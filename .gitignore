@@ -1,0 +1,64 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+migrations/*.sqlite
+
+# Model files (large binaries, gitignored per spec)
+models/
+*.pt
+*.pth
+*.onnx
+*.task
+*.pkl
+*.joblib
+
+# Logs
+logs/
+*.log
+
+# IDE / editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Python packaging
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Testing / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Uvicorn / FastAPI runtime
+*.pid
+
+# Local configuration (if any)
+config.local.py

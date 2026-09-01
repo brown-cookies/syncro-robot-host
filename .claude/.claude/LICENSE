@@ -1,0 +1,114 @@
+QACED LICENSE
+Version 1.0
+
+Copyright (c) 2026 Qaced. All rights reserved.
+
+This software and its accompanying documentation (the "Software") are proprietary.
+They are not open source. They are licensed, not sold, and only to the people
+described in Section 1.
+
+
+1. WHO MAY USE THIS
+
+A license is granted only to a "Licensed User", meaning:
+
+  a. a student currently or formerly enrolled in a course, program, cohort, or
+     mentorship offered by Qaced, for as long as their access remains in good
+     standing; or
+
+  b. an engineer affiliated with Qaced, or a student of such an engineer, where
+     that affiliation has been granted in writing by Qaced.
+
+If you are not a Licensed User, you have no rights to this Software. Possessing a
+copy does not create a license. Receiving a copy from someone else does not create
+a license.
+
+
+2. WHAT A LICENSED USER MAY DO
+
+A Licensed User may:
+
+  a. read, study, and run the Software;
+
+  b. modify the Software and adapt it to their own projects;
+
+  c. use the Software, modified or unmodified, in their own work, including
+     commercial work they perform for themselves or an employer.
+
+The output a Licensed User produces by using the Software belongs to that user.
+Qaced claims no rights in it.
+
+
+3. WHAT NOBODY MAY DO
+
+No person, Licensed User or otherwise, may:
+
+  a. distribute, publish, share, upload, or otherwise make the Software or any
+     derivative of it available to anyone who is not a Licensed User;
+
+  b. sell, resell, rent, lease, sublicense, or bundle the Software into a product
+     or service offered to others;
+
+  c. post the Software, in whole or in substantial part, to a public repository,
+     forum, model-training corpus, dataset, or file-sharing service;
+
+  d. use the Software to build, train, fine-tune, evaluate, or benchmark a machine
+     learning model, or submit it to any service that does so;
+
+  e. remove, obscure, or alter this license, the copyright notice, or the
+     contribution rules in CONTRIBUTING.md;
+
+  f. present the Software or a derivative of it as their own original work when
+     teaching, publishing, or selling to others.
+
+Section 3(a) is the core restriction. Everything else follows from it: this is
+course material, and it stays inside the course.
+
+
+4. CONTRIBUTING BACK
+
+Contributions to this Software are governed by CONTRIBUTING.md, which forms part of
+this license. Its requirements are binding: contributions are branch-and-pull-request
+only, require review by qaceddagoat, must be submitted by a named human author who is
+accountable for the change and who discloses any AI assistance used to produce it, and
+must be general improvements rather than role-specific customizations.
+
+By opening a pull request you grant Qaced a perpetual, irrevocable, worldwide,
+royalty-free license to use, modify, and distribute your contribution as part of
+the Software.
+
+
+5. WHEN THIS LICENSE ENDS
+
+This license terminates automatically and immediately if you breach any term of
+it. Qaced may also terminate it at any time by written notice.
+
+On termination you must stop using the Software and destroy every copy in your
+possession. Work you already produced with the Software remains yours. Sections
+3, 6, and 7 survive termination.
+
+
+6. NO WARRANTY
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+
+This Software orchestrates AI agents that write and modify code. It can produce
+incorrect, incomplete, or damaging changes. You are responsible for reviewing
+everything it produces before you rely on it, commit it, or ship it. The Software
+is deliberately built so that a human makes that final call.
+
+
+7. NO LIABILITY
+
+IN NO EVENT SHALL QACED OR ANY CONTRIBUTOR BE LIABLE FOR ANY CLAIM, DAMAGES, OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING
+FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+
+8. QUESTIONS
+
+If you are unsure whether you are a Licensed User, or whether something you want
+to do is permitted, ask before doing it. Contact Qaced.
