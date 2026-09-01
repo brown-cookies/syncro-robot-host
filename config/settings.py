@@ -196,6 +196,3 @@ def get_settings() -> Settings:
     """Return one immutable settings snapshot for the running process."""
     return Settings.from_env()
 
-
-# Compatibility alias for older code. New modules should inject Settings instead.
-config = get_settings()
