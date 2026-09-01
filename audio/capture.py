@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-from dataclasses import replace
-
 import numpy as np
 
-from config.settings import Settings, get_settings
+from config.settings import Settings
 
 
 class AudioCaptureError(RuntimeError):

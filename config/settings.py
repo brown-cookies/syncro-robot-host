@@ -59,8 +59,6 @@ class Settings:
 
     # TTS
     piper_model_path: str = "./models/en_US-lessac-medium"
-    tts_sample_rate: int = 16000
-    tts_chunk_ms: int = 100
 
     # Audio
     audio_sample_rate_hz: int = 16000
@@ -119,11 +117,6 @@ class Settings:
             piper_model_path=os.getenv(
                 "PIPER_MODEL_PATH", defaults.piper_model_path
             ),
-            tts_sample_rate=_int_env(
-                "TTS_SAMPLE_RATE", defaults.tts_sample_rate
-            ),
-            tts_chunk_ms=_int_env("TTS_CHUNK_MS", defaults.tts_chunk_ms),
-
             # Audio
             audio_sample_rate_hz=_int_env(
                 "AUDIO_SAMPLE_RATE_HZ", defaults.audio_sample_rate_hz
