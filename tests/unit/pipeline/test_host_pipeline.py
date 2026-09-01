@@ -131,6 +131,18 @@ def test_unexpected_stage_error_is_wrapped_and_stops_pipeline():
     assert exc.value.cause is boom
 
 
+def test_keyboard_interrupt_at_stage_boundary_is_wrapped():
+    class InterruptingInput:
+        def capture(self):
+            raise KeyboardInterrupt()
+
+    with pytest.raises(PipelineStageError) as exc:
+        make_pipeline(audio_input=InterruptingInput()).run_once()
+
+    assert exc.value.stage == "audio_capture"
+    assert isinstance(exc.value.cause, KeyboardInterrupt)
+
+
 def test_empty_transcript_stops_before_llm():
     llm = FakeLLM()
     with pytest.raises(PipelineStageError) as exc:
