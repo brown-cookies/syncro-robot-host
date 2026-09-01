@@ -118,5 +118,7 @@ class HostPipeline:
             return operation()
         except expected_error as exc:
             raise PipelineStageError(stage, exc) from exc
+        except Exception as exc:  # noqa: BLE001 - stage boundary
+            raise PipelineStageError(stage, exc) from exc
         finally:
             durations[stage] = time.monotonic() - start

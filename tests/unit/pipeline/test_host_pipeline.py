@@ -117,6 +117,20 @@ def test_inv6_failure_stops_pipeline(stage, error_type):
     assert exc.value.cause is error
 
 
+def test_unexpected_stage_error_is_wrapped_and_stops_pipeline():
+    boom = RuntimeError("unexpected boom")
+
+    class FailingSTT(FakeSTT):
+        def transcribe(self, *args, **kwargs):
+            raise boom
+
+    with pytest.raises(PipelineStageError) as exc:
+        make_pipeline(stt=FailingSTT()).run_once()
+
+    assert exc.value.stage == "stt"
+    assert exc.value.cause is boom
+
+
 def test_empty_transcript_stops_before_llm():
     llm = FakeLLM()
     with pytest.raises(PipelineStageError) as exc:
