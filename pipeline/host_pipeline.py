@@ -75,7 +75,8 @@ class HostPipeline:
             durations,
         )
         if not transcript.strip():
-            self._raise_stage("stt", STTAdapterError("Transcript was empty; nothing to send to the LLM."))
+            self._raise_stage("stt", STTAdapterError(
+                "Transcript was empty; nothing to send to the LLM."))
 
         response_text = self._run_stage(
             "llm",
@@ -84,7 +85,8 @@ class HostPipeline:
             durations,
         )
         if not response_text.strip():
-            self._raise_stage("llm", LLMAdapterError("LLM returned an empty response."))
+            self._raise_stage("llm", LLMAdapterError(
+                "LLM returned an empty response."))
 
         synthesized_audio, tts_rate = self._run_stage(
             "tts",
@@ -95,7 +97,8 @@ class HostPipeline:
 
         self._run_stage(
             "audio_output",
-            lambda: self._audio_output.play(synthesized_audio, sample_rate=tts_rate),
+            lambda: self._audio_output.play(
+                synthesized_audio, sample_rate=tts_rate),
             AudioPlaybackError,
             durations,
         )

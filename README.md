@@ -41,7 +41,7 @@ python -m pytest -q
 Run the real WP-102 host-only acceptance path:
 
 ```bash
-python -m scripts.live_run_WP-102
+python -m scripts.run_wp102
 ```
 
 Use `.env.example` as the configuration template. `.env` is local-only and must
