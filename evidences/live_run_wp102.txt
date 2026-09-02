@@ -6,11 +6,18 @@ WP-102 host-only pipeline
 Recording 5s from the USB microphone -- speak now...
 
 --- WP-102 run complete ---
-Transcript: 'hello this is AWP-102 live acceptance test'
-Response:   "Hello! I'm here to assist you with the AWP-102 live acceptance test. Please proceed with the test and I'll do my best to help you with any questions or issues that may arise. What's the first step or scenario for the test?"
+Transcript: "Hello, I'm under the water. Please help me"
+Response: "Oh no, I'm here to help! Since you're underwater, I'll try to communicate with you in a way that doesn't require sound waves. Can you respond in any way that feels natural to you? 
+Are you using a scuba tank, snorkeling, or in some other situation?\n\nAlso, are you okay? Do you need help breathing or are you experiencing any other difficulties?"
+
 Stage durations (s):
-  audio_capture   5.367
-  stt             1.548
-  llm             3.403
-  tts             0.515
-  audio_output   13.232
+  audio_capture   5.337
+  stt             1.607
+  llm             4.026
+  audio_output    0.726
+  tts             19.627
+
+
+
+
+Live Evidence: https://drive.google.com/file/d/1WUzBrCg_aHLX6Wh-qxiE-wMyV5eT6n2t/view?usp=sharing
