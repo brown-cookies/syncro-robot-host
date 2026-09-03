@@ -51,6 +51,7 @@ class Settings:
     llm_model: str = "llama3.1:8b-instruct-q4_K_M"
     ollama_num_ctx: int = 2048
     ollama_timeout_s: float = 60.0
+    intent_confidence_threshold: float = 0.60
 
     # STT
     stt_model_size: str = "small"
@@ -78,6 +79,7 @@ class Settings:
     lead_time_max: int = 60
     alpha: float = 0.3
     deadline_proximity_hours: int = 2
+    context_top_k: int = 5
     grace_window_minutes: int = 15
     session_timeout_seconds: int = 30
     reminder_response_window_minutes: int = 10
@@ -102,6 +104,9 @@ class Settings:
             ollama_num_ctx=_int_env("OLLAMA_NUM_CTX", defaults.ollama_num_ctx),
             ollama_timeout_s=_float_env(
                 "OLLAMA_TIMEOUT_S", defaults.ollama_timeout_s
+            ),
+            intent_confidence_threshold=_float_env(
+                "INTENT_CONFIDENCE_THRESHOLD", defaults.intent_confidence_threshold
             ),
 
             # STT
@@ -161,6 +166,9 @@ class Settings:
             deadline_proximity_hours=_int_env(
                 "DEADLINE_PROXIMITY_HOURS",
                 defaults.deadline_proximity_hours,
+            ),
+            context_top_k=_int_env(
+                "CONTEXT_TOP_K", defaults.context_top_k
             ),
             grace_window_minutes=_int_env(
                 "GRACE_WINDOW_MINUTES",
