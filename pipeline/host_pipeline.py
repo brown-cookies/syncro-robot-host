@@ -23,7 +23,7 @@ from audio.playback import AudioPlaybackError
 class PipelineStageError(RuntimeError):
     """Raised when a required WP-102 stage fails."""
 
-    def __init__(self, stage: str, cause: Exception) -> None:
+    def __init__(self, stage: str, cause: BaseException) -> None:
         super().__init__(f"WP-102 pipeline failed at stage '{stage}': {cause}")
         self.stage = stage
         self.cause = cause
@@ -119,9 +119,7 @@ class HostPipeline:
         start = time.monotonic()
         try:
             return operation()
-        except expected_error as exc:
-            raise PipelineStageError(stage, exc) from exc
-        except Exception as exc:  # noqa: BLE001 - stage boundary
+        except BaseException as exc:  # noqa: BLE001 - stage boundary
             raise PipelineStageError(stage, exc) from exc
         finally:
             durations[stage] = time.monotonic() - start
