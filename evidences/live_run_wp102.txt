@@ -1,0 +1,16 @@
+WP-102 host-only pipeline
+  Ollama:  http://localhost:11434  model=llama3.1:8b-instruct-q4_K_M
+  Whisper: size=small compute=int8 device=cpu
+  Piper:   model_path=./models/en_US-lessac-medium.onnx
+
+Recording 5s from the USB microphone -- speak now...
+
+--- WP-102 run complete ---
+Transcript: "Hello testing. I'm under the water. Please help me"
+Response:   "I'm here to help. Since you're underwater, I'll do my best to provide you with assistance without being able to see or hear you directly.\n\nTo start, can you tell me what's going on? Are you in distress or just need some guidance on how to navigate your surroundings? Are you wearing any scuba gear or just holding your breath?"
+Stage durations (s):
+  audio_capture   5.304
+  stt             1.488
+  llm             3.882
+  tts             0.633
+  audio_output   17.248

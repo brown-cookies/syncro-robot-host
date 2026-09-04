@@ -21,7 +21,6 @@ def test_settings() -> Settings:
         stt_compute_type="int8",
         stt_device="cpu",
         piper_model_path="./models/test",
-        tts_sample_rate=16_000,
     )
 
 @pytest.fixture

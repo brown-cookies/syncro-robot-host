@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from config.settings import Settings, get_settings
+from config.settings import Settings
 
 
 class AudioPlaybackError(RuntimeError):

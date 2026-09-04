@@ -1,7 +1,7 @@
 """Run the WP-102 real host-only acceptance path.
 
 Usage:
-    python -m scripts.live_run_WP-102
+    python -m scripts.run_wp102
 """
 
 from __future__ import annotations
