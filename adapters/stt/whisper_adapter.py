@@ -13,6 +13,7 @@ class STTAdapterError(RuntimeError):
 
 class WhisperSTTAdapter:
     def __init__(self, settings: Settings | None = None) -> None:
+        """Initialize the WhisperSTTAdapter and establish its runtime state."""
         settings = settings or get_settings()
         self._sample_rate = settings.audio_sample_rate_hz
         try:
@@ -35,6 +36,7 @@ class WhisperSTTAdapter:
             ) from exc
 
     def transcribe(self, audio: np.ndarray, sample_rate: int) -> str:
+        """Transcribe the supplied audio using the configured speech-to-text backend."""
         if audio.dtype != np.float32:
             raise STTAdapterError(
                 f"Expected float32 PCM, got {audio.dtype}. Convert before calling transcribe()."

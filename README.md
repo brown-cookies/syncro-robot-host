@@ -62,7 +62,7 @@ WP-103 adds the dialogue graph and its policy/storage boundaries:
 The WP-103 affect implementation is deliberately only a contract-boundary stub:
 
 ```python
-DevelopmentAffectDetector().detect(...)  # -> "Low"
+ClassifierAffectDetector(model_path).detect(audio, sample_rate)  # -> "Low" | "Moderate" | "High"
 ```
 
 Do **not** add the WP-104 classifier to this work package. The production affect model, feature extraction, training, evaluation, and macro-F1 evidence belong to WP-104.
@@ -312,7 +312,7 @@ python -m pytest -q
 Run the WP-103 integration tests specifically:
 
 ```bash
-python -m pytest -q tests/integration/test_wp103_integration.py tests/test_wp103_graph.py
+python -m pytest -q tests/integration/test_dialogue_graph_integration.py
 ```
 
 The WP-103 graph tests inject a fake affect detector. That is intentional: **WP-103 validates graph wiring and policy behavior without depending on the future WP-104 acoustic classifier.**
@@ -326,7 +326,7 @@ WP-103 uses these external model boundaries:
 | STT | `faster-whisper` | Existing host pipeline |
 | LLM | Ollama + configured local model | Existing host pipeline |
 | TTS | Piper + configured local voice | Existing host pipeline |
-| Affect | `DevelopmentAffectDetector` → `Low` | **WP-104** |
+| Affect | `ClassifierAffectDetector` → `Low` / `Moderate` / `High` | **WP-104** |
 
 WP-103 therefore does **not** require an affect model file, openSMILE feature extraction, a scikit-learn classifier, or affect-training data to exercise its scaffold.
 

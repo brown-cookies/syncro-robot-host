@@ -8,22 +8,27 @@ from adapters.llm.ollama_adapter import LLMAdapterError, OllamaLLMAdapter
 
 class FakeResponse:
     def __init__(self, payload=None, *, text=""):
+        """Initialize the FakeResponse and establish its runtime state."""
         self._payload = payload
         self.text = text
 
     def raise_for_status(self):
+        """Provide the fake HTTP status-check behavior used by the test."""
         return None
 
     def json(self):
+        """Return the fake JSON payload used by the test."""
         if isinstance(self._payload, Exception):
             raise self._payload
         return self._payload
 
 
 def test_llm_builds_expected_request(monkeypatch, test_settings):
+    """Verify that llm builds expected request."""
     captured = {}
 
     def fake_post(url, **kwargs):
+        """Provide a controlled HTTP response for the adapter test."""
         captured.update(url=url, kwargs=kwargs)
         return FakeResponse({"response": " Hello world "})
 
@@ -41,6 +46,7 @@ def test_llm_builds_expected_request(monkeypatch, test_settings):
 
 
 def test_llm_wraps_request_failure(monkeypatch, test_settings):
+    """Verify that llm wraps request failure."""
     monkeypatch.setattr(
         "adapters.llm.ollama_adapter.requests.post",
         lambda *a, **k: (_ for _ in ()).throw(requests.ConnectionError("server unavailable")),
@@ -50,6 +56,7 @@ def test_llm_wraps_request_failure(monkeypatch, test_settings):
 
 
 def test_llm_rejects_malformed_json(monkeypatch, test_settings):
+    """Verify that llm rejects malformed json."""
     monkeypatch.setattr(
         "adapters.llm.ollama_adapter.requests.post",
         lambda *a, **k: FakeResponse(ValueError("bad json"), text="not-json"),
@@ -59,6 +66,7 @@ def test_llm_rejects_malformed_json(monkeypatch, test_settings):
 
 
 def test_llm_rejects_missing_response(monkeypatch, test_settings):
+    """Verify that llm rejects missing response."""
     monkeypatch.setattr(
         "adapters.llm.ollama_adapter.requests.post",
         lambda *a, **k: FakeResponse({}, text="{}"),
@@ -68,6 +76,7 @@ def test_llm_rejects_missing_response(monkeypatch, test_settings):
 
 
 def test_llm_rejects_empty_response(monkeypatch, test_settings):
+    """Verify that llm rejects empty response."""
     monkeypatch.setattr(
         "adapters.llm.ollama_adapter.requests.post",
         lambda *a, **k: FakeResponse({"response": "   "}),

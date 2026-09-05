@@ -22,9 +22,11 @@ class DecisionTraceRepository:
     """Validates and persists complete Section 8.3 trace records."""
 
     def __init__(self, database: SQLiteDatabase) -> None:
+        """Initialize the DecisionTraceRepository and establish its runtime state."""
         self._database = database
 
     def save(self, record: dict[str, Any]) -> None:
+        """Persist the current decision-trace data to storage."""
         validated = DecisionTraceRecord.model_validate(record)
         record_json = validated.model_dump(mode="json")
         values = [record_json[name] for name in TRACE_FIELDS]
@@ -38,7 +40,7 @@ class DecisionTraceRepository:
             )
 
     def suppress_pending_reminder_traces(self, user_id: str) -> int:
-        """Mark other pending reminder trace rows as suppressed for R5."""
+        """Suppress other pending reminder traces when policy requires it."""
         if not user_id:
             raise ValueError("user_id is required")
         with self._database.connection() as conn:
@@ -55,6 +57,7 @@ class DecisionTraceRepository:
             return cursor.rowcount
 
     def list_for_user(self, user_id: str) -> list[dict[str, Any]]:
+        """Retrieve decision traces belonging to the requested user."""
         with self._database.connection() as conn:
             rows = conn.execute(
                 "SELECT * FROM decision_trace WHERE user_id = ? ORDER BY timestamp ASC",

@@ -6,7 +6,9 @@ from pipeline.state import DialogueState
 
 
 def make_intent_node(classifier, confidence_threshold: float):
+    """Create the intent graph node with its injected classifier."""
     def intent_node(state: DialogueState) -> DialogueState:
+        """Classify the request intent and store the result in dialogue state."""
         transcript = state.get("transcript")
         if transcript is None:
             raise RuntimeError("Node 1 intent classification requires transcript in DialogueState.")

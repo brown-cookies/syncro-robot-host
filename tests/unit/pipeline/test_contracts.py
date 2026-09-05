@@ -9,6 +9,7 @@ from pipeline.contracts import DecisionTraceRecord, ResponsePayload
 
 
 def base_trace(**overrides):
+    """Perform the base trace operation required by the project."""
     record = {
         "trace_id": uuid4(),
         "session_id": "session-1",
@@ -33,6 +34,7 @@ def base_trace(**overrides):
 
 
 def test_response_payload_matches_section_8_1_shape():
+    """Verify that response payload matches section 8 1 shape."""
     payload = ResponsePayload(
         session_id="session-1",
         tts_text="Done.",
@@ -47,6 +49,7 @@ def test_response_payload_matches_section_8_1_shape():
 
 
 def test_decision_trace_matches_section_8_3_shape():
+    """Verify that decision trace matches section 8 3 shape."""
     trace = DecisionTraceRecord(**base_trace()).model_dump(mode="json")
     assert set(trace) == {
         "trace_id", "session_id", "user_id", "timestamp", "intent",
@@ -58,16 +61,19 @@ def test_decision_trace_matches_section_8_3_shape():
 
 
 def test_non_policy_trace_requires_na_for_both_fields():
+    """Verify that non policy trace requires na for both fields."""
     with pytest.raises(ValueError):
         DecisionTraceRecord(**base_trace(deadline_proximity="imminent"))
 
 
 def test_invalid_policy_enum_is_rejected():
+    """Verify that invalid policy enum is rejected."""
     with pytest.raises(ValueError):
         DecisionTraceRecord(**base_trace(policy_rule="R9", deadline_proximity="imminent"))
 
 
 def test_policy_trace_accepts_each_spec_rule():
+    """Verify that policy trace accepts each spec rule."""
     cases = {
         "R1": "not_imminent",
         "R2": "not_imminent",

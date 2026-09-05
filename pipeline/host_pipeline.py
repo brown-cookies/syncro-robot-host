@@ -24,6 +24,7 @@ class PipelineStageError(RuntimeError):
     """Raised when a required WP-102 stage fails."""
 
     def __init__(self, stage: str, cause: BaseException) -> None:
+        """Initialize the PipelineStageError and establish its runtime state."""
         super().__init__(f"WP-102 pipeline failed at stage '{stage}': {cause}")
         self.stage = stage
         self.cause = cause
@@ -37,6 +38,7 @@ class PipelineResult:
 
     @property
     def total_duration_s(self) -> float:
+        """Return the accumulated duration of the recorded pipeline stages."""
         return sum(self.stage_durations_s.values())
 
 
@@ -52,6 +54,7 @@ class HostPipeline:
         tts: TTS,
         audio_output: AudioOutput,
     ) -> None:
+        """Initialize the HostPipeline and establish its runtime state."""
         self._audio_input = audio_input
         self._stt = stt
         self._llm = llm
@@ -59,6 +62,7 @@ class HostPipeline:
         self._audio_output = audio_output
 
     def run_once(self) -> tuple[PipelineResult, np.ndarray, int]:
+        """Execute one complete host pipeline run."""
         durations: dict[str, float] = {}
 
         captured, capture_rate = self._run_stage(
@@ -112,10 +116,12 @@ class HostPipeline:
 
     @staticmethod
     def _raise_stage(stage: str, cause: Exception) -> None:
+        """Convert a stage failure into the pipeline error contract."""
         raise PipelineStageError(stage, cause) from cause
 
     @staticmethod
     def _run_stage(stage: str, operation, expected_error: type[Exception], durations: dict[str, float]):
+        """Execute one named pipeline stage with its required error handling."""
         start = time.monotonic()
         try:
             return operation()

@@ -6,6 +6,7 @@ from config.settings import Settings
 
 
 def test_settings_defaults_are_instance_values() -> None:
+    """Verify that settings defaults are instance values."""
     settings = Settings()
     assert settings.audio_sample_rate_hz == 16_000
     assert settings.audio_capture_seconds == 5.0
@@ -13,6 +14,7 @@ def test_settings_defaults_are_instance_values() -> None:
 
 
 def test_settings_reads_environment(monkeypatch) -> None:
+    """Verify that settings reads environment."""
     monkeypatch.setenv("AUDIO_SAMPLE_RATE_HZ", "22050")
     monkeypatch.setenv("AUDIO_CAPTURE_SECONDS", "2.5")
     monkeypatch.setenv("WS_PORT", "9000")
@@ -23,12 +25,14 @@ def test_settings_reads_environment(monkeypatch) -> None:
 
 
 def test_settings_rejects_invalid_integer(monkeypatch) -> None:
+    """Verify that settings rejects invalid integer."""
     monkeypatch.setenv("WS_PORT", "bad")
     with pytest.raises(ValueError, match="WS_PORT must be an integer"):
         Settings.from_env()
 
 
 def test_settings_rejects_invalid_boolean(monkeypatch) -> None:
+    """Verify that settings rejects invalid boolean."""
     monkeypatch.setenv("ADAPTIVE_LEAD_TIME_ENABLED", "maybe")
     with pytest.raises(ValueError, match="must be boolean"):
         Settings.from_env()

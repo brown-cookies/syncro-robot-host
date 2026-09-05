@@ -14,6 +14,7 @@ USER_ID = "wp103-demo-user"
 
 
 def _task(task_id: str, title: str, deadline: datetime | None, priority: str, now: datetime) -> tuple:
+    """Execute the seeded task operation used by the development script."""
     return (
         task_id,
         USER_ID,
@@ -31,6 +32,7 @@ def _task(task_id: str, title: str, deadline: datetime | None, priority: str, no
 
 
 def seed(db_path: str, reset: bool = True) -> None:
+    """Perform the seed operation required by the project."""
     SQLiteStore(db_path)
     conn = sqlite3.connect(db_path)
     try:
@@ -87,6 +89,7 @@ def seed(db_path: str, reset: bool = True) -> None:
 
 
 def main() -> int:
+    """Run the command-line entry point for this module."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--db", default=None, help="SQLite path; defaults to config.db_path")
     parser.add_argument("--no-reset", action="store_true", help="Keep existing WP-103 demo rows")

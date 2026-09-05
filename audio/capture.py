@@ -15,9 +15,11 @@ class MicrophoneAudioInput:
     """Concrete host microphone implementation using sounddevice."""
 
     def __init__(self, settings: Settings) -> None:
+        """Initialize the MicrophoneAudioInput and establish its runtime state."""
         self._settings = settings
 
     def capture(self) -> tuple[np.ndarray, int]:
+        """Capture audio and return it in the format required by the host pipeline."""
         try:
             import sounddevice as sd
         except ImportError as exc:  # pragma: no cover - dependency boundary

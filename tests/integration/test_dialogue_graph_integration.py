@@ -11,25 +11,30 @@ from storage.sqlite_store import SQLiteStore
 
 class FakeSTT:
     def transcribe(self, audio, sample_rate):
+        """Transcribe the supplied audio using the configured speech-to-text backend."""
         return "please remind me about my task"
 
 
 class FakeIntent:
     def classify(self, transcript):
+        """Classify the supplied input using the configured classifier."""
         return "dismiss_reminder", 0.94, {}
 
 
 class FakeAffect:
     def detect(self, audio, sample_rate):
+        """Detect the current affect level from the supplied audio."""
         return "High"
 
 
 class FakeLLM:
     def generate(self, prompt):
+        """Generate an LLM response from the supplied conversation state and context."""
         return '{"response_text":"I will keep the reminder focused.","proposed_action":"deliver"}'
 
 
-def test_wp103_graph_runs_stt_intent_context_llm_policy_and_trace(tmp_path):
+def test_dialogue_graph_runs_full_processing_path_and_trace(tmp_path):
+    """Verify that dialogue graph runs full processing path and trace."""
     store = SQLiteStore(str(tmp_path / "wp103.db"))
     graph = build_dialogue_graph(
         stt=FakeSTT(),

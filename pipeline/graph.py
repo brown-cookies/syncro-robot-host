@@ -37,13 +37,7 @@ def build_dialogue_graph(
     grace_window_minutes: int,
     default_lead_time: float,
 ):
-    """Build the SPEC Section 2 graph.
-
-    Raw audio fans out immediately to the STT path and the acoustic affect
-    detector. The STT path continues through intent, context, and LLM. Node 4
-    is a join: it cannot execute until both the LLM
-    draft and the affect result exist.
-    """
+    """Build the dialogue graph and connect its dependency-injected nodes."""
 
     builder = StateGraph(DialogueState)
     builder.add_node("node1_stt", make_stt_node(stt))
@@ -91,6 +85,7 @@ def invoke_dialogue(
     audio: Any,
     sample_rate: int,
 ) -> DialogueGraphResult:
+    """Invoke the dialogue graph with the supplied request state."""
     started = monotonic()
     state = graph.invoke(
         {

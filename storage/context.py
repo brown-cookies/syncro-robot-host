@@ -18,6 +18,7 @@ class ContextResult:
 
     @property
     def ids(self) -> list[str]:
+        """Return the identifiers represented by the context collection."""
         ids = [str(item["task_id"]) for item in self.tasks]
         ids.extend(
             str(item["task_id"])
@@ -33,6 +34,7 @@ class ContextRepository:
     """Queries the context required by SPEC FR-H5."""
 
     def __init__(self, database: SQLiteDatabase) -> None:
+        """Initialize the ContextRepository and establish its runtime state."""
         self._database = database
 
     def retrieve(
@@ -41,6 +43,7 @@ class ContextRepository:
         top_k: int,
         deadline_proximity_hours: int,
     ) -> ContextResult:
+        """Retrieve context records required for the current request."""
         now = datetime.now(timezone.utc)
         now_iso = now.isoformat()
 

@@ -12,13 +12,14 @@ class SQLiteDatabase:
     """Own database path handling, connections, and SQLite pragmas."""
 
     def __init__(self, db_path: str) -> None:
+        """Initialize the SQLiteDatabase and establish its runtime state."""
         self.path = db_path
         if db_path != ":memory:":
             parent = Path(db_path).expanduser().parent
             parent.mkdir(parents=True, exist_ok=True)
 
     def connect(self) -> sqlite3.Connection:
-        """Open a configured connection; the caller owns and closes it."""
+        """Open a database connection using the configured storage settings."""
         conn = sqlite3.connect(self.path)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys = ON")
@@ -26,7 +27,7 @@ class SQLiteDatabase:
 
     @contextmanager
     def connection(self) -> Iterator[sqlite3.Connection]:
-        """Yield a connection and always close it on exit."""
+        """Provide a database connection and close it reliably after use."""
         conn = self.connect()
         try:
             with conn:

@@ -10,25 +10,30 @@ from storage.sqlite_store import SQLiteStore
 
 class FakeSTT:
     def transcribe(self, audio, sample_rate):
+        """Transcribe the supplied audio using the configured speech-to-text backend."""
         return "what should I focus on today?"
 
 
 class FakeIntent:
     def classify(self, transcript):
+        """Classify the supplied input using the configured classifier."""
         return "ask_status", 0.91, {}
 
 
 class FakeAffect:
     def detect(self, audio, sample_rate):
+        """Detect the current affect level from the supplied audio."""
         return "High"
 
 
 class FakeLLM:
     def generate(self, prompt):
+        """Generate an LLM response from the supplied conversation state and context."""
         return '{"response_text":"You have one priority task.","proposed_action":"respond"}'
 
 
 def test_graph_runs_all_four_nodes_and_writes_trace(tmp_path):
+    """Verify that graph runs all four nodes and writes trace."""
     store = SQLiteStore(str(tmp_path / "test.db"))
     graph = build_dialogue_graph(
         stt=FakeSTT(), intent_classifier=FakeIntent(), llm=FakeLLM(), store=store, affect_detector=FakeAffect(),
