@@ -40,13 +40,13 @@ def test_node3_parser_rejects_invalid_json():
         _parse_json("not json")
 
 
-def test_node3_rejects_unexecuted_mutation_claim():
+def test_node3_degrades_unexecuted_mutation_claim():
     from pipeline.nodes.llm import _reject_unexecuted_mutation_claim
 
-    with pytest.raises(ValueError, match="falsely claims a mutation"):
-        _reject_unexecuted_mutation_claim(
-            "add_task", "I've added the task to your schedule."
-        )
+    result = _reject_unexecuted_mutation_claim(
+        "add_task", "I've added the task to your schedule."
+    )
+    assert result.startswith("I can help with that")
 
 
 def test_node3_allows_proposed_mutation_language():
@@ -56,3 +56,35 @@ def test_node3_allows_proposed_mutation_language():
         "add_task", "I can add that task for tomorrow at 9 p.m."
     )
     assert text.startswith("I can add")
+
+
+def test_node3_mutation_guard_uses_word_boundaries():
+    from pipeline.nodes.llm import _reject_unexecuted_mutation_claim
+
+    text = "I have your address on file, so where should I put this task?"
+    assert _reject_unexecuted_mutation_claim("add_task", text) == text
+
+
+def test_node3_mutation_guard_allows_explicit_denials():
+    from pipeline.nodes.llm import _reject_unexecuted_mutation_claim
+
+    for intent, text in (
+        ("dismiss_reminder", "I have not cleared anything yet."),
+        ("snooze_reminder", "Nothing was postponed. I have no pending items."),
+    ):
+        assert _reject_unexecuted_mutation_claim(intent, text) == text
+
+
+def test_node3_mutation_guard_flags_affirmative_completion_beyond_i_have():
+    from pipeline.nodes.llm import _reject_unexecuted_mutation_claim
+
+    text = "The task was added successfully."
+    result = _reject_unexecuted_mutation_claim("add_task", text)
+    assert result.startswith("I can help with that")
+
+
+def test_node3_mutation_guard_allows_prospective_successful_language():
+    from pipeline.nodes.llm import _reject_unexecuted_mutation_claim
+
+    text = "I can add the task successfully once you confirm."
+    assert _reject_unexecuted_mutation_claim("add_task", text) == text

@@ -44,7 +44,9 @@ class ContextRepository:
         now = datetime.now(timezone.utc)
         now_iso = now.isoformat()
 
-        with self._database.connect() as conn:
+        overdue_limit = max(top_k, 1)
+
+        with self._database.connection() as conn:
             upcoming_rows = conn.execute(
                 """
                 SELECT task_id, title, deadline, priority, status, notes, created_at
@@ -80,8 +82,9 @@ class ContextRepository:
                   AND status != 'completed'
                   AND deadline IS NOT NULL
                 ORDER BY deadline ASC, created_at ASC
+                LIMIT ?
                 """,
-                (user_id,),
+                (user_id, overdue_limit),
             ).fetchall()
 
         tasks = [dict(row) for row in upcoming_rows]
@@ -109,7 +112,7 @@ class ContextRepository:
             except ValueError:
                 continue
             delta_hours = (deadline - now).total_seconds() / 3600.0
-            if delta_hours <= deadline_proximity_hours:
+            if 0 <= delta_hours <= deadline_proximity_hours:
                 imminent = True
                 break
 

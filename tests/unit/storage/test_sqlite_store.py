@@ -1,3 +1,4 @@
+import pytest
 from datetime import datetime, timedelta, timezone
 import sqlite3
 
@@ -30,7 +31,7 @@ def test_context_returns_tasks_routine_and_overdue(tmp_path):
     result = store.retrieve_context("u1", 5, 2)
     assert result.recent_routine["log_id"] == "r1"
     assert result.overdue_tasks[0]["task_id"] == "t1"
-    assert result.deadline_proximity == "imminent"
+    assert result.deadline_proximity == "not_imminent"
     assert "t1" in result.ids
 
 
@@ -129,3 +130,54 @@ def test_r5_suppresses_other_pending_reminder_traces(tmp_path):
     assert store.suppress_pending_reminder_traces("u1") == 1
     row = store.list_decision_traces("u1")[0]
     assert row["action_taken"] == "suppress"
+
+
+def test_overdue_task_does_not_count_as_imminent(tmp_path):
+    store = SQLiteStore(str(tmp_path / "deadline.db"))
+    now = datetime.now(timezone.utc)
+    with sqlite3.connect(str(tmp_path / "deadline.db")) as conn:
+        conn.execute("INSERT INTO users(user_id, created_at) VALUES (?, ?)", ("u1", now.isoformat()))
+        conn.execute(
+            """INSERT INTO tasks(task_id,user_id,title,deadline,priority,status,created_at)
+               VALUES (?,?,?,?,?,?,?)""",
+            ("stale", "u1", "Stale", (now - timedelta(days=90)).isoformat(), "normal", "overdue", now.isoformat()),
+        )
+    result = store.retrieve_context("u1", 5, 2)
+    assert result.overdue_tasks[0]["task_id"] == "stale"
+    assert result.deadline_proximity == "not_imminent"
+
+
+def test_overdue_context_is_bounded(tmp_path):
+    store = SQLiteStore(str(tmp_path / "bounded.db"))
+    now = datetime.now(timezone.utc)
+    with sqlite3.connect(str(tmp_path / "bounded.db")) as conn:
+        conn.execute("INSERT INTO users(user_id, created_at) VALUES (?, ?)", ("u1", now.isoformat()))
+        for i in range(20):
+            deadline = (now - timedelta(days=i + 1)).isoformat()
+            conn.execute(
+                """INSERT INTO tasks(task_id,user_id,title,deadline,priority,status,created_at)
+                   VALUES (?,?,?,?,?,?,?)""",
+                (f"stale-{i}", "u1", f"Stale {i}", deadline, "normal", "overdue", now.isoformat()),
+            )
+    result = store.retrieve_context("u1", 5, 2)
+    assert len(result.overdue_tasks) == 5
+
+
+def test_database_connection_context_closes_connection(tmp_path):
+    db = SQLiteDatabase(str(tmp_path / "close.db"))
+    with db.connection() as conn:
+        conn.execute("SELECT 1")
+    with pytest.raises(sqlite3.ProgrammingError):
+        conn.execute("SELECT 1")
+
+
+def test_ensure_user_is_idempotent(tmp_path):
+    store = SQLiteStore(str(tmp_path / "user.db"))
+    store.ensure_user("demo", declared_working_window_start="08:00", declared_working_window_end="22:00")
+    store.ensure_user("demo", declared_working_window_start="09:00", declared_working_window_end="21:00")
+    with sqlite3.connect(str(tmp_path / "user.db")) as conn:
+        row = conn.execute(
+            "SELECT user_id, declared_working_window_start, declared_working_window_end FROM users WHERE user_id = ?",
+            ("demo",),
+        ).fetchone()
+    assert row == ("demo", "08:00", "22:00")

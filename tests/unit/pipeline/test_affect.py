@@ -25,3 +25,4 @@ def test_affect_node_uses_same_audio_contract():
 def test_affect_node_rejects_invalid_level():
     with pytest.raises(AffectDetectionError):
         make_affect_node(FakeAffect("medium"))({"audio": [1], "sample_rate": 16000})
+

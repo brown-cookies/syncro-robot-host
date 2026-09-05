@@ -15,7 +15,7 @@ class SQLiteStore:
 
     def __init__(self, db_path: str) -> None:
         self.database = SQLiteDatabase(db_path)
-        with self.database.connect() as conn:
+        with self.database.connection() as conn:
             initialize_schema(conn)
         self.context = ContextRepository(self.database)
         self.decision_trace = DecisionTraceRepository(self.database)
@@ -23,6 +23,35 @@ class SQLiteStore:
     @property
     def path(self) -> str:
         return self.database.path
+
+
+    def ensure_user(
+        self,
+        user_id: str,
+        *,
+        declared_working_window_start: str | None = None,
+        declared_working_window_end: str | None = None,
+    ) -> None:
+        """Create the user if absent without mutating existing user data."""
+        if not user_id:
+            raise ValueError("user_id is required")
+        from datetime import datetime, timezone
+
+        with self.database.connection() as conn:
+            conn.execute(
+                """
+                INSERT INTO users(
+                    user_id, created_at, declared_working_window_start, declared_working_window_end
+                ) VALUES (?, ?, ?, ?)
+                ON CONFLICT(user_id) DO NOTHING
+                """,
+                (
+                    user_id,
+                    datetime.now(timezone.utc).isoformat(),
+                    declared_working_window_start,
+                    declared_working_window_end,
+                ),
+            )
 
     def retrieve_context(self, user_id: str, top_k: int, deadline_proximity_hours: int) -> ContextResult:
         return self.context.retrieve(user_id, top_k, deadline_proximity_hours)
@@ -34,7 +63,7 @@ class SQLiteStore:
         return self.decision_trace.suppress_pending_reminder_traces(user_id)
 
     def get_lead_time(self, user_id: str, default: float) -> float:
-        with self.database.connect() as conn:
+        with self.database.connection() as conn:
             row = conn.execute(
                 "SELECT current_L FROM lead_time_state WHERE user_id = ?",
                 (user_id,),

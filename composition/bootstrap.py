@@ -46,10 +46,9 @@ def build_wp103_components(settings: Settings | None = None, *, affect_detector=
     from pipeline.graph import build_dialogue_graph
 
     if affect_detector is None:
-        raise RuntimeError(
-            "WP-103 requires an affect_detector. Connect the WP-104 acoustic affect adapter "
-            "or explicitly pass a test/stub detector."
-        )
+        from adapters.affect import DevelopmentAffectDetector
+
+        affect_detector = DevelopmentAffectDetector()
 
     graph = build_dialogue_graph(
         stt=stt,

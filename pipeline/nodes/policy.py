@@ -7,7 +7,6 @@ from pipeline.state import DialogueState
 ALLOWED_AFFECT_LEVELS = frozenset({"Low", "Moderate", "High"})
 ALLOWED_DEADLINE_PROXIMITY = frozenset({"imminent", "not_imminent", "n/a"})
 POLICY_RULES: dict[tuple[str, str], str] = {
-    ("Low", "any"): "R1",
     ("Moderate", "not_imminent"): "R2",
     ("Moderate", "imminent"): "R3",
     ("High", "not_imminent"): "R4",

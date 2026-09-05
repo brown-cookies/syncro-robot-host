@@ -36,6 +36,7 @@ def test_wp103_graph_runs_stt_intent_context_llm_policy_and_trace(tmp_path):
         intent_classifier=FakeIntent(),
         llm=FakeLLM(),
         store=store,
+        affect_detector=FakeAffect(),
         confidence_threshold=0.60,
         context_top_k=5,
         deadline_proximity_hours=2,

@@ -84,35 +84,64 @@ def _select_context_for_request(
 
 
 def _reject_unexecuted_mutation_claim(intent: str, response_text: str) -> str:
-    """Reject response text that claims a mutation happened without an executor."""
-    mutation_intents = {
-        "add_task": ("add", "created", "scheduled", "saved"),
-        "reschedule_task": ("rescheduled", "moved", "updated"),
-        "snooze_reminder": ("snoozed", "postponed", "delayed"),
-        "dismiss_reminder": ("dismissed", "cleared"),
+    """Degrade unsafe mutation claims instead of crashing the graph.
+
+    Node 3 is a drafting boundary: without an executor it must not claim that
+    a mutation already happened. Matching uses word boundaries, explicit
+    negation, and prospective language so ordinary wording does not trigger it.
+    """
+    mutation_terms = {
+        "add_task": (r"\badd(?:ed)?\b", r"\bcreated\b", r"\bsaved\b", r"\bscheduled\b"),
+        "reschedule_task": (r"\brescheduled\b", r"\bmoved\b", r"\bupdated\b"),
+        "snooze_reminder": (r"\bsnoozed\b", r"\bpostponed\b", r"\bdelayed\b"),
+        "dismiss_reminder": (r"\bdismissed\b", r"\bcleared\b"),
     }
-    verbs = mutation_intents.get(intent)
-    if not verbs:
+    terms = mutation_terms.get(intent)
+    if not terms:
         return response_text
 
     lowered = response_text.casefold()
-    completion_markers = (
-        "i've ",
-        "i have ",
-        "done",
-        "completed",
-        "successfully",
-        "it's been ",
-        "it has been ",
+    mutation_match = next(
+        (match for term in terms if (match := re.search(term, lowered))),
+        None,
     )
-    mutation_marker = any(verb in lowered for verb in verbs)
-    completion_marker = any(marker in lowered for marker in completion_markers)
+    if mutation_match is None:
+        return response_text
 
-    if mutation_marker and completion_marker:
-        raise ValueError(
-            "Node 3 falsely claims a mutation was executed; no mutation executor is connected."
-        )
-    return response_text
+    # Evaluate only the sentence containing the mutation verb.
+    sentence_start = max(lowered.rfind(".", 0, mutation_match.start()), lowered.rfind("!", 0, mutation_match.start()), lowered.rfind("?", 0, mutation_match.start())) + 1
+    sentence_end_candidates = [
+        index for punctuation in (".", "!", "?")
+        if (index := lowered.find(punctuation, mutation_match.end())) >= 0
+    ]
+    sentence_end = min(sentence_end_candidates, default=len(lowered))
+    sentence = lowered[sentence_start:sentence_end].strip()
+    prefix = lowered[sentence_start:mutation_match.start()]
+
+    if re.search(
+        r"(?:\b(?:not|never|haven't|have not|hasn't|has not|wasn't|was not|isn't|is not)\b[^.!?]{0,40}$|\bnothing\s+(?:was|has been|is)\s*$)",
+        prefix,
+    ):
+        return response_text
+
+    # Prospective/proposal wording is exactly what Node 3 is allowed to do.
+    if re.search(
+        r"\b(?:can|could|may|might|will|would|should|shall)\b[^.!?]{0,30}$|\blet\s+me\b[^.!?]{0,30}$|\bi(?:'m| am)\s+going\s+to\b[^.!?]{0,30}$",
+        prefix,
+    ):
+        return response_text
+
+    completion = re.search(
+        r"(?:\b(?:i(?:'ve| have)|we(?:'ve| have))\s+(?:already\s+)?|\b(?:done|completed|successfully)\b|\b(?:it's|it has|it was|that was|the task was)\s+)",
+        sentence,
+    )
+    if completion is None:
+        return response_text
+
+    return (
+        "I can help with that, but I have not executed the change yet. "
+        + response_text
+    )
 
 def _parse_json(raw: str) -> dict[str, object]:
     text = raw.strip()

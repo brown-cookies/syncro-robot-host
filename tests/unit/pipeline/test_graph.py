@@ -31,7 +31,7 @@ class FakeLLM:
 def test_graph_runs_all_four_nodes_and_writes_trace(tmp_path):
     store = SQLiteStore(str(tmp_path / "test.db"))
     graph = build_dialogue_graph(
-        stt=FakeSTT(), intent_classifier=FakeIntent(), llm=FakeLLM(), store=store,
+        stt=FakeSTT(), intent_classifier=FakeIntent(), llm=FakeLLM(), store=store, affect_detector=FakeAffect(),
         confidence_threshold=0.60, context_top_k=5, deadline_proximity_hours=2,
         grace_window_minutes=15, default_lead_time=15,
     )

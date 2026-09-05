@@ -30,7 +30,7 @@ class DecisionTraceRepository:
         values = [record_json[name] for name in TRACE_FIELDS]
         values[6] = json.dumps(values[6])
 
-        with self._database.connect() as conn:
+        with self._database.connection() as conn:
             conn.execute(
                 f"INSERT INTO decision_trace ({', '.join(TRACE_FIELDS)}) "
                 f"VALUES ({', '.join('?' for _ in TRACE_FIELDS)})",
@@ -41,7 +41,7 @@ class DecisionTraceRepository:
         """Mark other pending reminder trace rows as suppressed for R5."""
         if not user_id:
             raise ValueError("user_id is required")
-        with self._database.connect() as conn:
+        with self._database.connection() as conn:
             cursor = conn.execute(
                 """
                 UPDATE decision_trace
@@ -55,7 +55,7 @@ class DecisionTraceRepository:
             return cursor.rowcount
 
     def list_for_user(self, user_id: str) -> list[dict[str, Any]]:
-        with self._database.connect() as conn:
+        with self._database.connection() as conn:
             rows = conn.execute(
                 "SELECT * FROM decision_trace WHERE user_id = ? ORDER BY timestamp ASC",
                 (user_id,),

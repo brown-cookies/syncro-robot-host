@@ -8,23 +8,21 @@ from time import monotonic
 from composition.bootstrap import build_wp103_components
 from config.settings import get_settings
 
-
-class DevelopmentAffectDetector:
-    """Temporary WP-103 graph stub; replace with WP-104 before G3."""
-
-    def detect(self, audio, sample_rate):
-        return "Low"
-
-
-
 def main() -> int:
     settings = get_settings()
-    graph, _store, audio_input, audio_output, tts = build_wp103_components(
-        settings, affect_detector=DevelopmentAffectDetector()
-    )
+    try:
+        graph, _store, audio_input, audio_output, tts = build_wp103_components(settings)
+    except Exception as exc:
+        print(f"[startup] FAILED: {exc}")
+        return 1
 
     session_id = str(uuid.uuid4())
     user_id = "wp103-demo-user"
+    _store.ensure_user(
+        user_id,
+        declared_working_window_start="08:00",
+        declared_working_window_end="22:00",
+    )
     wake_word_detected_at = int(__import__("time").time() * 1000)
     started_monotonic = monotonic()
 
