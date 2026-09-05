@@ -1,0 +1,2801 @@
+audio_path,corpus,speaker_id,source_label,target_label
+OAF_back_angry.wav,tess,OAF,angry,High
+OAF_back_disgust.wav,tess,OAF,disgust,High
+OAF_back_fear.wav,tess,OAF,fear,High
+OAF_back_happy.wav,tess,OAF,happy,Moderate
+OAF_back_neutral.wav,tess,OAF,neutral,Low
+OAF_back_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_back_sad.wav,tess,OAF,sad,Moderate
+OAF_bar_angry.wav,tess,OAF,angry,High
+OAF_bar_disgust.wav,tess,OAF,disgust,High
+OAF_bar_fear.wav,tess,OAF,fear,High
+OAF_bar_happy.wav,tess,OAF,happy,Moderate
+OAF_bar_neutral.wav,tess,OAF,neutral,Low
+OAF_bar_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_bar_sad.wav,tess,OAF,sad,Moderate
+OAF_base_angry.wav,tess,OAF,angry,High
+OAF_base_disgust.wav,tess,OAF,disgust,High
+OAF_base_fear.wav,tess,OAF,fear,High
+OAF_base_happy.wav,tess,OAF,happy,Moderate
+OAF_base_neutral.wav,tess,OAF,neutral,Low
+OAF_base_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_base_sad.wav,tess,OAF,sad,Moderate
+OAF_bath_angry.wav,tess,OAF,angry,High
+OAF_bath_disgust.wav,tess,OAF,disgust,High
+OAF_bath_fear.wav,tess,OAF,fear,High
+OAF_bath_happy.wav,tess,OAF,happy,Moderate
+OAF_bath_neutral.wav,tess,OAF,neutral,Low
+OAF_bath_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_bath_sad.wav,tess,OAF,sad,Moderate
+OAF_bean_angry.wav,tess,OAF,angry,High
+OAF_bean_disgust.wav,tess,OAF,disgust,High
+OAF_bean_fear.wav,tess,OAF,fear,High
+OAF_bean_happy.wav,tess,OAF,happy,Moderate
+OAF_bean_neutral.wav,tess,OAF,neutral,Low
+OAF_bean_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_bean_sad.wav,tess,OAF,sad,Moderate
+OAF_beg_angry.wav,tess,OAF,angry,High
+OAF_beg_disgust.wav,tess,OAF,disgust,High
+OAF_beg_fear.wav,tess,OAF,fear,High
+OAF_beg_happy.wav,tess,OAF,happy,Moderate
+OAF_beg_neutral.wav,tess,OAF,neutral,Low
+OAF_beg_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_beg_sad.wav,tess,OAF,sad,Moderate
+OAF_bite_angry.wav,tess,OAF,angry,High
+OAF_bite_disgust.wav,tess,OAF,disgust,High
+OAF_bite_fear.wav,tess,OAF,fear,High
+OAF_bite_happy.wav,tess,OAF,happy,Moderate
+OAF_bite_neutral.wav,tess,OAF,neutral,Low
+OAF_bite_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_bite_sad.wav,tess,OAF,sad,Moderate
+OAF_boat_angry.wav,tess,OAF,angry,High
+OAF_boat_disgust.wav,tess,OAF,disgust,High
+OAF_boat_fear.wav,tess,OAF,fear,High
+OAF_boat_happy.wav,tess,OAF,happy,Moderate
+OAF_boat_neutral.wav,tess,OAF,neutral,Low
+OAF_boat_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_boat_sad.wav,tess,OAF,sad,Moderate
+OAF_bone_angry.wav,tess,OAF,angry,High
+OAF_bone_disgust.wav,tess,OAF,disgust,High
+OAF_bone_fear.wav,tess,OAF,fear,High
+OAF_bone_happy.wav,tess,OAF,happy,Moderate
+OAF_bone_neutral.wav,tess,OAF,neutral,Low
+OAF_bone_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_bone_sad.wav,tess,OAF,sad,Moderate
+OAF_book_angry.wav,tess,OAF,angry,High
+OAF_book_disgust.wav,tess,OAF,disgust,High
+OAF_book_fear.wav,tess,OAF,fear,High
+OAF_book_happy.wav,tess,OAF,happy,Moderate
+OAF_book_neutral.wav,tess,OAF,neutral,Low
+OAF_book_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_book_sad.wav,tess,OAF,sad,Moderate
+OAF_bought_angry.wav,tess,OAF,angry,High
+OAF_bought_disgust.wav,tess,OAF,disgust,High
+OAF_bought_fear.wav,tess,OAF,fear,High
+OAF_bought_happy.wav,tess,OAF,happy,Moderate
+OAF_bought_neutral.wav,tess,OAF,neutral,Low
+OAF_bought_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_bought_sad.wav,tess,OAF,sad,Moderate
+OAF_burn_angry.wav,tess,OAF,angry,High
+OAF_burn_disgust.wav,tess,OAF,disgust,High
+OAF_burn_fear.wav,tess,OAF,fear,High
+OAF_burn_happy.wav,tess,OAF,happy,Moderate
+OAF_burn_neutral.wav,tess,OAF,neutral,Low
+OAF_burn_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_burn_sad.wav,tess,OAF,sad,Moderate
+OAF_cab_angry.wav,tess,OAF,angry,High
+OAF_cab_disgust.wav,tess,OAF,disgust,High
+OAF_cab_fear.wav,tess,OAF,fear,High
+OAF_cab_happy.wav,tess,OAF,happy,Moderate
+OAF_cab_neutral.wav,tess,OAF,neutral,Low
+OAF_cab_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_cab_sad.wav,tess,OAF,sad,Moderate
+OAF_calm_angry.wav,tess,OAF,angry,High
+OAF_calm_disgust.wav,tess,OAF,disgust,High
+OAF_calm_fear.wav,tess,OAF,fear,High
+OAF_calm_happy.wav,tess,OAF,happy,Moderate
+OAF_calm_neutral.wav,tess,OAF,neutral,Low
+OAF_calm_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_calm_sad.wav,tess,OAF,sad,Moderate
+OAF_came_angry.wav,tess,OAF,angry,High
+OAF_came_disgust.wav,tess,OAF,disgust,High
+OAF_came_fear.wav,tess,OAF,fear,High
+OAF_came_happy.wav,tess,OAF,happy,Moderate
+OAF_came_neutral.wav,tess,OAF,neutral,Low
+OAF_came_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_came_sad.wav,tess,OAF,sad,Moderate
+OAF_cause_angry.wav,tess,OAF,angry,High
+OAF_cause_disgust.wav,tess,OAF,disgust,High
+OAF_cause_fear.wav,tess,OAF,fear,High
+OAF_cause_happy.wav,tess,OAF,happy,Moderate
+OAF_cause_neutral.wav,tess,OAF,neutral,Low
+OAF_cause_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_cause_sad.wav,tess,OAF,sad,Moderate
+OAF_chain_angry.wav,tess,OAF,angry,High
+OAF_chain_disgust.wav,tess,OAF,disgust,High
+OAF_chain_fear.wav,tess,OAF,fear,High
+OAF_chain_happy.wav,tess,OAF,happy,Moderate
+OAF_chain_neutral.wav,tess,OAF,neutral,Low
+OAF_chain_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_chain_sad.wav,tess,OAF,sad,Moderate
+OAF_chair_angry.wav,tess,OAF,angry,High
+OAF_chair_disgust.wav,tess,OAF,disgust,High
+OAF_chair_fear.wav,tess,OAF,fear,High
+OAF_chair_happy.wav,tess,OAF,happy,Moderate
+OAF_chair_neutral.wav,tess,OAF,neutral,Low
+OAF_chair_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_chair_sad.wav,tess,OAF,sad,Moderate
+OAF_chalk_angry.wav,tess,OAF,angry,High
+OAF_chalk_disgust.wav,tess,OAF,disgust,High
+OAF_chalk_fear.wav,tess,OAF,fear,High
+OAF_chalk_happy.wav,tess,OAF,happy,Moderate
+OAF_chalk_neutral.wav,tess,OAF,neutral,Low
+OAF_chalk_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_chalk_sad.wav,tess,OAF,sad,Moderate
+OAF_chat_angry.wav,tess,OAF,angry,High
+OAF_chat_disgust.wav,tess,OAF,disgust,High
+OAF_chat_fear.wav,tess,OAF,fear,High
+OAF_chat_happy.wav,tess,OAF,happy,Moderate
+OAF_chat_neutral.wav,tess,OAF,neutral,Low
+OAF_chat_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_chat_sad.wav,tess,OAF,sad,Moderate
+OAF_check_angry.wav,tess,OAF,angry,High
+OAF_check_disgust.wav,tess,OAF,disgust,High
+OAF_check_fear.wav,tess,OAF,fear,High
+OAF_check_happy.wav,tess,OAF,happy,Moderate
+OAF_check_neutral.wav,tess,OAF,neutral,Low
+OAF_check_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_check_sad.wav,tess,OAF,sad,Moderate
+OAF_cheek_angry.wav,tess,OAF,angry,High
+OAF_cheek_disgust.wav,tess,OAF,disgust,High
+OAF_cheek_fear.wav,tess,OAF,fear,High
+OAF_cheek_happy.wav,tess,OAF,happy,Moderate
+OAF_cheek_neutral.wav,tess,OAF,neutral,Low
+OAF_cheek_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_cheek_sad.wav,tess,OAF,sad,Moderate
+OAF_chief_angry.wav,tess,OAF,angry,High
+OAF_chief_disgust.wav,tess,OAF,disgust,High
+OAF_chief_fear.wav,tess,OAF,fear,High
+OAF_chief_happy.wav,tess,OAF,happy,Moderate
+OAF_chief_neutral.wav,tess,OAF,neutral,Low
+OAF_chief_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_chief_sad.wav,tess,OAF,sad,Moderate
+OAF_choice_angry.wav,tess,OAF,angry,High
+OAF_choice_disgust.wav,tess,OAF,disgust,High
+OAF_choice_fear.wav,tess,OAF,fear,High
+OAF_choice_happy.wav,tess,OAF,happy,Moderate
+OAF_choice_neutral.wav,tess,OAF,neutral,Low
+OAF_choice_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_choice_sad.wav,tess,OAF,sad,Moderate
+OAF_cool_angry.wav,tess,OAF,angry,High
+OAF_cool_disgust.wav,tess,OAF,disgust,High
+OAF_cool_fear.wav,tess,OAF,fear,High
+OAF_cool_happy.wav,tess,OAF,happy,Moderate
+OAF_cool_neutral.wav,tess,OAF,neutral,Low
+OAF_cool_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_cool_sad.wav,tess,OAF,sad,Moderate
+OAF_dab_angry.wav,tess,OAF,angry,High
+OAF_dab_disgust.wav,tess,OAF,disgust,High
+OAF_dab_fear.wav,tess,OAF,fear,High
+OAF_dab_happy.wav,tess,OAF,happy,Moderate
+OAF_dab_neutral.wav,tess,OAF,neutral,Low
+OAF_dab_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_dab_sad.wav,tess,OAF,sad,Moderate
+OAF_date_angry.wav,tess,OAF,angry,High
+OAF_date_disgust.wav,tess,OAF,disgust,High
+OAF_date_fear.wav,tess,OAF,fear,High
+OAF_date_happy.wav,tess,OAF,happy,Moderate
+OAF_date_neutral.wav,tess,OAF,neutral,Low
+OAF_date_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_date_sad.wav,tess,OAF,sad,Moderate
+OAF_dead_angry.wav,tess,OAF,angry,High
+OAF_dead_disgust.wav,tess,OAF,disgust,High
+OAF_dead_fear.wav,tess,OAF,fear,High
+OAF_dead_happy.wav,tess,OAF,happy,Moderate
+OAF_dead_neutral.wav,tess,OAF,neutral,Low
+OAF_dead_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_dead_sad.wav,tess,OAF,sad,Moderate
+OAF_death_angry.wav,tess,OAF,angry,High
+OAF_death_disgust.wav,tess,OAF,disgust,High
+OAF_death_fear.wav,tess,OAF,fear,High
+OAF_death_happy.wav,tess,OAF,happy,Moderate
+OAF_death_neutral.wav,tess,OAF,neutral,Low
+OAF_death_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_death_sad.wav,tess,OAF,sad,Moderate
+OAF_deep_angry.wav,tess,OAF,angry,High
+OAF_deep_disgust.wav,tess,OAF,disgust,High
+OAF_deep_fear.wav,tess,OAF,fear,High
+OAF_deep_happy.wav,tess,OAF,happy,Moderate
+OAF_deep_neutral.wav,tess,OAF,neutral,Low
+OAF_deep_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_deep_sad.wav,tess,OAF,sad,Moderate
+OAF_dime_angry.wav,tess,OAF,angry,High
+OAF_dime_disgust.wav,tess,OAF,disgust,High
+OAF_dime_fear.wav,tess,OAF,fear,High
+OAF_dime_happy.wav,tess,OAF,happy,Moderate
+OAF_dime_neutral.wav,tess,OAF,neutral,Low
+OAF_dime_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_dime_sad.wav,tess,OAF,sad,Moderate
+OAF_dip_angry.wav,tess,OAF,angry,High
+OAF_dip_disgust.wav,tess,OAF,disgust,High
+OAF_dip_fear.wav,tess,OAF,fear,High
+OAF_dip_happy.wav,tess,OAF,happy,Moderate
+OAF_dip_neutral.wav,tess,OAF,neutral,Low
+OAF_dip_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_dip_sad.wav,tess,OAF,sad,Moderate
+OAF_ditch_angry.wav,tess,OAF,angry,High
+OAF_ditch_disgust.wav,tess,OAF,disgust,High
+OAF_ditch_fear.wav,tess,OAF,fear,High
+OAF_ditch_happy.wav,tess,OAF,happy,Moderate
+OAF_ditch_neutral.wav,tess,OAF,neutral,Low
+OAF_ditch_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_ditch_sad.wav,tess,OAF,sad,Moderate
+OAF_dodge_angry.wav,tess,OAF,angry,High
+OAF_dodge_disgust.wav,tess,OAF,disgust,High
+OAF_dodge_fear.wav,tess,OAF,fear,High
+OAF_dodge_happy.wav,tess,OAF,happy,Moderate
+OAF_dodge_neutral.wav,tess,OAF,neutral,Low
+OAF_dodge_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_dodge_sad.wav,tess,OAF,sad,Moderate
+OAF_dog_angry.wav,tess,OAF,angry,High
+OAF_dog_disgust.wav,tess,OAF,disgust,High
+OAF_dog_fear.wav,tess,OAF,fear,High
+OAF_dog_happy.wav,tess,OAF,happy,Moderate
+OAF_dog_neutral.wav,tess,OAF,neutral,Low
+OAF_dog_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_dog_sad.wav,tess,OAF,sad,Moderate
+OAF_doll_angry.wav,tess,OAF,angry,High
+OAF_doll_disgust.wav,tess,OAF,disgust,High
+OAF_doll_fear.wav,tess,OAF,fear,High
+OAF_doll_happy.wav,tess,OAF,happy,Moderate
+OAF_doll_neutral.wav,tess,OAF,neutral,Low
+OAF_doll_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_doll_sad.wav,tess,OAF,sad,Moderate
+OAF_door_angry.wav,tess,OAF,angry,High
+OAF_door_disgust.wav,tess,OAF,disgust,High
+OAF_door_fear.wav,tess,OAF,fear,High
+OAF_door_happy.wav,tess,OAF,happy,Moderate
+OAF_door_neutral.wav,tess,OAF,neutral,Low
+OAF_door_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_door_sad.wav,tess,OAF,sad,Moderate
+OAF_fail_angry.wav,tess,OAF,angry,High
+OAF_fail_disgust.wav,tess,OAF,disgust,High
+OAF_fail_fear.wav,tess,OAF,fear,High
+OAF_fail_happy.wav,tess,OAF,happy,Moderate
+OAF_fail_neutral.wav,tess,OAF,neutral,Low
+OAF_fail_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_fail_sad.wav,tess,OAF,sad,Moderate
+OAF_fall_angry.wav,tess,OAF,angry,High
+OAF_fall_disgust.wav,tess,OAF,disgust,High
+OAF_fall_fear.wav,tess,OAF,fear,High
+OAF_fall_happy.wav,tess,OAF,happy,Moderate
+OAF_fall_neutral.wav,tess,OAF,neutral,Low
+OAF_fall_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_fall_sad.wav,tess,OAF,sad,Moderate
+OAF_far_angry.wav,tess,OAF,angry,High
+OAF_far_disgust.wav,tess,OAF,disgust,High
+OAF_far_fear.wav,tess,OAF,fear,High
+OAF_far_happy.wav,tess,OAF,happy,Moderate
+OAF_far_neutral.wav,tess,OAF,neutral,Low
+OAF_far_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_far_sad.wav,tess,OAF,sad,Moderate
+OAF_fat_angry.wav,tess,OAF,angry,High
+OAF_fat_disgust.wav,tess,OAF,disgust,High
+OAF_fat_fear.wav,tess,OAF,fear,High
+OAF_fat_happy.wav,tess,OAF,happy,Moderate
+OAF_fat_neutral.wav,tess,OAF,neutral,Low
+OAF_fat_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_fat_sad.wav,tess,OAF,sad,Moderate
+OAF_fit_angry.wav,tess,OAF,angry,High
+OAF_fit_disgust.wav,tess,OAF,disgust,High
+OAF_fit_fear.wav,tess,OAF,fear,High
+OAF_fit_happy.wav,tess,OAF,happy,Moderate
+OAF_fit_neutral.wav,tess,OAF,neutral,Low
+OAF_fit_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_fit_sad.wav,tess,OAF,sad,Moderate
+OAF_five_angry.wav,tess,OAF,angry,High
+OAF_five_disgust.wav,tess,OAF,disgust,High
+OAF_five_fear.wav,tess,OAF,fear,High
+OAF_five_happy.wav,tess,OAF,happy,Moderate
+OAF_five_neutral.wav,tess,OAF,neutral,Low
+OAF_five_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_five_sad.wav,tess,OAF,sad,Moderate
+OAF_food_angry.wav,tess,OAF,angry,High
+OAF_food_disgust.wav,tess,OAF,disgust,High
+OAF_food_fear.wav,tess,OAF,fear,High
+OAF_food_happy.wav,tess,OAF,happy,Moderate
+OAF_food_neutral.wav,tess,OAF,neutral,Low
+OAF_food_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_food_sad.wav,tess,OAF,sad,Moderate
+OAF_gap_angry.wav,tess,OAF,angry,High
+OAF_gap_disgust.wav,tess,OAF,disgust,High
+OAF_gap_fear.wav,tess,OAF,fear,High
+OAF_gap_happy.wav,tess,OAF,happy,Moderate
+OAF_gap_neutral.wav,tess,OAF,neutral,Low
+OAF_gap_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_gap_sad.wav,tess,OAF,sad,Moderate
+OAF_gas_angry.wav,tess,OAF,angry,High
+OAF_gas_disgust.wav,tess,OAF,disgust,High
+OAF_gas_fear.wav,tess,OAF,fear,High
+OAF_gas_happy.wav,tess,OAF,happy,Moderate
+OAF_gas_neutral.wav,tess,OAF,neutral,Low
+OAF_gas_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_gas_sad.wav,tess,OAF,sad,Moderate
+OAF_gaze_angry.wav,tess,OAF,angry,High
+OAF_gaze_disgust.wav,tess,OAF,disgust,High
+OAF_gaze_fear.wav,tess,OAF,fear,High
+OAF_gaze_happy.wav,tess,OAF,happy,Moderate
+OAF_gaze_neutral.wav,tess,OAF,neutral,Low
+OAF_gaze_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_gaze_sad.wav,tess,OAF,sad,Moderate
+OAF_germ_angry.wav,tess,OAF,angry,High
+OAF_germ_disgust.wav,tess,OAF,disgust,High
+OAF_germ_fear.wav,tess,OAF,fear,High
+OAF_germ_happy.wav,tess,OAF,happy,Moderate
+OAF_germ_neutral.wav,tess,OAF,neutral,Low
+OAF_germ_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_germ_sad.wav,tess,OAF,sad,Moderate
+OAF_get_angry.wav,tess,OAF,angry,High
+OAF_get_disgust.wav,tess,OAF,disgust,High
+OAF_get_fear.wav,tess,OAF,fear,High
+OAF_get_happy.wav,tess,OAF,happy,Moderate
+OAF_get_neutral.wav,tess,OAF,neutral,Low
+OAF_get_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_get_sad.wav,tess,OAF,sad,Moderate
+OAF_gin_angry.wav,tess,OAF,angry,High
+OAF_gin_disgust.wav,tess,OAF,disgust,High
+OAF_gin_fear.wav,tess,OAF,fear,High
+OAF_gin_happy.wav,tess,OAF,happy,Moderate
+OAF_gin_neutral.wav,tess,OAF,neutral,Low
+OAF_gin_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_gin_sad.wav,tess,OAF,sad,Moderate
+OAF_goal_angry.wav,tess,OAF,angry,High
+OAF_goal_disgust.wav,tess,OAF,disgust,High
+OAF_goal_fear.wav,tess,OAF,fear,High
+OAF_goal_happy.wav,tess,OAF,happy,Moderate
+OAF_goal_neutral.wav,tess,OAF,neutral,Low
+OAF_goal_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_goal_sad.wav,tess,OAF,sad,Moderate
+OAF_good_angry.wav,tess,OAF,angry,High
+OAF_good_disgust.wav,tess,OAF,disgust,High
+OAF_good_fear.wav,tess,OAF,fear,High
+OAF_good_happy.wav,tess,OAF,happy,Moderate
+OAF_good_neutral.wav,tess,OAF,neutral,Low
+OAF_good_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_good_sad.wav,tess,OAF,sad,Moderate
+OAF_goose_angry.wav,tess,OAF,angry,High
+OAF_goose_disgust.wav,tess,OAF,disgust,High
+OAF_goose_fear.wav,tess,OAF,fear,High
+OAF_goose_happy.wav,tess,OAF,happy,Moderate
+OAF_goose_neutral.wav,tess,OAF,neutral,Low
+OAF_goose_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_goose_sad.wav,tess,OAF,sad,Moderate
+OAF_gun_angry.wav,tess,OAF,angry,High
+OAF_gun_disgust.wav,tess,OAF,disgust,High
+OAF_gun_fear.wav,tess,OAF,fear,High
+OAF_gun_happy.wav,tess,OAF,happy,Moderate
+OAF_gun_neutral.wav,tess,OAF,neutral,Low
+OAF_gun_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_gun_sad.wav,tess,OAF,sad,Moderate
+OAF_half_angry.wav,tess,OAF,angry,High
+OAF_half_disgust.wav,tess,OAF,disgust,High
+OAF_half_fear.wav,tess,OAF,fear,High
+OAF_half_happy.wav,tess,OAF,happy,Moderate
+OAF_half_neutral.wav,tess,OAF,neutral,Low
+OAF_half_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_half_sad.wav,tess,OAF,sad,Moderate
+OAF_hall_angry.wav,tess,OAF,angry,High
+OAF_hall_disgust.wav,tess,OAF,disgust,High
+OAF_hall_fear.wav,tess,OAF,fear,High
+OAF_hall_happy.wav,tess,OAF,happy,Moderate
+OAF_hall_neutral.wav,tess,OAF,neutral,Low
+OAF_hall_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_hall_sad.wav,tess,OAF,sad,Moderate
+OAF_hash_angry.wav,tess,OAF,angry,High
+OAF_hash_disgust.wav,tess,OAF,disgust,High
+OAF_hash_fear.wav,tess,OAF,fear,High
+OAF_hash_happy.wav,tess,OAF,happy,Moderate
+OAF_hash_neutral.wav,tess,OAF,neutral,Low
+OAF_hash_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_hash_sad.wav,tess,OAF,sad,Moderate
+OAF_hate_angry.wav,tess,OAF,angry,High
+OAF_hate_disgust.wav,tess,OAF,disgust,High
+OAF_hate_fear.wav,tess,OAF,fear,High
+OAF_hate_happy.wav,tess,OAF,happy,Moderate
+OAF_hate_neutral.wav,tess,OAF,neutral,Low
+OAF_hate_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_hate_sad.wav,tess,OAF,sad,Moderate
+OAF_have_angry.wav,tess,OAF,angry,High
+OAF_have_disgust.wav,tess,OAF,disgust,High
+OAF_have_fear.wav,tess,OAF,fear,High
+OAF_have_happy.wav,tess,OAF,happy,Moderate
+OAF_have_neutral.wav,tess,OAF,neutral,Low
+OAF_have_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_have_sad.wav,tess,OAF,sad,Moderate
+OAF_haze_angry.wav,tess,OAF,angry,High
+OAF_haze_disgust.wav,tess,OAF,disgust,High
+OAF_haze_fear.wav,tess,OAF,fear,High
+OAF_haze_happy.wav,tess,OAF,happy,Moderate
+OAF_haze_neutral.wav,tess,OAF,neutral,Low
+OAF_haze_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_haze_sad.wav,tess,OAF,sad,Moderate
+OAF_hire_angry.wav,tess,OAF,angry,High
+OAF_hire_disgust.wav,tess,OAF,disgust,High
+OAF_hire_fear.wav,tess,OAF,fear,High
+OAF_hire_happy.wav,tess,OAF,happy,Moderate
+OAF_hire_neutral.wav,tess,OAF,neutral,Low
+OAF_hire_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_hire_sad.wav,tess,OAF,sad,Moderate
+OAF_hit_angry.wav,tess,OAF,angry,High
+OAF_hit_disgust.wav,tess,OAF,disgust,High
+OAF_hit_fear.wav,tess,OAF,fear,High
+OAF_hit_happy.wav,tess,OAF,happy,Moderate
+OAF_hit_neutral.wav,tess,OAF,neutral,Low
+OAF_hit_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_hit_sad.wav,tess,OAF,sad,Moderate
+OAF_hole_angry.wav,tess,OAF,angry,High
+OAF_hole_disgust.wav,tess,OAF,disgust,High
+OAF_hole_fear.wav,tess,OAF,fear,High
+OAF_hole_happy.wav,tess,OAF,happy,Moderate
+OAF_hole_neutral.wav,tess,OAF,neutral,Low
+OAF_hole_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_hole_sad.wav,tess,OAF,sad,Moderate
+OAF_home_angry.wav,tess,OAF,angry,High
+OAF_home_disgust.wav,tess,OAF,disgust,High
+OAF_home_fear.wav,tess,OAF,fear,High
+OAF_home_happy.wav,tess,OAF,happy,Moderate
+OAF_home_neutral.wav,tess,OAF,neutral,Low
+OAF_home_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_home_sad.wav,tess,OAF,sad,Moderate
+OAF_hurl_angry.wav,tess,OAF,angry,High
+OAF_hurl_disgust.wav,tess,OAF,disgust,High
+OAF_hurl_fear.wav,tess,OAF,fear,High
+OAF_hurl_happy.wav,tess,OAF,happy,Moderate
+OAF_hurl_neutral.wav,tess,OAF,neutral,Low
+OAF_hurl_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_hurl_sad.wav,tess,OAF,sad,Moderate
+OAF_hush_angry.wav,tess,OAF,angry,High
+OAF_hush_disgust.wav,tess,OAF,disgust,High
+OAF_hush_fear.wav,tess,OAF,fear,High
+OAF_hush_happy.wav,tess,OAF,happy,Moderate
+OAF_hush_neutral.wav,tess,OAF,neutral,Low
+OAF_hush_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_hush_sad.wav,tess,OAF,sad,Moderate
+OAF_jail_angry.wav,tess,OAF,angry,High
+OAF_jail_disgust.wav,tess,OAF,disgust,High
+OAF_jail_fear.wav,tess,OAF,fear,High
+OAF_jail_happy.wav,tess,OAF,happy,Moderate
+OAF_jail_neutral.wav,tess,OAF,neutral,Low
+OAF_jail_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_jail_sad.wav,tess,OAF,sad,Moderate
+OAF_jar_angry.wav,tess,OAF,angry,High
+OAF_jar_disgust.wav,tess,OAF,disgust,High
+OAF_jar_fear.wav,tess,OAF,fear,High
+OAF_jar_happy.wav,tess,OAF,happy,Moderate
+OAF_jar_neutral.wav,tess,OAF,neutral,Low
+OAF_jar_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_jar_sad.wav,tess,OAF,sad,Moderate
+OAF_join_angry.wav,tess,OAF,angry,High
+OAF_join_disgust.wav,tess,OAF,disgust,High
+OAF_join_fear.wav,tess,OAF,fear,High
+OAF_join_happy.wav,tess,OAF,happy,Moderate
+OAF_join_neutral.wav,tess,OAF,neutral,Low
+OAF_join_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_join_sad.wav,tess,OAF,sad,Moderate
+OAF_judge_angry.wav,tess,OAF,angry,High
+OAF_judge_disgust.wav,tess,OAF,disgust,High
+OAF_judge_fear.wav,tess,OAF,fear,High
+OAF_judge_happy.wav,tess,OAF,happy,Moderate
+OAF_judge_neutral.wav,tess,OAF,neutral,Low
+OAF_judge_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_judge_sad.wav,tess,OAF,sad,Moderate
+OAF_jug_angry.wav,tess,OAF,angry,High
+OAF_jug_disgust.wav,tess,OAF,disgust,High
+OAF_jug_fear.wav,tess,OAF,fear,High
+OAF_jug_happy.wav,tess,OAF,happy,Moderate
+OAF_jug_neutral.wav,tess,OAF,neutral,Low
+OAF_jug_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_jug_sad.wav,tess,OAF,sad,Moderate
+OAF_juice_angry.wav,tess,OAF,angry,High
+OAF_juice_disgust.wav,tess,OAF,disgust,High
+OAF_juice_fear.wav,tess,OAF,fear,High
+OAF_juice_happy.wav,tess,OAF,happy,Moderate
+OAF_juice_neutral.wav,tess,OAF,neutral,Low
+OAF_juice_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_juice_sad.wav,tess,OAF,sad,Moderate
+OAF_keen_angry.wav,tess,OAF,angry,High
+OAF_keen_disgust.wav,tess,OAF,disgust,High
+OAF_keen_fear.wav,tess,OAF,fear,High
+OAF_keen_happy.wav,tess,OAF,happy,Moderate
+OAF_keen_neutral.wav,tess,OAF,neutral,Low
+OAF_keen_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_keen_sad.wav,tess,OAF,sad,Moderate
+OAF_keep_angry.wav,tess,OAF,angry,High
+OAF_keep_disgust.wav,tess,OAF,disgust,High
+OAF_keep_fear.wav,tess,OAF,fear,High
+OAF_keep_happy.wav,tess,OAF,happy,Moderate
+OAF_keep_neutral.wav,tess,OAF,neutral,Low
+OAF_keep_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_keep_sad.wav,tess,OAF,sad,Moderate
+OAF_keg_angry.wav,tess,OAF,angry,High
+OAF_keg_disgust.wav,tess,OAF,disgust,High
+OAF_keg_fear.wav,tess,OAF,fear,High
+OAF_keg_happy.wav,tess,OAF,happy,Moderate
+OAF_keg_neutral.wav,tess,OAF,neutral,Low
+OAF_keg_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_keg_sad.wav,tess,OAF,sad,Moderate
+OAF_kick_angry.wav,tess,OAF,angry,High
+OAF_kick_disgust.wav,tess,OAF,disgust,High
+OAF_kick_fear.wav,tess,OAF,fear,High
+OAF_kick_happy.wav,tess,OAF,happy,Moderate
+OAF_kick_neutral.wav,tess,OAF,neutral,Low
+OAF_kick_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_kick_sad.wav,tess,OAF,sad,Moderate
+OAF_kill_angry.wav,tess,OAF,angry,High
+OAF_kill_disgust.wav,tess,OAF,disgust,High
+OAF_kill_fear.wav,tess,OAF,fear,High
+OAF_kill_happy.wav,tess,OAF,happy,Moderate
+OAF_kill_neutral.wav,tess,OAF,neutral,Low
+OAF_kill_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_kill_sad.wav,tess,OAF,sad,Moderate
+OAF_king_angry.wav,tess,OAF,angry,High
+OAF_king_disgust.wav,tess,OAF,disgust,High
+OAF_king_fear.wav,tess,OAF,fear,High
+OAF_king_happy.wav,tess,OAF,happy,Moderate
+OAF_king_neutral.wav,tess,OAF,neutral,Low
+OAF_king_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_king_sad.wav,tess,OAF,sad,Moderate
+OAF_kite_angry.wav,tess,OAF,angry,High
+OAF_kite_disgust.wav,tess,OAF,disgust,High
+OAF_kite_fear.wav,tess,OAF,fear,High
+OAF_kite_happy.wav,tess,OAF,happy,Moderate
+OAF_kite_neutral.wav,tess,OAF,neutral,Low
+OAF_kite_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_kite_sad.wav,tess,OAF,sad,Moderate
+OAF_knock_angry.wav,tess,OAF,angry,High
+OAF_knock_disgust.wav,tess,OAF,disgust,High
+OAF_knock_fear.wav,tess,OAF,fear,High
+OAF_knock_happy.wav,tess,OAF,happy,Moderate
+OAF_knock_neutral.wav,tess,OAF,neutral,Low
+OAF_knock_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_knock_sad.wav,tess,OAF,sad,Moderate
+OAF_late_angry.wav,tess,OAF,angry,High
+OAF_late_disgust.wav,tess,OAF,disgust,High
+OAF_late_fear.wav,tess,OAF,fear,High
+OAF_late_happy.wav,tess,OAF,happy,Moderate
+OAF_late_neutral.wav,tess,OAF,neutral,Low
+OAF_late_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_late_sad.wav,tess,OAF,sad,Moderate
+OAF_laud_angry.wav,tess,OAF,angry,High
+OAF_laud_disgust.wav,tess,OAF,disgust,High
+OAF_laud_fear.wav,tess,OAF,fear,High
+OAF_laud_happy.wav,tess,OAF,happy,Moderate
+OAF_laud_neutral.wav,tess,OAF,neutral,Low
+OAF_laud_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_laud_sad.wav,tess,OAF,sad,Moderate
+OAF_lean_angry.wav,tess,OAF,angry,High
+OAF_lean_disgust.wav,tess,OAF,disgust,High
+OAF_lean_fear.wav,tess,OAF,fear,High
+OAF_lean_happy.wav,tess,OAF,happy,Moderate
+OAF_lean_neutral.wav,tess,OAF,neutral,Low
+OAF_lean_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_lean_sad.wav,tess,OAF,sad,Moderate
+OAF_learn_angry.wav,tess,OAF,angry,High
+OAF_learn_disgust.wav,tess,OAF,disgust,High
+OAF_learn_fear.wav,tess,OAF,fear,High
+OAF_learn_happy.wav,tess,OAF,happy,Moderate
+OAF_learn_neutral.wav,tess,OAF,neutral,Low
+OAF_learn_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_learn_sad.wav,tess,OAF,sad,Moderate
+OAF_lease_angry.wav,tess,OAF,angry,High
+OAF_lease_disgust.wav,tess,OAF,disgust,High
+OAF_lease_fear.wav,tess,OAF,fear,High
+OAF_lease_happy.wav,tess,OAF,happy,Moderate
+OAF_lease_neutral.wav,tess,OAF,neutral,Low
+OAF_lease_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_lease_sad.wav,tess,OAF,sad,Moderate
+OAF_lid_angry.wav,tess,OAF,angry,High
+OAF_lid_disgust.wav,tess,OAF,disgust,High
+OAF_lid_fear.wav,tess,OAF,fear,High
+OAF_lid_happy.wav,tess,OAF,happy,Moderate
+OAF_lid_neutral.wav,tess,OAF,neutral,Low
+OAF_lid_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_lid_sad.wav,tess,OAF,sad,Moderate
+OAF_life_angry.wav,tess,OAF,angry,High
+OAF_life_disgust.wav,tess,OAF,disgust,High
+OAF_life_fear.wav,tess,OAF,fear,High
+OAF_life_happy.wav,tess,OAF,happy,Moderate
+OAF_life_neutral.wav,tess,OAF,neutral,Low
+OAF_life_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_life_sad.wav,tess,OAF,sad,Moderate
+OAF_limb_angry.wav,tess,OAF,angry,High
+OAF_limb_disgust.wav,tess,OAF,disgust,High
+OAF_limb_fear.wav,tess,OAF,fear,High
+OAF_limb_happy.wav,tess,OAF,happy,Moderate
+OAF_limb_neutral.wav,tess,OAF,neutral,Low
+OAF_limb_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_limb_sad.wav,tess,OAF,sad,Moderate
+OAF_live_angry.wav,tess,OAF,angry,High
+OAF_live_disgust.wav,tess,OAF,disgust,High
+OAF_live_fear.wav,tess,OAF,fear,High
+OAF_live_happy.wav,tess,OAF,happy,Moderate
+OAF_live_neutral.wav,tess,OAF,neutral,Low
+OAF_live_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_live_sad.wav,tess,OAF,sad,Moderate
+OAF_loaf_angry.wav,tess,OAF,angry,High
+OAF_loaf_disgust.wav,tess,OAF,disgust,High
+OAF_loaf_fear.wav,tess,OAF,fear,High
+OAF_loaf_happy.wav,tess,OAF,happy,Moderate
+OAF_loaf_neutral.wav,tess,OAF,neutral,Low
+OAF_loaf_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_loaf_sad.wav,tess,OAF,sad,Moderate
+OAF_long_angry.wav,tess,OAF,angry,High
+OAF_long_disgust.wav,tess,OAF,disgust,High
+OAF_long_fear.wav,tess,OAF,fear,High
+OAF_long_happy.wav,tess,OAF,happy,Moderate
+OAF_long_neutral.wav,tess,OAF,neutral,Low
+OAF_long_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_long_sad.wav,tess,OAF,sad,Moderate
+OAF_lore_angry.wav,tess,OAF,angry,High
+OAF_lore_disgust.wav,tess,OAF,disgust,High
+OAF_lore_fear.wav,tess,OAF,fear,High
+OAF_lore_happy.wav,tess,OAF,happy,Moderate
+OAF_lore_neutral.wav,tess,OAF,neutral,Low
+OAF_lore_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_lore_sad.wav,tess,OAF,sad,Moderate
+OAF_lose_angry.wav,tess,OAF,angry,High
+OAF_lose_disgust.wav,tess,OAF,disgust,High
+OAF_lose_fear.wav,tess,OAF,fear,High
+OAF_lose_happy.wav,tess,OAF,happy,Moderate
+OAF_lose_neutral.wav,tess,OAF,neutral,Low
+OAF_lose_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_lose_sad.wav,tess,OAF,sad,Moderate
+OAF_lot_angry.wav,tess,OAF,angry,High
+OAF_lot_disgust.wav,tess,OAF,disgust,High
+OAF_lot_fear.wav,tess,OAF,fear,High
+OAF_lot_happy.wav,tess,OAF,happy,Moderate
+OAF_lot_neutral.wav,tess,OAF,neutral,Low
+OAF_lot_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_lot_sad.wav,tess,OAF,sad,Moderate
+OAF_love_angry.wav,tess,OAF,angry,High
+OAF_love_disgust.wav,tess,OAF,disgust,High
+OAF_love_fear.wav,tess,OAF,fear,High
+OAF_love_happy.wav,tess,OAF,happy,Moderate
+OAF_love_neutral.wav,tess,OAF,neutral,Low
+OAF_love_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_love_sad.wav,tess,OAF,sad,Moderate
+OAF_luck_angry.wav,tess,OAF,angry,High
+OAF_luck_disgust.wav,tess,OAF,disgust,High
+OAF_luck_fear.wav,tess,OAF,fear,High
+OAF_luck_happy.wav,tess,OAF,happy,Moderate
+OAF_luck_neutral.wav,tess,OAF,neutral,Low
+OAF_luck_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_luck_sad.wav,tess,OAF,sad,Moderate
+OAF_make_angry.wav,tess,OAF,angry,High
+OAF_make_disgust.wav,tess,OAF,disgust,High
+OAF_make_fear.wav,tess,OAF,fear,High
+OAF_make_happy.wav,tess,OAF,happy,Moderate
+OAF_make_neutral.wav,tess,OAF,neutral,Low
+OAF_make_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_make_sad.wav,tess,OAF,sad,Moderate
+OAF_match_angry.wav,tess,OAF,angry,High
+OAF_match_disgust.wav,tess,OAF,disgust,High
+OAF_match_fear.wav,tess,OAF,fear,High
+OAF_match_happy.wav,tess,OAF,happy,Moderate
+OAF_match_neutral.wav,tess,OAF,neutral,Low
+OAF_match_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_match_sad.wav,tess,OAF,sad,Moderate
+OAF_merge_angry.wav,tess,OAF,angry,High
+OAF_merge_disgust.wav,tess,OAF,disgust,High
+OAF_merge_fear.wav,tess,OAF,fear,High
+OAF_merge_happy.wav,tess,OAF,happy,Moderate
+OAF_merge_neutral.wav,tess,OAF,neutral,Low
+OAF_merge_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_merge_sad.wav,tess,OAF,sad,Moderate
+OAF_mess_angry.wav,tess,OAF,angry,High
+OAF_mess_disgust.wav,tess,OAF,disgust,High
+OAF_mess_fear.wav,tess,OAF,fear,High
+OAF_mess_happy.wav,tess,OAF,happy,Moderate
+OAF_mess_neutral.wav,tess,OAF,neutral,Low
+OAF_mess_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_mess_sad.wav,tess,OAF,sad,Moderate
+OAF_met_angry.wav,tess,OAF,angry,High
+OAF_met_disgust.wav,tess,OAF,disgust,High
+OAF_met_fear.wav,tess,OAF,fear,High
+OAF_met_happy.wav,tess,OAF,happy,Moderate
+OAF_met_neutral.wav,tess,OAF,neutral,Low
+OAF_met_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_met_sad.wav,tess,OAF,sad,Moderate
+OAF_mill_angry.wav,tess,OAF,angry,High
+OAF_mill_disgust.wav,tess,OAF,disgust,High
+OAF_mill_fear.wav,tess,OAF,fear,High
+OAF_mill_happy.wav,tess,OAF,happy,Moderate
+OAF_mill_neutral.wav,tess,OAF,neutral,Low
+OAF_mill_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_mill_sad.wav,tess,OAF,sad,Moderate
+OAF_mob_angry.wav,tess,OAF,angry,High
+OAF_mob_disgust.wav,tess,OAF,disgust,High
+OAF_mob_fear.wav,tess,OAF,fear,High
+OAF_mob_happy.wav,tess,OAF,happy,Moderate
+OAF_mob_neutral.wav,tess,OAF,neutral,Low
+OAF_mob_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_mob_sad.wav,tess,OAF,sad,Moderate
+OAF_mode_angry.wav,tess,OAF,angry,High
+OAF_mode_disgust.wav,tess,OAF,disgust,High
+OAF_mode_fear.wav,tess,OAF,fear,High
+OAF_mode_happy.wav,tess,OAF,happy,Moderate
+OAF_mode_neutral.wav,tess,OAF,neutral,Low
+OAF_mode_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_mode_sad.wav,tess,OAF,sad,Moderate
+OAF_mood_angry.wav,tess,OAF,angry,High
+OAF_mood_disgust.wav,tess,OAF,disgust,High
+OAF_mood_fear.wav,tess,OAF,fear,High
+OAF_mood_happy.wav,tess,OAF,happy,Moderate
+OAF_mood_neutral.wav,tess,OAF,neutral,Low
+OAF_mood_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_mood_sad.wav,tess,OAF,sad,Moderate
+OAF_moon_angry.wav,tess,OAF,angry,High
+OAF_moon_disgust.wav,tess,OAF,disgust,High
+OAF_moon_fear.wav,tess,OAF,fear,High
+OAF_moon_happy.wav,tess,OAF,happy,Moderate
+OAF_moon_neutral.wav,tess,OAF,neutral,Low
+OAF_moon_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_moon_sad.wav,tess,OAF,sad,Moderate
+OAF_mop_angry.wav,tess,OAF,angry,High
+OAF_mop_disgust.wav,tess,OAF,disgust,High
+OAF_mop_fear.wav,tess,OAF,fear,High
+OAF_mop_happy.wav,tess,OAF,happy,Moderate
+OAF_mop_neutral.wav,tess,OAF,neutral,Low
+OAF_mop_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_mop_sad.wav,tess,OAF,sad,Moderate
+OAF_mouse_angry.wav,tess,OAF,angry,High
+OAF_mouse_disgust.wav,tess,OAF,disgust,High
+OAF_mouse_fear.wav,tess,OAF,fear,High
+OAF_mouse_happy.wav,tess,OAF,happy,Moderate
+OAF_mouse_neutral.wav,tess,OAF,neutral,Low
+OAF_mouse_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_mouse_sad.wav,tess,OAF,sad,Moderate
+OAF_nag_angry.wav,tess,OAF,angry,High
+OAF_nag_disgust.wav,tess,OAF,disgust,High
+OAF_nag_fear.wav,tess,OAF,fear,High
+OAF_nag_happy.wav,tess,OAF,happy,Moderate
+OAF_nag_neutral.wav,tess,OAF,neutral,Low
+OAF_nag_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_nag_sad.wav,tess,OAF,sad,Moderate
+OAF_name_angry.wav,tess,OAF,angry,High
+OAF_name_disgust.wav,tess,OAF,disgust,High
+OAF_name_fear.wav,tess,OAF,fear,High
+OAF_name_happy.wav,tess,OAF,happy,Moderate
+OAF_name_neutral.wav,tess,OAF,neutral,Low
+OAF_name_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_name_sad.wav,tess,OAF,sad,Moderate
+OAF_near_angry.wav,tess,OAF,angry,High
+OAF_near_disgust.wav,tess,OAF,disgust,High
+OAF_near_fear.wav,tess,OAF,fear,High
+OAF_near_happy.wav,tess,OAF,happy,Moderate
+OAF_near_neutral.wav,tess,OAF,neutral,Low
+OAF_near_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_near_sad.wav,tess,OAF,sad,Moderate
+OAF_neat_angry.wav,tess,OAF,angry,High
+OAF_neat_disgust.wav,tess,OAF,disgust,High
+OAF_neat_fear.wav,tess,OAF,fear,High
+OAF_neat_happy.wav,tess,OAF,happy,Moderate
+OAF_neat_neutral.wav,tess,OAF,neutral,Low
+OAF_neat_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_neat_sad.wav,tess,OAF,sad,Moderate
+OAF_nice_angry.wav,tess,OAF,angry,High
+OAF_nice_disgust.wav,tess,OAF,disgust,High
+OAF_nice_fear.wav,tess,OAF,fear,High
+OAF_nice_happy.wav,tess,OAF,happy,Moderate
+OAF_nice_neutral.wav,tess,OAF,neutral,Low
+OAF_nice_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_nice_sad.wav,tess,OAF,sad,Moderate
+OAF_note_angry.wav,tess,OAF,angry,High
+OAF_note_disgust.wav,tess,OAF,disgust,High
+OAF_note_fear.wav,tess,OAF,fear,High
+OAF_note_happy.wav,tess,OAF,happy,Moderate
+OAF_note_neutral.wav,tess,OAF,neutral,Low
+OAF_note_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_note_sad.wav,tess,OAF,sad,Moderate
+OAF_numb_angry.wav,tess,OAF,angry,High
+OAF_numb_disgust.wav,tess,OAF,disgust,High
+OAF_numb_fear.wav,tess,OAF,fear,High
+OAF_numb_happy.wav,tess,OAF,happy,Moderate
+OAF_numb_neutral.wav,tess,OAF,neutral,Low
+OAF_numb_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_numb_sad.wav,tess,OAF,sad,Moderate
+OAF_pad_angry.wav,tess,OAF,angry,High
+OAF_pad_disgust.wav,tess,OAF,disgust,High
+OAF_pad_fear.wav,tess,OAF,fear,High
+OAF_pad_happy.wav,tess,OAF,happy,Moderate
+OAF_pad_neutral.wav,tess,OAF,neutral,Low
+OAF_pad_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_pad_sad.wav,tess,OAF,sad,Moderate
+OAF_page_angry.wav,tess,OAF,angry,High
+OAF_page_disgust.wav,tess,OAF,disgust,High
+OAF_page_fear.wav,tess,OAF,fear,High
+OAF_page_happy.wav,tess,OAF,happy,Moderate
+OAF_page_neutral.wav,tess,OAF,neutral,Low
+OAF_page_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_page_sad.wav,tess,OAF,sad,Moderate
+OAF_pain_angry.wav,tess,OAF,angry,High
+OAF_pain_disgust.wav,tess,OAF,disgust,High
+OAF_pain_fear.wav,tess,OAF,fear,High
+OAF_pain_happy.wav,tess,OAF,happy,Moderate
+OAF_pain_neutral.wav,tess,OAF,neutral,Low
+OAF_pain_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_pain_sad.wav,tess,OAF,sad,Moderate
+OAF_pass_angry.wav,tess,OAF,angry,High
+OAF_pass_disgust.wav,tess,OAF,disgust,High
+OAF_pass_fear.wav,tess,OAF,fear,High
+OAF_pass_happy.wav,tess,OAF,happy,Moderate
+OAF_pass_neutral.wav,tess,OAF,neutral,Low
+OAF_pass_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_pass_sad.wav,tess,OAF,sad,Moderate
+OAF_pearl_angry.wav,tess,OAF,angry,High
+OAF_pearl_disgust.wav,tess,OAF,disgust,High
+OAF_pearl_fear.wav,tess,OAF,fear,High
+OAF_pearl_happy.wav,tess,OAF,happy,Moderate
+OAF_pearl_neutral.wav,tess,OAF,neutral,Low
+OAF_pearl_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_pearl_sad.wav,tess,OAF,sad,Moderate
+OAF_peg_angry.wav,tess,OAF,angry,High
+OAF_peg_disgust.wav,tess,OAF,disgust,High
+OAF_peg_fear.wav,tess,OAF,fear,High
+OAF_peg_happy.wav,tess,OAF,happy,Moderate
+OAF_peg_neutral.wav,tess,OAF,neutral,Low
+OAF_peg_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_peg_sad.wav,tess,OAF,sad,Moderate
+OAF_perch_angry.wav,tess,OAF,angry,High
+OAF_perch_disgust.wav,tess,OAF,disgust,High
+OAF_perch_fear.wav,tess,OAF,fear,High
+OAF_perch_happy.wav,tess,OAF,happy,Moderate
+OAF_perch_neutral.wav,tess,OAF,neutral,Low
+OAF_perch_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_perch_sad.wav,tess,OAF,sad,Moderate
+OAF_phone_angry.wav,tess,OAF,angry,High
+OAF_phone_disgust.wav,tess,OAF,disgust,High
+OAF_phone_fear.wav,tess,OAF,fear,High
+OAF_phone_happy.wav,tess,OAF,happy,Moderate
+OAF_phone_neutral.wav,tess,OAF,neutral,Low
+OAF_phone_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_phone_sad.wav,tess,OAF,sad,Moderate
+OAF_pick_angry.wav,tess,OAF,angry,High
+OAF_pick_disgust.wav,tess,OAF,disgust,High
+OAF_pick_fear.wav,tess,OAF,fear,High
+OAF_pick_happy.wav,tess,OAF,happy,Moderate
+OAF_pick_neutral.wav,tess,OAF,neutral,Low
+OAF_pick_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_pick_sad.wav,tess,OAF,sad,Moderate
+OAF_pike_angry.wav,tess,OAF,angry,High
+OAF_pike_disgust.wav,tess,OAF,disgust,High
+OAF_pike_fear.wav,tess,OAF,fear,High
+OAF_pike_happy.wav,tess,OAF,happy,Moderate
+OAF_pike_neutral.wav,tess,OAF,neutral,Low
+OAF_pike_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_pike_sad.wav,tess,OAF,sad,Moderate
+OAF_pole_angry.wav,tess,OAF,angry,High
+OAF_pole_disgust.wav,tess,OAF,disgust,High
+OAF_pole_fear.wav,tess,OAF,fear,High
+OAF_pole_happy.wav,tess,OAF,happy,Moderate
+OAF_pole_neutral.wav,tess,OAF,neutral,Low
+OAF_pole_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_pole_sad.wav,tess,OAF,sad,Moderate
+OAF_pool_angry.wav,tess,OAF,angry,High
+OAF_pool_disgust.wav,tess,OAF,disgust,High
+OAF_pool_fear.wav,tess,OAF,fear,High
+OAF_pool_happy.wav,tess,OAF,happy,Moderate
+OAF_pool_neutral.wav,tess,OAF,neutral,Low
+OAF_pool_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_pool_sad.wav,tess,OAF,sad,Moderate
+OAF_puff_angry.wav,tess,OAF,angry,High
+OAF_puff_disgust.wav,tess,OAF,disgust,High
+OAF_puff_fear.wav,tess,OAF,fear,High
+OAF_puff_happy.wav,tess,OAF,happy,Moderate
+OAF_puff_neutral.wav,tess,OAF,neutral,Low
+OAF_puff_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_puff_sad.wav,tess,OAF,sad,Moderate
+OAF_rag_angry.wav,tess,OAF,angry,High
+OAF_rag_disgust.wav,tess,OAF,disgust,High
+OAF_rag_fear.wav,tess,OAF,fear,High
+OAF_rag_happy.wav,tess,OAF,happy,Moderate
+OAF_rag_neutral.wav,tess,OAF,neutral,Low
+OAF_rag_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_rag_sad.wav,tess,OAF,sad,Moderate
+OAF_raid_angry.wav,tess,OAF,angry,High
+OAF_raid_disgust.wav,tess,OAF,disgust,High
+OAF_raid_fear.wav,tess,OAF,fear,High
+OAF_raid_happy.wav,tess,OAF,happy,Moderate
+OAF_raid_neutral.wav,tess,OAF,neutral,Low
+OAF_raid_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_raid_sad.wav,tess,OAF,sad,Moderate
+OAF_rain_angry.wav,tess,OAF,angry,High
+OAF_rain_disgust.wav,tess,OAF,disgust,High
+OAF_rain_fear.wav,tess,OAF,fear,High
+OAF_rain_happy.wav,tess,OAF,happy,Moderate
+OAF_rain_neutral.wav,tess,OAF,neutral,Low
+OAF_rain_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_rain_sad.wav,tess,OAF,sad,Moderate
+OAF_raise_angry.wav,tess,OAF,angry,High
+OAF_raise_disgust.wav,tess,OAF,disgust,High
+OAF_raise_fear.wav,tess,OAF,fear,High
+OAF_raise_happy.wav,tess,OAF,happy,Moderate
+OAF_raise_neutral.wav,tess,OAF,neutral,Low
+OAF_raise_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_raise_sad.wav,tess,OAF,sad,Moderate
+OAF_rat_angry.wav,tess,OAF,angry,High
+OAF_rat_disgust.wav,tess,OAF,disgust,High
+OAF_rat_fear.wav,tess,OAF,fear,High
+OAF_rat_happy.wav,tess,OAF,happy,Moderate
+OAF_rat_neutral.wav,tess,OAF,neutral,Low
+OAF_rat_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_rat_sad.wav,tess,OAF,sad,Moderate
+OAF_reach_angry.wav,tess,OAF,angry,High
+OAF_reach_disgust.wav,tess,OAF,disgust,High
+OAF_reach_fear.wav,tess,OAF,fear,High
+OAF_reach_happy.wav,tess,OAF,happy,Moderate
+OAF_reach_neutral.wav,tess,OAF,neutral,Low
+OAF_reach_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_reach_sad.wav,tess,OAF,sad,Moderate
+OAF_read_angry.wav,tess,OAF,angry,High
+OAF_read_disgust.wav,tess,OAF,disgust,High
+OAF_read_fear.wav,tess,OAF,fear,High
+OAF_read_happy.wav,tess,OAF,happy,Moderate
+OAF_read_neutral.wav,tess,OAF,neutral,Low
+OAF_read_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_read_sad.wav,tess,OAF,sad,Moderate
+OAF_red_angry.wav,tess,OAF,angry,High
+OAF_red_disgust.wav,tess,OAF,disgust,High
+OAF_red_fear.wav,tess,OAF,fear,High
+OAF_red_happy.wav,tess,OAF,happy,Moderate
+OAF_red_neutral.wav,tess,OAF,neutral,Low
+OAF_red_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_red_sad.wav,tess,OAF,sad,Moderate
+OAF_ring_angry.wav,tess,OAF,angry,High
+OAF_ring_disgust.wav,tess,OAF,disgust,High
+OAF_ring_fear.wav,tess,OAF,fear,High
+OAF_ring_happy.wav,tess,OAF,happy,Moderate
+OAF_ring_neutral.wav,tess,OAF,neutral,Low
+OAF_ring_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_ring_sad.wav,tess,OAF,sad,Moderate
+OAF_ripe_angry.wav,tess,OAF,angry,High
+OAF_ripe_disgust.wav,tess,OAF,disgust,High
+OAF_ripe_fear.wav,tess,OAF,fear,High
+OAF_ripe_happy.wav,tess,OAF,happy,Moderate
+OAF_ripe_neutral.wav,tess,OAF,neutral,Low
+OAF_ripe_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_ripe_sad.wav,tess,OAF,sad,Moderate
+OAF_road_angry.wav,tess,OAF,angry,High
+OAF_road_disgust.wav,tess,OAF,disgust,High
+OAF_road_fear.wav,tess,OAF,fear,High
+OAF_road_happy.wav,tess,OAF,happy,Moderate
+OAF_road_neutral.wav,tess,OAF,neutral,Low
+OAF_road_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_road_sad.wav,tess,OAF,sad,Moderate
+OAF_room_angry.wav,tess,OAF,angry,High
+OAF_room_disgust.wav,tess,OAF,disgust,High
+OAF_room_fear.wav,tess,OAF,fear,High
+OAF_room_happy.wav,tess,OAF,happy,Moderate
+OAF_room_neutral.wav,tess,OAF,neutral,Low
+OAF_room_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_room_sad.wav,tess,OAF,sad,Moderate
+OAF_rose_angry.wav,tess,OAF,angry,High
+OAF_rose_disgust.wav,tess,OAF,disgust,High
+OAF_rose_fear.wav,tess,OAF,fear,High
+OAF_rose_happy.wav,tess,OAF,happy,Moderate
+OAF_rose_neutral.wav,tess,OAF,neutral,Low
+OAF_rose_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_rose_sad.wav,tess,OAF,sad,Moderate
+OAF_rot_angry.wav,tess,OAF,angry,High
+OAF_rot_disgust.wav,tess,OAF,disgust,High
+OAF_rot_fear.wav,tess,OAF,fear,High
+OAF_rot_happy.wav,tess,OAF,happy,Moderate
+OAF_rot_neutral.wav,tess,OAF,neutral,Low
+OAF_rot_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_rot_sad.wav,tess,OAF,sad,Moderate
+OAF_rough_angry.wav,tess,OAF,angry,High
+OAF_rough_disgust.wav,tess,OAF,disgust,High
+OAF_rough_fear.wav,tess,OAF,fear,High
+OAF_rough_happy.wav,tess,OAF,happy,Moderate
+OAF_rough_neutral.wav,tess,OAF,neutral,Low
+OAF_rough_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_rough_sad.wav,tess,OAF,sad,Moderate
+OAF_rush_angry.wav,tess,OAF,angry,High
+OAF_rush_disgust.wav,tess,OAF,disgust,High
+OAF_rush_fear.wav,tess,OAF,fear,High
+OAF_rush_happy.wav,tess,OAF,happy,Moderate
+OAF_rush_neutral.wav,tess,OAF,neutral,Low
+OAF_rush_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_rush_sad.wav,tess,OAF,sad,Moderate
+OAF_said_angry.wav,tess,OAF,angry,High
+OAF_said_disgust.wav,tess,OAF,disgust,High
+OAF_said_fear.wav,tess,OAF,fear,High
+OAF_said_happy.wav,tess,OAF,happy,Moderate
+OAF_said_neutral.wav,tess,OAF,neutral,Low
+OAF_said_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_said_sad.wav,tess,OAF,sad,Moderate
+OAF_sail_angry.wav,tess,OAF,angry,High
+OAF_sail_disgust.wav,tess,OAF,disgust,High
+OAF_sail_fear.wav,tess,OAF,fear,High
+OAF_sail_happy.wav,tess,OAF,happy,Moderate
+OAF_sail_neutral.wav,tess,OAF,neutral,Low
+OAF_sail_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_sail_sad.wav,tess,OAF,sad,Moderate
+OAF_search_angry.wav,tess,OAF,angry,High
+OAF_search_disgust.wav,tess,OAF,disgust,High
+OAF_search_fear.wav,tess,OAF,fear,High
+OAF_search_happy.wav,tess,OAF,happy,Moderate
+OAF_search_neutral.wav,tess,OAF,neutral,Low
+OAF_search_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_search_sad.wav,tess,OAF,sad,Moderate
+OAF_seize_angry.wav,tess,OAF,angry,High
+OAF_seize_disgust.wav,tess,OAF,disgust,High
+OAF_seize_fear.wav,tess,OAF,fear,High
+OAF_seize_happy.wav,tess,OAF,happy,Moderate
+OAF_seize_neutral.wav,tess,OAF,neutral,Low
+OAF_seize_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_seize_sad.wav,tess,OAF,sad,Moderate
+OAF_sell_angry.wav,tess,OAF,angry,High
+OAF_sell_disgust.wav,tess,OAF,disgust,High
+OAF_sell_fear.wav,tess,OAF,fear,High
+OAF_sell_happy.wav,tess,OAF,happy,Moderate
+OAF_sell_neutral.wav,tess,OAF,neutral,Low
+OAF_sell_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_sell_sad.wav,tess,OAF,sad,Moderate
+OAF_shack_angry.wav,tess,OAF,angry,High
+OAF_shack_disgust.wav,tess,OAF,disgust,High
+OAF_shack_fear.wav,tess,OAF,fear,High
+OAF_shack_happy.wav,tess,OAF,happy,Moderate
+OAF_shack_neutral.wav,tess,OAF,neutral,Low
+OAF_shack_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_shack_sad.wav,tess,OAF,sad,Moderate
+OAF_shall_angry.wav,tess,OAF,angry,High
+OAF_shall_disgust.wav,tess,OAF,disgust,High
+OAF_shall_fear.wav,tess,OAF,fear,High
+OAF_shall_happy.wav,tess,OAF,happy,Moderate
+OAF_shall_neutral.wav,tess,OAF,neutral,Low
+OAF_shall_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_shall_sad.wav,tess,OAF,sad,Moderate
+OAF_shawl_angry.wav,tess,OAF,angry,High
+OAF_shawl_disgust.wav,tess,OAF,disgust,High
+OAF_shawl_fear.wav,tess,OAF,fear,High
+OAF_shawl_happy.wav,tess,OAF,happy,Moderate
+OAF_shawl_neutral.wav,tess,OAF,neutral,Low
+OAF_shawl_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_shawl_sad.wav,tess,OAF,sad,Moderate
+OAF_sheep_angry.wav,tess,OAF,angry,High
+OAF_sheep_disgust.wav,tess,OAF,disgust,High
+OAF_sheep_fear.wav,tess,OAF,fear,High
+OAF_sheep_happy.wav,tess,OAF,happy,Moderate
+OAF_sheep_neutral.wav,tess,OAF,neutral,Low
+OAF_sheep_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_sheep_sad.wav,tess,OAF,sad,Moderate
+OAF_shirt_angry.wav,tess,OAF,angry,High
+OAF_shirt_disgust.wav,tess,OAF,disgust,High
+OAF_shirt_fear.wav,tess,OAF,fear,High
+OAF_shirt_happy.wav,tess,OAF,happy,Moderate
+OAF_shirt_neutral.wav,tess,OAF,neutral,Low
+OAF_shirt_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_shirt_sad.wav,tess,OAF,sad,Moderate
+OAF_should_angry.wav,tess,OAF,angry,High
+OAF_should_disgust.wav,tess,OAF,disgust,High
+OAF_should_fear.wav,tess,OAF,fear,High
+OAF_should_happy.wav,tess,OAF,happy,Moderate
+OAF_should_neutral.wav,tess,OAF,neutral,Low
+OAF_should_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_should_sad.wav,tess,OAF,sad,Moderate
+OAF_shout_angry.wav,tess,OAF,angry,High
+OAF_shout_disgust.wav,tess,OAF,disgust,High
+OAF_shout_fear.wav,tess,OAF,fear,High
+OAF_shout_happy.wav,tess,OAF,happy,Moderate
+OAF_shout_neutral.wav,tess,OAF,neutral,Low
+OAF_shout_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_shout_sad.wav,tess,OAF,sad,Moderate
+OAF_size_angry.wav,tess,OAF,angry,High
+OAF_size_disgust.wav,tess,OAF,disgust,High
+OAF_size_fear.wav,tess,OAF,fear,High
+OAF_size_happy.wav,tess,OAF,happy,Moderate
+OAF_size_neutral.wav,tess,OAF,neutral,Low
+OAF_size_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_size_sad.wav,tess,OAF,sad,Moderate
+OAF_soap_angry.wav,tess,OAF,angry,High
+OAF_soap_disgust.wav,tess,OAF,disgust,High
+OAF_soap_fear.wav,tess,OAF,fear,High
+OAF_soap_happy.wav,tess,OAF,happy,Moderate
+OAF_soap_neutral.wav,tess,OAF,neutral,Low
+OAF_soap_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_soap_sad.wav,tess,OAF,sad,Moderate
+OAF_soup_angry.wav,tess,OAF,angry,High
+OAF_soup_disgust.wav,tess,OAF,disgust,High
+OAF_soup_fear.wav,tess,OAF,fear,High
+OAF_soup_happy.wav,tess,OAF,happy,Moderate
+OAF_soup_neutral.wav,tess,OAF,neutral,Low
+OAF_soup_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_soup_sad.wav,tess,OAF,sad,Moderate
+OAF_sour_angry.wav,tess,OAF,angry,High
+OAF_sour_disgust.wav,tess,OAF,disgust,High
+OAF_sour_fear.wav,tess,OAF,fear,High
+OAF_sour_happy.wav,tess,OAF,happy,Moderate
+OAF_sour_neutral.wav,tess,OAF,neutral,Low
+OAF_sour_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_sour_sad.wav,tess,OAF,sad,Moderate
+OAF_south_angry.wav,tess,OAF,angry,High
+OAF_south_disgust.wav,tess,OAF,disgust,High
+OAF_south_fear.wav,tess,OAF,fear,High
+OAF_south_happy.wav,tess,OAF,happy,Moderate
+OAF_south_neutral.wav,tess,OAF,neutral,Low
+OAF_south_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_south_sad.wav,tess,OAF,sad,Moderate
+OAF_sub_angry.wav,tess,OAF,angry,High
+OAF_sub_disgust.wav,tess,OAF,disgust,High
+OAF_sub_fear.wav,tess,OAF,fear,High
+OAF_sub_happy.wav,tess,OAF,happy,Moderate
+OAF_sub_neutral.wav,tess,OAF,neutral,Low
+OAF_sub_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_sub_sad.wav,tess,OAF,sad,Moderate
+OAF_such_angry.wav,tess,OAF,angry,High
+OAF_such_disgust.wav,tess,OAF,disgust,High
+OAF_such_fear.wav,tess,OAF,fear,High
+OAF_such_happy.wav,tess,OAF,happy,Moderate
+OAF_such_neutral.wav,tess,OAF,neutral,Low
+OAF_such_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_such_sad.wav,tess,OAF,sad,Moderate
+OAF_sure_angry.wav,tess,OAF,angry,High
+OAF_sure_disgust.wav,tess,OAF,disgust,High
+OAF_sure_fear.wav,tess,OAF,fear,High
+OAF_sure_happy.wav,tess,OAF,happy,Moderate
+OAF_sure_neutral.wav,tess,OAF,neutral,Low
+OAF_sure_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_sure_sad.wav,tess,OAF,sad,Moderate
+OAF_take_angry.wav,tess,OAF,angry,High
+OAF_take_disgust.wav,tess,OAF,disgust,High
+OAF_take_fear.wav,tess,OAF,fear,High
+OAF_take_happy.wav,tess,OAF,happy,Moderate
+OAF_take_neutral.wav,tess,OAF,neutral,Low
+OAF_take_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_take_sad.wav,tess,OAF,sad,Moderate
+OAF_talk_angry.wav,tess,OAF,angry,High
+OAF_talk_disgust.wav,tess,OAF,disgust,High
+OAF_talk_fear.wav,tess,OAF,fear,High
+OAF_talk_happy.wav,tess,OAF,happy,Moderate
+OAF_talk_neutral.wav,tess,OAF,neutral,Low
+OAF_talk_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_talk_sad.wav,tess,OAF,sad,Moderate
+OAF_tape_angry.wav,tess,OAF,angry,High
+OAF_tape_disgust.wav,tess,OAF,disgust,High
+OAF_tape_fear.wav,tess,OAF,fear,High
+OAF_tape_happy.wav,tess,OAF,happy,Moderate
+OAF_tape_neutral.wav,tess,OAF,neutral,Low
+OAF_tape_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_tape_sad.wav,tess,OAF,sad,Moderate
+OAF_team_angry.wav,tess,OAF,angry,High
+OAF_team_disgust.wav,tess,OAF,disgust,High
+OAF_team_fear.wav,tess,OAF,fear,High
+OAF_team_happy.wav,tess,OAF,happy,Moderate
+OAF_team_neutral.wav,tess,OAF,neutral,Low
+OAF_team_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_team_sad.wav,tess,OAF,sad,Moderate
+OAF_tell_angry.wav,tess,OAF,angry,High
+OAF_tell_disgust.wav,tess,OAF,disgust,High
+OAF_tell_fear.wav,tess,OAF,fear,High
+OAF_tell_happy.wav,tess,OAF,happy,Moderate
+OAF_tell_neutral.wav,tess,OAF,neutral,Low
+OAF_tell_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_tell_sad.wav,tess,OAF,sad,Moderate
+OAF_thin_angry.wav,tess,OAF,angry,High
+OAF_thin_disgust.wav,tess,OAF,disgust,High
+OAF_thin_fear.wav,tess,OAF,fear,High
+OAF_thin_happy.wav,tess,OAF,happy,Moderate
+OAF_thin_neutral.wav,tess,OAF,neutral,Low
+OAF_thin_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_thin_sad.wav,tess,OAF,sad,Moderate
+OAF_third_angry.wav,tess,OAF,angry,High
+OAF_third_disgust.wav,tess,OAF,disgust,High
+OAF_third_fear.wav,tess,OAF,fear,High
+OAF_third_happy.wav,tess,OAF,happy,Moderate
+OAF_third_neutral.wav,tess,OAF,neutral,Low
+OAF_third_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_third_sad.wav,tess,OAF,sad,Moderate
+OAF_thought_angry.wav,tess,OAF,angry,High
+OAF_thought_disgust.wav,tess,OAF,disgust,High
+OAF_thought_fear.wav,tess,OAF,fear,High
+OAF_thought_happy.wav,tess,OAF,happy,Moderate
+OAF_thought_neutral.wav,tess,OAF,neutral,Low
+OAF_thought_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_thought_sad.wav,tess,OAF,sad,Moderate
+OAF_thumb_angry.wav,tess,OAF,angry,High
+OAF_thumb_disgust.wav,tess,OAF,disgust,High
+OAF_thumb_fear.wav,tess,OAF,fear,High
+OAF_thumb_happy.wav,tess,OAF,happy,Moderate
+OAF_thumb_neutral.wav,tess,OAF,neutral,Low
+OAF_thumb_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_thumb_sad.wav,tess,OAF,sad,Moderate
+OAF_time_angry.wav,tess,OAF,angry,High
+OAF_time_disgust.wav,tess,OAF,disgust,High
+OAF_time_fear.wav,tess,OAF,fear,High
+OAF_time_happy.wav,tess,OAF,happy,Moderate
+OAF_time_neutral.wav,tess,OAF,neutral,Low
+OAF_time_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_time_sad.wav,tess,OAF,sad,Moderate
+OAF_tip_angry.wav,tess,OAF,angry,High
+OAF_tip_disgust.wav,tess,OAF,disgust,High
+OAF_tip_fear.wav,tess,OAF,fear,High
+OAF_tip_happy.wav,tess,OAF,happy,Moderate
+OAF_tip_neutral.wav,tess,OAF,neutral,Low
+OAF_tip_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_tip_sad.wav,tess,OAF,sad,Moderate
+OAF_tire_angry.wav,tess,OAF,angry,High
+OAF_tire_disgust.wav,tess,OAF,disgust,High
+OAF_tire_fear.wav,tess,OAF,fear,High
+OAF_tire_happy.wav,tess,OAF,happy,Moderate
+OAF_tire_neutral.wav,tess,OAF,neutral,Low
+OAF_tire_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_tire_sad.wav,tess,OAF,sad,Moderate
+OAF_ton_angry.wav,tess,OAF,angry,High
+OAF_ton_disgust.wav,tess,OAF,disgust,High
+OAF_ton_fear.wav,tess,OAF,fear,High
+OAF_ton_happy.wav,tess,OAF,happy,Moderate
+OAF_ton_neutral.wav,tess,OAF,neutral,Low
+OAF_ton_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_ton_sad.wav,tess,OAF,sad,Moderate
+OAF_tool_angry.wav,tess,OAF,angry,High
+OAF_tool_disgust.wav,tess,OAF,disgust,High
+OAF_tool_fear.wav,tess,OAF,fear,High
+OAF_tool_happy.wav,tess,OAF,happy,Moderate
+OAF_tool_neutral.wav,tess,OAF,neutral,Low
+OAF_tool_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_tool_sad.wav,tess,OAF,sad,Moderate
+OAF_tough_angry.wav,tess,OAF,angry,High
+OAF_tough_disgust.wav,tess,OAF,disgust,High
+OAF_tough_fear.wav,tess,OAF,fear,High
+OAF_tough_happy.wav,tess,OAF,happy,Moderate
+OAF_tough_neutral.wav,tess,OAF,neutral,Low
+OAF_tough_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_tough_sad.wav,tess,OAF,sad,Moderate
+OAF_turn_angry.wav,tess,OAF,angry,High
+OAF_turn_disgust.wav,tess,OAF,disgust,High
+OAF_turn_fear.wav,tess,OAF,fear,High
+OAF_turn_happy.wav,tess,OAF,happy,Moderate
+OAF_turn_neutral.wav,tess,OAF,neutral,Low
+OAF_turn_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_turn_sad.wav,tess,OAF,sad,Moderate
+OAF_vine_angry.wav,tess,OAF,angry,High
+OAF_vine_disgust.wav,tess,OAF,disgust,High
+OAF_vine_fear.wav,tess,OAF,fear,High
+OAF_vine_happy.wav,tess,OAF,happy,Moderate
+OAF_vine_neutral.wav,tess,OAF,neutral,Low
+OAF_vine_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_vine_sad.wav,tess,OAF,sad,Moderate
+OAF_voice_angry.wav,tess,OAF,angry,High
+OAF_voice_disgust.wav,tess,OAF,disgust,High
+OAF_voice_fear.wav,tess,OAF,fear,High
+OAF_voice_happy.wav,tess,OAF,happy,Moderate
+OAF_voice_neutral.wav,tess,OAF,neutral,Low
+OAF_voice_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_voice_sad.wav,tess,OAF,sad,Moderate
+OAF_void_angry.wav,tess,OAF,angry,High
+OAF_void_disgust.wav,tess,OAF,disgust,High
+OAF_void_fear.wav,tess,OAF,fear,High
+OAF_void_happy.wav,tess,OAF,happy,Moderate
+OAF_void_neutral.wav,tess,OAF,neutral,Low
+OAF_void_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_void_sad.wav,tess,OAF,sad,Moderate
+OAF_vote_angry.wav,tess,OAF,angry,High
+OAF_vote_disgust.wav,tess,OAF,disgust,High
+OAF_vote_fear.wav,tess,OAF,fear,High
+OAF_vote_happy.wav,tess,OAF,happy,Moderate
+OAF_vote_neutral.wav,tess,OAF,neutral,Low
+OAF_vote_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_vote_sad.wav,tess,OAF,sad,Moderate
+OAF_wag_angry.wav,tess,OAF,angry,High
+OAF_wag_disgust.wav,tess,OAF,disgust,High
+OAF_wag_fear.wav,tess,OAF,fear,High
+OAF_wag_happy.wav,tess,OAF,happy,Moderate
+OAF_wag_neutral.wav,tess,OAF,neutral,Low
+OAF_wag_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_wag_sad.wav,tess,OAF,sad,Moderate
+OAF_walk_angry.wav,tess,OAF,angry,High
+OAF_walk_disgust.wav,tess,OAF,disgust,High
+OAF_walk_fear.wav,tess,OAF,fear,High
+OAF_walk_happy.wav,tess,OAF,happy,Moderate
+OAF_walk_neutral.wav,tess,OAF,neutral,Low
+OAF_walk_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_walk_sad.wav,tess,OAF,sad,Moderate
+OAF_wash_angry.wav,tess,OAF,angry,High
+OAF_wash_disgust.wav,tess,OAF,disgust,High
+OAF_wash_fear.wav,tess,OAF,fear,High
+OAF_wash_happy.wav,tess,OAF,happy,Moderate
+OAF_wash_neutral.wav,tess,OAF,neutral,Low
+OAF_wash_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_wash_sad.wav,tess,OAF,sad,Moderate
+OAF_week_angry.wav,tess,OAF,angry,High
+OAF_week_disgust.wav,tess,OAF,disgust,High
+OAF_week_fear.wav,tess,OAF,fear,High
+OAF_week_happy.wav,tess,OAF,happy,Moderate
+OAF_week_neutral.wav,tess,OAF,neutral,Low
+OAF_week_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_week_sad.wav,tess,OAF,sad,Moderate
+OAF_wheat_angry.wav,tess,OAF,angry,High
+OAF_wheat_disgust.wav,tess,OAF,disgust,High
+OAF_wheat_fear.wav,tess,OAF,fear,High
+OAF_wheat_happy.wav,tess,OAF,happy,Moderate
+OAF_wheat_neutral.wav,tess,OAF,neutral,Low
+OAF_wheat_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_wheat_sad.wav,tess,OAF,sad,Moderate
+OAF_when_angry.wav,tess,OAF,angry,High
+OAF_when_disgust.wav,tess,OAF,disgust,High
+OAF_when_fear.wav,tess,OAF,fear,High
+OAF_when_happy.wav,tess,OAF,happy,Moderate
+OAF_when_neutral.wav,tess,OAF,neutral,Low
+OAF_when_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_when_sad.wav,tess,OAF,sad,Moderate
+OAF_which_angry.wav,tess,OAF,angry,High
+OAF_which_disgust.wav,tess,OAF,disgust,High
+OAF_which_fear.wav,tess,OAF,fear,High
+OAF_which_happy.wav,tess,OAF,happy,Moderate
+OAF_which_neutral.wav,tess,OAF,neutral,Low
+OAF_which_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_which_sad.wav,tess,OAF,sad,Moderate
+OAF_whip_angry.wav,tess,OAF,angry,High
+OAF_whip_disgust.wav,tess,OAF,disgust,High
+OAF_whip_fear.wav,tess,OAF,fear,High
+OAF_whip_happy.wav,tess,OAF,happy,Moderate
+OAF_whip_neutral.wav,tess,OAF,neutral,Low
+OAF_whip_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_whip_sad.wav,tess,OAF,sad,Moderate
+OAF_white_angry.wav,tess,OAF,angry,High
+OAF_white_disgust.wav,tess,OAF,disgust,High
+OAF_white_fear.wav,tess,OAF,fear,High
+OAF_white_happy.wav,tess,OAF,happy,Moderate
+OAF_white_neutral.wav,tess,OAF,neutral,Low
+OAF_white_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_white_sad.wav,tess,OAF,sad,Moderate
+OAF_wife_angry.wav,tess,OAF,angry,High
+OAF_wife_disgust.wav,tess,OAF,disgust,High
+OAF_wife_fear.wav,tess,OAF,fear,High
+OAF_wife_happy.wav,tess,OAF,happy,Moderate
+OAF_wife_neutral.wav,tess,OAF,neutral,Low
+OAF_wife_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_wife_sad.wav,tess,OAF,sad,Moderate
+OAF_wire_angry.wav,tess,OAF,angry,High
+OAF_wire_disgust.wav,tess,OAF,disgust,High
+OAF_wire_fear.wav,tess,OAF,fear,High
+OAF_wire_happy.wav,tess,OAF,happy,Moderate
+OAF_wire_neutral.wav,tess,OAF,neutral,Low
+OAF_wire_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_wire_sad.wav,tess,OAF,sad,Moderate
+OAF_witch_angry.wav,tess,OAF,angry,High
+OAF_witch_disgust.wav,tess,OAF,disgust,High
+OAF_witch_fear.wav,tess,OAF,fear,High
+OAF_witch_happy.wav,tess,OAF,happy,Moderate
+OAF_witch_neutral.wav,tess,OAF,neutral,Low
+OAF_witch_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_witch_sad.wav,tess,OAF,sad,Moderate
+OAF_yearn_angry.wav,tess,OAF,angry,High
+OAF_yearn_disgust.wav,tess,OAF,disgust,High
+OAF_yearn_fear.wav,tess,OAF,fear,High
+OAF_yearn_happy.wav,tess,OAF,happy,Moderate
+OAF_yearn_neutral.wav,tess,OAF,neutral,Low
+OAF_yearn_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_yearn_sad.wav,tess,OAF,sad,Moderate
+OAF_yes_angry.wav,tess,OAF,angry,High
+OAF_yes_disgust.wav,tess,OAF,disgust,High
+OAF_yes_fear.wav,tess,OAF,fear,High
+OAF_yes_happy.wav,tess,OAF,happy,Moderate
+OAF_yes_neutral.wav,tess,OAF,neutral,Low
+OAF_yes_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_yes_sad.wav,tess,OAF,sad,Moderate
+OAF_young_angry.wav,tess,OAF,angry,High
+OAF_young_disgust.wav,tess,OAF,disgust,High
+OAF_young_fear.wav,tess,OAF,fear,High
+OAF_young_happy.wav,tess,OAF,happy,Moderate
+OAF_young_neutral.wav,tess,OAF,neutral,Low
+OAF_young_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_young_sad.wav,tess,OAF,sad,Moderate
+OAF_youth_angry.wav,tess,OAF,angry,High
+OAF_youth_disgust.wav,tess,OAF,disgust,High
+OAF_youth_fear.wav,tess,OAF,fear,High
+OAF_youth_happy.wav,tess,OAF,happy,Moderate
+OAF_youth_neutral.wav,tess,OAF,neutral,Low
+OAF_youth_ps.wav,tess,OAF,pleasant surprise,Moderate
+OAF_youth_sad.wav,tess,OAF,sad,Moderate
+YAF_back_angry.wav,tess,YAF,angry,High
+YAF_back_disgust.wav,tess,YAF,disgust,High
+YAF_back_fear.wav,tess,YAF,fear,High
+YAF_back_happy.wav,tess,YAF,happy,Moderate
+YAF_back_neutral.wav,tess,YAF,neutral,Low
+YAF_back_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_back_sad.wav,tess,YAF,sad,Moderate
+YAF_bar_angry.wav,tess,YAF,angry,High
+YAF_bar_disgust.wav,tess,YAF,disgust,High
+YAF_bar_fear.wav,tess,YAF,fear,High
+YAF_bar_happy.wav,tess,YAF,happy,Moderate
+YAF_bar_neutral.wav,tess,YAF,neutral,Low
+YAF_bar_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_bar_sad.wav,tess,YAF,sad,Moderate
+YAF_base_angry.wav,tess,YAF,angry,High
+YAF_base_disgust.wav,tess,YAF,disgust,High
+YAF_base_fear.wav,tess,YAF,fear,High
+YAF_base_happy.wav,tess,YAF,happy,Moderate
+YAF_base_neutral.wav,tess,YAF,neutral,Low
+YAF_base_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_base_sad.wav,tess,YAF,sad,Moderate
+YAF_bath_angry.wav,tess,YAF,angry,High
+YAF_bath_disgust.wav,tess,YAF,disgust,High
+YAF_bath_fear.wav,tess,YAF,fear,High
+YAF_bath_happy.wav,tess,YAF,happy,Moderate
+YAF_bath_neutral.wav,tess,YAF,neutral,Low
+YAF_bath_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_bath_sad.wav,tess,YAF,sad,Moderate
+YAF_bean_angry.wav,tess,YAF,angry,High
+YAF_bean_disgust.wav,tess,YAF,disgust,High
+YAF_bean_fear.wav,tess,YAF,fear,High
+YAF_bean_happy.wav,tess,YAF,happy,Moderate
+YAF_bean_neutral.wav,tess,YAF,neutral,Low
+YAF_bean_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_bean_sad.wav,tess,YAF,sad,Moderate
+YAF_beg_angry.wav,tess,YAF,angry,High
+YAF_beg_disgust.wav,tess,YAF,disgust,High
+YAF_beg_fear.wav,tess,YAF,fear,High
+YAF_beg_happy.wav,tess,YAF,happy,Moderate
+YAF_beg_neutral.wav,tess,YAF,neutral,Low
+YAF_beg_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_beg_sad.wav,tess,YAF,sad,Moderate
+YAF_bite_angry.wav,tess,YAF,angry,High
+YAF_bite_disgust.wav,tess,YAF,disgust,High
+YAF_bite_fear.wav,tess,YAF,fear,High
+YAF_bite_happy.wav,tess,YAF,happy,Moderate
+YAF_bite_neutral.wav,tess,YAF,neutral,Low
+YAF_bite_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_bite_sad.wav,tess,YAF,sad,Moderate
+YAF_boat_angry.wav,tess,YAF,angry,High
+YAF_boat_disgust.wav,tess,YAF,disgust,High
+YAF_boat_fear.wav,tess,YAF,fear,High
+YAF_boat_happy.wav,tess,YAF,happy,Moderate
+YAF_boat_neutral.wav,tess,YAF,neutral,Low
+YAF_boat_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_boat_sad.wav,tess,YAF,sad,Moderate
+YAF_bone_angry.wav,tess,YAF,angry,High
+YAF_bone_disgust.wav,tess,YAF,disgust,High
+YAF_bone_fear.wav,tess,YAF,fear,High
+YAF_bone_happy.wav,tess,YAF,happy,Moderate
+YAF_bone_neutral.wav,tess,YAF,neutral,Low
+YAF_bone_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_bone_sad.wav,tess,YAF,sad,Moderate
+YAF_book_angry.wav,tess,YAF,angry,High
+YAF_book_disgust.wav,tess,YAF,disgust,High
+YAF_book_fear.wav,tess,YAF,fear,High
+YAF_book_happy.wav,tess,YAF,happy,Moderate
+YAF_book_neutral.wav,tess,YAF,neutral,Low
+YAF_book_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_book_sad.wav,tess,YAF,sad,Moderate
+YAF_bought_angry.wav,tess,YAF,angry,High
+YAF_bought_disgust.wav,tess,YAF,disgust,High
+YAF_bought_fear.wav,tess,YAF,fear,High
+YAF_bought_happy.wav,tess,YAF,happy,Moderate
+YAF_bought_neutral.wav,tess,YAF,neutral,Low
+YAF_bought_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_bought_sad.wav,tess,YAF,sad,Moderate
+YAF_burn_angry.wav,tess,YAF,angry,High
+YAF_burn_disgust.wav,tess,YAF,disgust,High
+YAF_burn_fear.wav,tess,YAF,fear,High
+YAF_burn_happy.wav,tess,YAF,happy,Moderate
+YAF_burn_neutral.wav,tess,YAF,neutral,Low
+YAF_burn_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_burn_sad.wav,tess,YAF,sad,Moderate
+YAF_cab_angry.wav,tess,YAF,angry,High
+YAF_cab_disgust.wav,tess,YAF,disgust,High
+YAF_cab_fear.wav,tess,YAF,fear,High
+YAF_cab_happy.wav,tess,YAF,happy,Moderate
+YAF_cab_neutral.wav,tess,YAF,neutral,Low
+YAF_cab_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_cab_sad.wav,tess,YAF,sad,Moderate
+YAF_calm_angry.wav,tess,YAF,angry,High
+YAF_calm_disgust.wav,tess,YAF,disgust,High
+YAF_calm_fear.wav,tess,YAF,fear,High
+YAF_calm_happy.wav,tess,YAF,happy,Moderate
+YAF_calm_neutral.wav,tess,YAF,neutral,Low
+YAF_calm_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_calm_sad.wav,tess,YAF,sad,Moderate
+YAF_came_angry.wav,tess,YAF,angry,High
+YAF_came_disgust.wav,tess,YAF,disgust,High
+YAF_came_fear.wav,tess,YAF,fear,High
+YAF_came_happy.wav,tess,YAF,happy,Moderate
+YAF_came_neutral.wav,tess,YAF,neutral,Low
+YAF_came_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_came_sad.wav,tess,YAF,sad,Moderate
+YAF_cause_angry.wav,tess,YAF,angry,High
+YAF_cause_disgust.wav,tess,YAF,disgust,High
+YAF_cause_fear.wav,tess,YAF,fear,High
+YAF_cause_happy.wav,tess,YAF,happy,Moderate
+YAF_cause_neutral.wav,tess,YAF,neutral,Low
+YAF_cause_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_cause_sad.wav,tess,YAF,sad,Moderate
+YAF_chain_angry.wav,tess,YAF,angry,High
+YAF_chain_disgust.wav,tess,YAF,disgust,High
+YAF_chain_fear.wav,tess,YAF,fear,High
+YAF_chain_happy.wav,tess,YAF,happy,Moderate
+YAF_chain_neutral.wav,tess,YAF,neutral,Low
+YAF_chain_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_chain_sad.wav,tess,YAF,sad,Moderate
+YAF_chair_angry.wav,tess,YAF,angry,High
+YAF_chair_disgust.wav,tess,YAF,disgust,High
+YAF_chair_fear.wav,tess,YAF,fear,High
+YAF_chair_happy.wav,tess,YAF,happy,Moderate
+YAF_chair_neutral.wav,tess,YAF,neutral,Low
+YAF_chair_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_chair_sad.wav,tess,YAF,sad,Moderate
+YAF_chalk_angry.wav,tess,YAF,angry,High
+YAF_chalk_disgust.wav,tess,YAF,disgust,High
+YAF_chalk_fear.wav,tess,YAF,fear,High
+YAF_chalk_happy.wav,tess,YAF,happy,Moderate
+YAF_chalk_neutral.wav,tess,YAF,neutral,Low
+YAF_chalk_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_chalk_sad.wav,tess,YAF,sad,Moderate
+YAF_chat_angry.wav,tess,YAF,angry,High
+YAF_chat_disgust.wav,tess,YAF,disgust,High
+YAF_chat_fear.wav,tess,YAF,fear,High
+YAF_chat_happy.wav,tess,YAF,happy,Moderate
+YAF_chat_neutral.wav,tess,YAF,neutral,Low
+YAF_chat_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_chat_sad.wav,tess,YAF,sad,Moderate
+YAF_check_angry.wav,tess,YAF,angry,High
+YAF_check_disgust.wav,tess,YAF,disgust,High
+YAF_check_fear.wav,tess,YAF,fear,High
+YAF_check_happy.wav,tess,YAF,happy,Moderate
+YAF_check_neutral.wav,tess,YAF,neutral,Low
+YAF_check_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_check_sad.wav,tess,YAF,sad,Moderate
+YAF_cheek_angry.wav,tess,YAF,angry,High
+YAF_cheek_disgust.wav,tess,YAF,disgust,High
+YAF_cheek_fear.wav,tess,YAF,fear,High
+YAF_cheek_happy.wav,tess,YAF,happy,Moderate
+YAF_cheek_neutral.wav,tess,YAF,neutral,Low
+YAF_cheek_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_cheek_sad.wav,tess,YAF,sad,Moderate
+YAF_chief_angry.wav,tess,YAF,angry,High
+YAF_chief_disgust.wav,tess,YAF,disgust,High
+YAF_chief_fear.wav,tess,YAF,fear,High
+YAF_chief_happy.wav,tess,YAF,happy,Moderate
+YAF_chief_neutral.wav,tess,YAF,neutral,Low
+YAF_chief_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_chief_sad.wav,tess,YAF,sad,Moderate
+YAF_choice_angry.wav,tess,YAF,angry,High
+YAF_choice_disgust.wav,tess,YAF,disgust,High
+YAF_choice_fear.wav,tess,YAF,fear,High
+YAF_choice_happy.wav,tess,YAF,happy,Moderate
+YAF_choice_neutral.wav,tess,YAF,neutral,Low
+YAF_choice_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_choice_sad.wav,tess,YAF,sad,Moderate
+YAF_cool_angry.wav,tess,YAF,angry,High
+YAF_cool_disgust.wav,tess,YAF,disgust,High
+YAF_cool_fear.wav,tess,YAF,fear,High
+YAF_cool_happy.wav,tess,YAF,happy,Moderate
+YAF_cool_neutral.wav,tess,YAF,neutral,Low
+YAF_cool_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_cool_sad.wav,tess,YAF,sad,Moderate
+YAF_dab_angry.wav,tess,YAF,angry,High
+YAF_dab_disgust.wav,tess,YAF,disgust,High
+YAF_dab_fear.wav,tess,YAF,fear,High
+YAF_dab_happy.wav,tess,YAF,happy,Moderate
+YAF_dab_neutral.wav,tess,YAF,neutral,Low
+YAF_dab_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_dab_sad.wav,tess,YAF,sad,Moderate
+YAF_date_angry.wav,tess,YAF,angry,High
+YAF_date_disgust.wav,tess,YAF,disgust,High
+YAF_date_fear.wav,tess,YAF,fear,High
+YAF_date_happy.wav,tess,YAF,happy,Moderate
+YAF_date_neutral.wav,tess,YAF,neutral,Low
+YAF_date_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_date_sad.wav,tess,YAF,sad,Moderate
+YAF_dead_angry.wav,tess,YAF,angry,High
+YAF_dead_disgust.wav,tess,YAF,disgust,High
+YAF_dead_fear.wav,tess,YAF,fear,High
+YAF_dead_happy.wav,tess,YAF,happy,Moderate
+YAF_dead_neutral.wav,tess,YAF,neutral,Low
+YAF_dead_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_dead_sad.wav,tess,YAF,sad,Moderate
+YAF_death_angry.wav,tess,YAF,angry,High
+YAF_death_disgust.wav,tess,YAF,disgust,High
+YAF_death_fear.wav,tess,YAF,fear,High
+YAF_death_happy.wav,tess,YAF,happy,Moderate
+YAF_death_neutral.wav,tess,YAF,neutral,Low
+YAF_death_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_death_sad.wav,tess,YAF,sad,Moderate
+YAF_deep_angry.wav,tess,YAF,angry,High
+YAF_deep_disgust.wav,tess,YAF,disgust,High
+YAF_deep_fear.wav,tess,YAF,fear,High
+YAF_deep_happy.wav,tess,YAF,happy,Moderate
+YAF_deep_neutral.wav,tess,YAF,neutral,Low
+YAF_deep_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_deep_sad.wav,tess,YAF,sad,Moderate
+YAF_dime_angry.wav,tess,YAF,angry,High
+YAF_dime_disgust.wav,tess,YAF,disgust,High
+YAF_dime_fear.wav,tess,YAF,fear,High
+YAF_dime_happy.wav,tess,YAF,happy,Moderate
+YAF_dime_neutral.wav,tess,YAF,neutral,Low
+YAF_dime_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_dime_sad.wav,tess,YAF,sad,Moderate
+YAF_dip_angry.wav,tess,YAF,angry,High
+YAF_dip_disgust.wav,tess,YAF,disgust,High
+YAF_dip_fear.wav,tess,YAF,fear,High
+YAF_dip_happy.wav,tess,YAF,happy,Moderate
+YAF_dip_neutral.wav,tess,YAF,neutral,Low
+YAF_dip_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_dip_sad.wav,tess,YAF,sad,Moderate
+YAF_ditch_angry.wav,tess,YAF,angry,High
+YAF_ditch_disgust.wav,tess,YAF,disgust,High
+YAF_ditch_fear.wav,tess,YAF,fear,High
+YAF_ditch_happy.wav,tess,YAF,happy,Moderate
+YAF_ditch_neutral.wav,tess,YAF,neutral,Low
+YAF_ditch_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_ditch_sad.wav,tess,YAF,sad,Moderate
+YAF_dodge_angry.wav,tess,YAF,angry,High
+YAF_dodge_disgust.wav,tess,YAF,disgust,High
+YAF_dodge_fear.wav,tess,YAF,fear,High
+YAF_dodge_happy.wav,tess,YAF,happy,Moderate
+YAF_dodge_neutral.wav,tess,YAF,neutral,Low
+YAF_dodge_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_dodge_sad.wav,tess,YAF,sad,Moderate
+YAF_dog_angry.wav,tess,YAF,angry,High
+YAF_dog_disgust.wav,tess,YAF,disgust,High
+YAF_dog_fear.wav,tess,YAF,fear,High
+YAF_dog_happy.wav,tess,YAF,happy,Moderate
+YAF_dog_neutral.wav,tess,YAF,neutral,Low
+YAF_dog_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_dog_sad.wav,tess,YAF,sad,Moderate
+YAF_doll_angry.wav,tess,YAF,angry,High
+YAF_doll_disgust.wav,tess,YAF,disgust,High
+YAF_doll_fear.wav,tess,YAF,fear,High
+YAF_doll_happy.wav,tess,YAF,happy,Moderate
+YAF_doll_neutral.wav,tess,YAF,neutral,Low
+YAF_doll_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_doll_sad.wav,tess,YAF,sad,Moderate
+YAF_door_angry.wav,tess,YAF,angry,High
+YAF_door_disgust.wav,tess,YAF,disgust,High
+YAF_door_fear.wav,tess,YAF,fear,High
+YAF_door_happy.wav,tess,YAF,happy,Moderate
+YAF_door_neutral.wav,tess,YAF,neutral,Low
+YAF_door_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_door_sad.wav,tess,YAF,sad,Moderate
+YAF_fail_angry.wav,tess,YAF,angry,High
+YAF_fail_disgust.wav,tess,YAF,disgust,High
+YAF_fail_fear.wav,tess,YAF,fear,High
+YAF_fail_happy.wav,tess,YAF,happy,Moderate
+YAF_fail_neutral.wav,tess,YAF,neutral,Low
+YAF_fail_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_fail_sad.wav,tess,YAF,sad,Moderate
+YAF_fall_angry.wav,tess,YAF,angry,High
+YAF_fall_disgust.wav,tess,YAF,disgust,High
+YAF_fall_fear.wav,tess,YAF,fear,High
+YAF_fall_happy.wav,tess,YAF,happy,Moderate
+YAF_fall_neutral.wav,tess,YAF,neutral,Low
+YAF_fall_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_fall_sad.wav,tess,YAF,sad,Moderate
+YAF_far_angry.wav,tess,YAF,angry,High
+YAF_far_disgust.wav,tess,YAF,disgust,High
+YAF_far_fear.wav,tess,YAF,fear,High
+YAF_far_happy.wav,tess,YAF,happy,Moderate
+YAF_far_neutral.wav,tess,YAF,neutral,Low
+YAF_far_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_far_sad.wav,tess,YAF,sad,Moderate
+YAF_fat_angry.wav,tess,YAF,angry,High
+YAF_fat_disgust.wav,tess,YAF,disgust,High
+YAF_fat_fear.wav,tess,YAF,fear,High
+YAF_fat_happy.wav,tess,YAF,happy,Moderate
+YAF_fat_neutral.wav,tess,YAF,neutral,Low
+YAF_fat_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_fat_sad.wav,tess,YAF,sad,Moderate
+YAF_fit_angry.wav,tess,YAF,angry,High
+YAF_fit_disgust.wav,tess,YAF,disgust,High
+YAF_fit_fear.wav,tess,YAF,fear,High
+YAF_fit_happy.wav,tess,YAF,happy,Moderate
+YAF_fit_neutral.wav,tess,YAF,neutral,Low
+YAF_fit_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_fit_sad.wav,tess,YAF,sad,Moderate
+YAF_five_angry.wav,tess,YAF,angry,High
+YAF_five_disgust.wav,tess,YAF,disgust,High
+YAF_five_fear.wav,tess,YAF,fear,High
+YAF_five_happy.wav,tess,YAF,happy,Moderate
+YAF_five_neutral.wav,tess,YAF,neutral,Low
+YAF_five_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_five_sad.wav,tess,YAF,sad,Moderate
+YAF_food_angry.wav,tess,YAF,angry,High
+YAF_food_disgust.wav,tess,YAF,disgust,High
+YAF_food_fear.wav,tess,YAF,fear,High
+YAF_food_happy.wav,tess,YAF,happy,Moderate
+YAF_food_neutral.wav,tess,YAF,neutral,Low
+YAF_food_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_food_sad.wav,tess,YAF,sad,Moderate
+YAF_gap_angry.wav,tess,YAF,angry,High
+YAF_gap_disgust.wav,tess,YAF,disgust,High
+YAF_gap_fear.wav,tess,YAF,fear,High
+YAF_gap_happy.wav,tess,YAF,happy,Moderate
+YAF_gap_neutral.wav,tess,YAF,neutral,Low
+YAF_gap_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_gap_sad.wav,tess,YAF,sad,Moderate
+YAF_gas_angry.wav,tess,YAF,angry,High
+YAF_gas_disgust.wav,tess,YAF,disgust,High
+YAF_gas_fear.wav,tess,YAF,fear,High
+YAF_gas_happy.wav,tess,YAF,happy,Moderate
+YAF_gas_neutral.wav,tess,YAF,neutral,Low
+YAF_gas_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_gas_sad.wav,tess,YAF,sad,Moderate
+YAF_gaze_angry.wav,tess,YAF,angry,High
+YAF_gaze_disgust.wav,tess,YAF,disgust,High
+YAF_gaze_fear.wav,tess,YAF,fear,High
+YAF_gaze_happy.wav,tess,YAF,happy,Moderate
+YAF_gaze_neutral.wav,tess,YAF,neutral,Low
+YAF_gaze_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_gaze_sad.wav,tess,YAF,sad,Moderate
+YAF_germ_angry.wav,tess,YAF,angry,High
+YAF_germ_disgust.wav,tess,YAF,disgust,High
+YAF_germ_fear.wav,tess,YAF,fear,High
+YAF_germ_happy.wav,tess,YAF,happy,Moderate
+YAF_germ_neutral.wav,tess,YAF,neutral,Low
+YAF_germ_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_germ_sad.wav,tess,YAF,sad,Moderate
+YAF_get_angry.wav,tess,YAF,angry,High
+YAF_get_disgust.wav,tess,YAF,disgust,High
+YAF_get_fear.wav,tess,YAF,fear,High
+YAF_get_happy.wav,tess,YAF,happy,Moderate
+YAF_get_neutral.wav,tess,YAF,neutral,Low
+YAF_get_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_get_sad.wav,tess,YAF,sad,Moderate
+YAF_gin_angry.wav,tess,YAF,angry,High
+YAF_gin_disgust.wav,tess,YAF,disgust,High
+YAF_gin_fear.wav,tess,YAF,fear,High
+YAF_gin_happy.wav,tess,YAF,happy,Moderate
+YAF_gin_neutral.wav,tess,YAF,neutral,Low
+YAF_gin_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_gin_sad.wav,tess,YAF,sad,Moderate
+YAF_goal_angry.wav,tess,YAF,angry,High
+YAF_goal_disgust.wav,tess,YAF,disgust,High
+YAF_goal_fear.wav,tess,YAF,fear,High
+YAF_goal_happy.wav,tess,YAF,happy,Moderate
+YAF_goal_neutral.wav,tess,YAF,neutral,Low
+YAF_goal_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_goal_sad.wav,tess,YAF,sad,Moderate
+YAF_good_angry.wav,tess,YAF,angry,High
+YAF_good_disgust.wav,tess,YAF,disgust,High
+YAF_good_fear.wav,tess,YAF,fear,High
+YAF_good_happy.wav,tess,YAF,happy,Moderate
+YAF_good_neutral.wav,tess,YAF,neutral,Low
+YAF_good_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_good_sad.wav,tess,YAF,sad,Moderate
+YAF_goose_angry.wav,tess,YAF,angry,High
+YAF_goose_disgust.wav,tess,YAF,disgust,High
+YAF_goose_fear.wav,tess,YAF,fear,High
+YAF_goose_happy.wav,tess,YAF,happy,Moderate
+YAF_goose_neutral.wav,tess,YAF,neutral,Low
+YAF_goose_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_goose_sad.wav,tess,YAF,sad,Moderate
+YAF_gun_angry.wav,tess,YAF,angry,High
+YAF_gun_disgust.wav,tess,YAF,disgust,High
+YAF_gun_fear.wav,tess,YAF,fear,High
+YAF_gun_happy.wav,tess,YAF,happy,Moderate
+YAF_gun_neutral.wav,tess,YAF,neutral,Low
+YAF_gun_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_gun_sad.wav,tess,YAF,sad,Moderate
+YAF_half_angry.wav,tess,YAF,angry,High
+YAF_half_disgust.wav,tess,YAF,disgust,High
+YAF_half_fear.wav,tess,YAF,fear,High
+YAF_half_happy.wav,tess,YAF,happy,Moderate
+YAF_half_neutral.wav,tess,YAF,neutral,Low
+YAF_half_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_half_sad.wav,tess,YAF,sad,Moderate
+YAF_hall_angry.wav,tess,YAF,angry,High
+YAF_hall_disgust.wav,tess,YAF,disgust,High
+YAF_hall_fear.wav,tess,YAF,fear,High
+YAF_hall_happy.wav,tess,YAF,happy,Moderate
+YAF_hall_neutral.wav,tess,YAF,neutral,Low
+YAF_hall_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_hall_sad.wav,tess,YAF,sad,Moderate
+YAF_hash_angry.wav,tess,YAF,angry,High
+YAF_hash_disgust.wav,tess,YAF,disgust,High
+YAF_hash_fear.wav,tess,YAF,fear,High
+YAF_hash_happy.wav,tess,YAF,happy,Moderate
+YAF_hash_neutral.wav,tess,YAF,neutral,Low
+YAF_hash_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_hash_sad.wav,tess,YAF,sad,Moderate
+YAF_hate_angry.wav,tess,YAF,angry,High
+YAF_hate_disgust.wav,tess,YAF,disgust,High
+YAF_hate_fear.wav,tess,YAF,fear,High
+YAF_hate_happy.wav,tess,YAF,happy,Moderate
+YAF_hate_neutral.wav,tess,YAF,neutral,Low
+YAF_hate_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_hate_sad.wav,tess,YAF,sad,Moderate
+YAF_have_angry.wav,tess,YAF,angry,High
+YAF_have_disgust.wav,tess,YAF,disgust,High
+YAF_have_fear.wav,tess,YAF,fear,High
+YAF_have_happy.wav,tess,YAF,happy,Moderate
+YAF_have_neutral.wav,tess,YAF,neutral,Low
+YAF_have_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_have_sad.wav,tess,YAF,sad,Moderate
+YAF_haze_angry.wav,tess,YAF,angry,High
+YAF_haze_disgust.wav,tess,YAF,disgust,High
+YAF_haze_fear.wav,tess,YAF,fear,High
+YAF_haze_happy.wav,tess,YAF,happy,Moderate
+YAF_haze_neutral.wav,tess,YAF,neutral,Low
+YAF_haze_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_haze_sad.wav,tess,YAF,sad,Moderate
+YAF_hire_angry.wav,tess,YAF,angry,High
+YAF_hire_disgust.wav,tess,YAF,disgust,High
+YAF_hire_fear.wav,tess,YAF,fear,High
+YAF_hire_happy.wav,tess,YAF,happy,Moderate
+YAF_hire_neutral.wav,tess,YAF,neutral,Low
+YAF_hire_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_hire_sad.wav,tess,YAF,sad,Moderate
+YAF_hit_angry.wav,tess,YAF,angry,High
+YAF_hit_disgust.wav,tess,YAF,disgust,High
+YAF_hit_fear.wav,tess,YAF,fear,High
+YAF_hit_happy.wav,tess,YAF,happy,Moderate
+YAF_hit_neutral.wav,tess,YAF,neutral,Low
+YAF_hit_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_hit_sad.wav,tess,YAF,sad,Moderate
+YAF_hole_angry.wav,tess,YAF,angry,High
+YAF_hole_disgust.wav,tess,YAF,disgust,High
+YAF_hole_fear.wav,tess,YAF,fear,High
+YAF_hole_happy.wav,tess,YAF,happy,Moderate
+YAF_hole_neutral.wav,tess,YAF,neutral,Low
+YAF_hole_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_hole_sad.wav,tess,YAF,sad,Moderate
+YAF_home_angry.wav,tess,YAF,angry,High
+YAF_home_disgust.wav,tess,YAF,disgust,High
+YAF_home_fear.wav,tess,YAF,fear,High
+YAF_home_happy.wav,tess,YAF,happy,Moderate
+YAF_home_neutral.wav,tess,YAF,neutral,Low
+YAF_home_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_home_sad.wav,tess,YAF,sad,Moderate
+YAF_hurl_angry.wav,tess,YAF,angry,High
+YAF_hurl_disgust.wav,tess,YAF,disgust,High
+YAF_hurl_fear.wav,tess,YAF,fear,High
+YAF_hurl_happy.wav,tess,YAF,happy,Moderate
+YAF_hurl_neutral.wav,tess,YAF,neutral,Low
+YAF_hurl_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_hurl_sad.wav,tess,YAF,sad,Moderate
+YAF_hush_angry.wav,tess,YAF,angry,High
+YAF_hush_disgust.wav,tess,YAF,disgust,High
+YAF_hush_fear.wav,tess,YAF,fear,High
+YAF_hush_happy.wav,tess,YAF,happy,Moderate
+YAF_hush_neutral.wav,tess,YAF,neutral,Low
+YAF_hush_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_hush_sad.wav,tess,YAF,sad,Moderate
+YAF_jail_angry.wav,tess,YAF,angry,High
+YAF_jail_disgust.wav,tess,YAF,disgust,High
+YAF_jail_fear.wav,tess,YAF,fear,High
+YAF_jail_happy.wav,tess,YAF,happy,Moderate
+YAF_jail_neutral.wav,tess,YAF,neutral,Low
+YAF_jail_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_jail_sad.wav,tess,YAF,sad,Moderate
+YAF_jar_angry.wav,tess,YAF,angry,High
+YAF_jar_disgust.wav,tess,YAF,disgust,High
+YAF_jar_fear.wav,tess,YAF,fear,High
+YAF_jar_happy.wav,tess,YAF,happy,Moderate
+YAF_jar_neutral.wav,tess,YAF,neutral,Low
+YAF_jar_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_jar_sad.wav,tess,YAF,sad,Moderate
+YAF_join_angry.wav,tess,YAF,angry,High
+YAF_join_disgust.wav,tess,YAF,disgust,High
+YAF_join_fear.wav,tess,YAF,fear,High
+YAF_join_happy.wav,tess,YAF,happy,Moderate
+YAF_join_neutral.wav,tess,YAF,neutral,Low
+YAF_join_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_join_sad.wav,tess,YAF,sad,Moderate
+YAF_judge_angry.wav,tess,YAF,angry,High
+YAF_judge_disgust.wav,tess,YAF,disgust,High
+YAF_judge_fear.wav,tess,YAF,fear,High
+YAF_judge_happy.wav,tess,YAF,happy,Moderate
+YAF_judge_neutral.wav,tess,YAF,neutral,Low
+YAF_judge_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_judge_sad.wav,tess,YAF,sad,Moderate
+YAF_jug_angry.wav,tess,YAF,angry,High
+YAF_jug_disgust.wav,tess,YAF,disgust,High
+YAF_jug_fear.wav,tess,YAF,fear,High
+YAF_jug_happy.wav,tess,YAF,happy,Moderate
+YAF_jug_neutral.wav,tess,YAF,neutral,Low
+YAF_jug_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_jug_sad.wav,tess,YAF,sad,Moderate
+YAF_juice_angry.wav,tess,YAF,angry,High
+YAF_juice_disgust.wav,tess,YAF,disgust,High
+YAF_juice_fear.wav,tess,YAF,fear,High
+YAF_juice_happy.wav,tess,YAF,happy,Moderate
+YAF_juice_neutral.wav,tess,YAF,neutral,Low
+YAF_juice_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_juice_sad.wav,tess,YAF,sad,Moderate
+YAF_keen_angry.wav,tess,YAF,angry,High
+YAF_keen_disgust.wav,tess,YAF,disgust,High
+YAF_keen_fear.wav,tess,YAF,fear,High
+YAF_keen_happy.wav,tess,YAF,happy,Moderate
+YAF_keen_neutral.wav,tess,YAF,neutral,Low
+YAF_keen_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_keen_sad.wav,tess,YAF,sad,Moderate
+YAF_keep_angry.wav,tess,YAF,angry,High
+YAF_keep_disgust.wav,tess,YAF,disgust,High
+YAF_keep_fear.wav,tess,YAF,fear,High
+YAF_keep_happy.wav,tess,YAF,happy,Moderate
+YAF_keep_neutral.wav,tess,YAF,neutral,Low
+YAF_keep_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_keep_sad.wav,tess,YAF,sad,Moderate
+YAF_keg_angry.wav,tess,YAF,angry,High
+YAF_keg_disgust.wav,tess,YAF,disgust,High
+YAF_keg_fear.wav,tess,YAF,fear,High
+YAF_keg_happy.wav,tess,YAF,happy,Moderate
+YAF_keg_neutral.wav,tess,YAF,neutral,Low
+YAF_keg_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_keg_sad.wav,tess,YAF,sad,Moderate
+YAF_kick_angry.wav,tess,YAF,angry,High
+YAF_kick_disgust.wav,tess,YAF,disgust,High
+YAF_kick_fear.wav,tess,YAF,fear,High
+YAF_kick_happy.wav,tess,YAF,happy,Moderate
+YAF_kick_neutral.wav,tess,YAF,neutral,Low
+YAF_kick_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_kick_sad.wav,tess,YAF,sad,Moderate
+YAF_kill_angry.wav,tess,YAF,angry,High
+YAF_kill_disgust.wav,tess,YAF,disgust,High
+YAF_kill_fear.wav,tess,YAF,fear,High
+YAF_kill_happy.wav,tess,YAF,happy,Moderate
+YAF_kill_neutral.wav,tess,YAF,neutral,Low
+YAF_kill_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_kill_sad.wav,tess,YAF,sad,Moderate
+YAF_king_angry.wav,tess,YAF,angry,High
+YAF_king_disgust.wav,tess,YAF,disgust,High
+YAF_king_fear.wav,tess,YAF,fear,High
+YAF_king_happy.wav,tess,YAF,happy,Moderate
+YAF_king_neutral.wav,tess,YAF,neutral,Low
+YAF_king_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_king_sad.wav,tess,YAF,sad,Moderate
+YAF_kite_angry.wav,tess,YAF,angry,High
+YAF_kite_disgust.wav,tess,YAF,disgust,High
+YAF_kite_fear.wav,tess,YAF,fear,High
+YAF_kite_happy.wav,tess,YAF,happy,Moderate
+YAF_kite_neutral.wav,tess,YAF,neutral,Low
+YAF_kite_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_kite_sad.wav,tess,YAF,sad,Moderate
+YAF_knock_angry.wav,tess,YAF,angry,High
+YAF_knock_disgust.wav,tess,YAF,disgust,High
+YAF_knock_fear.wav,tess,YAF,fear,High
+YAF_knock_happy.wav,tess,YAF,happy,Moderate
+YAF_knock_neutral.wav,tess,YAF,neutral,Low
+YAF_knock_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_knock_sad.wav,tess,YAF,sad,Moderate
+YAF_late_angry.wav,tess,YAF,angry,High
+YAF_late_disgust.wav,tess,YAF,disgust,High
+YAF_late_fear.wav,tess,YAF,fear,High
+YAF_late_happy.wav,tess,YAF,happy,Moderate
+YAF_late_neutral.wav,tess,YAF,neutral,Low
+YAF_late_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_late_sad.wav,tess,YAF,sad,Moderate
+YAF_laud_angry.wav,tess,YAF,angry,High
+YAF_laud_disgust.wav,tess,YAF,disgust,High
+YAF_laud_fear.wav,tess,YAF,fear,High
+YAF_laud_happy.wav,tess,YAF,happy,Moderate
+YAF_laud_neutral.wav,tess,YAF,neutral,Low
+YAF_laud_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_laud_sad.wav,tess,YAF,sad,Moderate
+YAF_lean_angry.wav,tess,YAF,angry,High
+YAF_lean_disgust.wav,tess,YAF,disgust,High
+YAF_lean_fear.wav,tess,YAF,fear,High
+YAF_lean_happy.wav,tess,YAF,happy,Moderate
+YAF_lean_neutral.wav,tess,YAF,neutral,Low
+YAF_lean_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_lean_sad.wav,tess,YAF,sad,Moderate
+YAF_learn_angry.wav,tess,YAF,angry,High
+YAF_learn_disgust.wav,tess,YAF,disgust,High
+YAF_learn_fear.wav,tess,YAF,fear,High
+YAF_learn_happy.wav,tess,YAF,happy,Moderate
+YAF_learn_neutral.wav,tess,YAF,neutral,Low
+YAF_learn_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_learn_sad.wav,tess,YAF,sad,Moderate
+YAF_lease_angry.wav,tess,YAF,angry,High
+YAF_lease_disgust.wav,tess,YAF,disgust,High
+YAF_lease_fear.wav,tess,YAF,fear,High
+YAF_lease_happy.wav,tess,YAF,happy,Moderate
+YAF_lease_neutral.wav,tess,YAF,neutral,Low
+YAF_lease_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_lease_sad.wav,tess,YAF,sad,Moderate
+YAF_lid_angry.wav,tess,YAF,angry,High
+YAF_lid_disgust.wav,tess,YAF,disgust,High
+YAF_lid_fear.wav,tess,YAF,fear,High
+YAF_lid_happy.wav,tess,YAF,happy,Moderate
+YAF_lid_neutral.wav,tess,YAF,neutral,Low
+YAF_lid_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_lid_sad.wav,tess,YAF,sad,Moderate
+YAF_life_angry.wav,tess,YAF,angry,High
+YAF_life_disgust.wav,tess,YAF,disgust,High
+YAF_life_fear.wav,tess,YAF,fear,High
+YAF_life_happy.wav,tess,YAF,happy,Moderate
+YAF_life_neutral.wav,tess,YAF,neutral,Low
+YAF_life_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_life_sad.wav,tess,YAF,sad,Moderate
+YAF_limb_angry.wav,tess,YAF,angry,High
+YAF_limb_disgust.wav,tess,YAF,disgust,High
+YAF_limb_fear.wav,tess,YAF,fear,High
+YAF_limb_happy.wav,tess,YAF,happy,Moderate
+YAF_limb_neutral.wav,tess,YAF,neutral,Low
+YAF_limb_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_limb_sad.wav,tess,YAF,sad,Moderate
+YAF_live_angry.wav,tess,YAF,angry,High
+YAF_live_disgust.wav,tess,YAF,disgust,High
+YAF_live_fear.wav,tess,YAF,fear,High
+YAF_live_happy.wav,tess,YAF,happy,Moderate
+YAF_live_neutral.wav,tess,YAF,neutral,Low
+YAF_live_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_live_sad.wav,tess,YAF,sad,Moderate
+YAF_loaf_angry.wav,tess,YAF,angry,High
+YAF_loaf_disgust.wav,tess,YAF,disgust,High
+YAF_loaf_fear.wav,tess,YAF,fear,High
+YAF_loaf_happy.wav,tess,YAF,happy,Moderate
+YAF_loaf_neutral.wav,tess,YAF,neutral,Low
+YAF_loaf_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_loaf_sad.wav,tess,YAF,sad,Moderate
+YAF_long_angry.wav,tess,YAF,angry,High
+YAF_long_disgust.wav,tess,YAF,disgust,High
+YAF_long_fear.wav,tess,YAF,fear,High
+YAF_long_happy.wav,tess,YAF,happy,Moderate
+YAF_long_neutral.wav,tess,YAF,neutral,Low
+YAF_long_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_long_sad.wav,tess,YAF,sad,Moderate
+YAF_lore_angry.wav,tess,YAF,angry,High
+YAF_lore_disgust.wav,tess,YAF,disgust,High
+YAF_lore_fear.wav,tess,YAF,fear,High
+YAF_lore_happy.wav,tess,YAF,happy,Moderate
+YAF_lore_neutral.wav,tess,YAF,neutral,Low
+YAF_lore_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_lore_sad.wav,tess,YAF,sad,Moderate
+YAF_lose_angry.wav,tess,YAF,angry,High
+YAF_lose_disgust.wav,tess,YAF,disgust,High
+YAF_lose_fear.wav,tess,YAF,fear,High
+YAF_lose_happy.wav,tess,YAF,happy,Moderate
+YAF_lose_neutral.wav,tess,YAF,neutral,Low
+YAF_lose_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_lose_sad.wav,tess,YAF,sad,Moderate
+YAF_lot_angry.wav,tess,YAF,angry,High
+YAF_lot_disgust.wav,tess,YAF,disgust,High
+YAF_lot_fear.wav,tess,YAF,fear,High
+YAF_lot_happy.wav,tess,YAF,happy,Moderate
+YAF_lot_neutral.wav,tess,YAF,neutral,Low
+YAF_lot_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_lot_sad.wav,tess,YAF,sad,Moderate
+YAF_love_angry.wav,tess,YAF,angry,High
+YAF_love_disgust.wav,tess,YAF,disgust,High
+YAF_love_fear.wav,tess,YAF,fear,High
+YAF_love_happy.wav,tess,YAF,happy,Moderate
+YAF_love_neutral.wav,tess,YAF,neutral,Low
+YAF_love_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_love_sad.wav,tess,YAF,sad,Moderate
+YAF_luck_angry.wav,tess,YAF,angry,High
+YAF_luck_disgust.wav,tess,YAF,disgust,High
+YAF_luck_fear.wav,tess,YAF,fear,High
+YAF_luck_happy.wav,tess,YAF,happy,Moderate
+YAF_luck_neutral.wav,tess,YAF,neutral,Low
+YAF_luck_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_luck_sad.wav,tess,YAF,sad,Moderate
+YAF_make_angry.wav,tess,YAF,angry,High
+YAF_make_disgust.wav,tess,YAF,disgust,High
+YAF_make_fear.wav,tess,YAF,fear,High
+YAF_make_happy.wav,tess,YAF,happy,Moderate
+YAF_make_neutral.wav,tess,YAF,neutral,Low
+YAF_make_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_make_sad.wav,tess,YAF,sad,Moderate
+YAF_match_angry.wav,tess,YAF,angry,High
+YAF_match_disgust.wav,tess,YAF,disgust,High
+YAF_match_fear.wav,tess,YAF,fear,High
+YAF_match_happy.wav,tess,YAF,happy,Moderate
+YAF_match_neutral.wav,tess,YAF,neutral,Low
+YAF_match_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_match_sad.wav,tess,YAF,sad,Moderate
+YAF_merge_angry.wav,tess,YAF,angry,High
+YAF_merge_disgust.wav,tess,YAF,disgust,High
+YAF_merge_fear.wav,tess,YAF,fear,High
+YAF_merge_happy.wav,tess,YAF,happy,Moderate
+YAF_merge_neutral.wav,tess,YAF,neutral,Low
+YAF_merge_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_merge_sad.wav,tess,YAF,sad,Moderate
+YAF_mess_angry.wav,tess,YAF,angry,High
+YAF_mess_disgust.wav,tess,YAF,disgust,High
+YAF_mess_fear.wav,tess,YAF,fear,High
+YAF_mess_happy.wav,tess,YAF,happy,Moderate
+YAF_mess_neutral.wav,tess,YAF,neutral,Low
+YAF_mess_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_mess_sad.wav,tess,YAF,sad,Moderate
+YAF_met_angry.wav,tess,YAF,angry,High
+YAF_met_disgust.wav,tess,YAF,disgust,High
+YAF_met_fear.wav,tess,YAF,fear,High
+YAF_met_happy.wav,tess,YAF,happy,Moderate
+YAF_met_neutral.wav,tess,YAF,neutral,Low
+YAF_met_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_met_sad.wav,tess,YAF,sad,Moderate
+YAF_mill_angry.wav,tess,YAF,angry,High
+YAF_mill_disgust.wav,tess,YAF,disgust,High
+YAF_mill_fear.wav,tess,YAF,fear,High
+YAF_mill_happy.wav,tess,YAF,happy,Moderate
+YAF_mill_neutral.wav,tess,YAF,neutral,Low
+YAF_mill_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_mill_sad.wav,tess,YAF,sad,Moderate
+YAF_mob_angry.wav,tess,YAF,angry,High
+YAF_mob_disgust.wav,tess,YAF,disgust,High
+YAF_mob_fear.wav,tess,YAF,fear,High
+YAF_mob_happy.wav,tess,YAF,happy,Moderate
+YAF_mob_neutral.wav,tess,YAF,neutral,Low
+YAF_mob_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_mob_sad.wav,tess,YAF,sad,Moderate
+YAF_mode_angry.wav,tess,YAF,angry,High
+YAF_mode_disgust.wav,tess,YAF,disgust,High
+YAF_mode_fear.wav,tess,YAF,fear,High
+YAF_mode_happy.wav,tess,YAF,happy,Moderate
+YAF_mode_neutral.wav,tess,YAF,neutral,Low
+YAF_mode_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_mode_sad.wav,tess,YAF,sad,Moderate
+YAF_mood_angry.wav,tess,YAF,angry,High
+YAF_mood_disgust.wav,tess,YAF,disgust,High
+YAF_mood_fear.wav,tess,YAF,fear,High
+YAF_mood_happy.wav,tess,YAF,happy,Moderate
+YAF_mood_neutral.wav,tess,YAF,neutral,Low
+YAF_mood_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_mood_sad.wav,tess,YAF,sad,Moderate
+YAF_moon_angry.wav,tess,YAF,angry,High
+YAF_moon_disgust.wav,tess,YAF,disgust,High
+YAF_moon_fear.wav,tess,YAF,fear,High
+YAF_moon_happy.wav,tess,YAF,happy,Moderate
+YAF_moon_neutral.wav,tess,YAF,neutral,Low
+YAF_moon_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_moon_sad.wav,tess,YAF,sad,Moderate
+YAF_mop_angry.wav,tess,YAF,angry,High
+YAF_mop_disgust.wav,tess,YAF,disgust,High
+YAF_mop_fear.wav,tess,YAF,fear,High
+YAF_mop_happy.wav,tess,YAF,happy,Moderate
+YAF_mop_neutral.wav,tess,YAF,neutral,Low
+YAF_mop_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_mop_sad.wav,tess,YAF,sad,Moderate
+YAF_mouse_angry.wav,tess,YAF,angry,High
+YAF_mouse_disgust.wav,tess,YAF,disgust,High
+YAF_mouse_fear.wav,tess,YAF,fear,High
+YAF_mouse_happy.wav,tess,YAF,happy,Moderate
+YAF_mouse_neutral.wav,tess,YAF,neutral,Low
+YAF_mouse_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_mouse_sad.wav,tess,YAF,sad,Moderate
+YAF_nag_angry.wav,tess,YAF,angry,High
+YAF_nag_disgust.wav,tess,YAF,disgust,High
+YAF_nag_fear.wav,tess,YAF,fear,High
+YAF_nag_happy.wav,tess,YAF,happy,Moderate
+YAF_nag_neutral.wav,tess,YAF,neutral,Low
+YAF_nag_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_nag_sad.wav,tess,YAF,sad,Moderate
+YAF_name_angry.wav,tess,YAF,angry,High
+YAF_name_disgust.wav,tess,YAF,disgust,High
+YAF_name_fear.wav,tess,YAF,fear,High
+YAF_name_happy.wav,tess,YAF,happy,Moderate
+YAF_name_neutral.wav,tess,YAF,neutral,Low
+YAF_name_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_name_sad.wav,tess,YAF,sad,Moderate
+YAF_near_angry.wav,tess,YAF,angry,High
+YAF_near_disgust.wav,tess,YAF,disgust,High
+YAF_near_fear.wav,tess,YAF,fear,High
+YAF_near_happy.wav,tess,YAF,happy,Moderate
+YAF_near_neutral.wav,tess,YAF,neutral,Low
+YAF_near_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_near_sad.wav,tess,YAF,sad,Moderate
+YAF_neat_angry.wav,tess,YAF,angry,High
+YAF_neat_disgust.wav,tess,YAF,disgust,High
+YAF_neat_fear.wav,tess,YAF,fear,High
+YAF_neat_happy.wav,tess,YAF,happy,Moderate
+YAF_neat_neutral.wav,tess,YAF,neutral,Low
+YAF_neat_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_neat_sad.wav,tess,YAF,sad,Moderate
+YAF_nice_angry.wav,tess,YAF,angry,High
+YAF_nice_disgust.wav,tess,YAF,disgust,High
+YAF_nice_fear.wav,tess,YAF,fear,High
+YAF_nice_happy.wav,tess,YAF,happy,Moderate
+YAF_nice_neutral.wav,tess,YAF,neutral,Low
+YAF_nice_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_nice_sad.wav,tess,YAF,sad,Moderate
+YAF_note_angry.wav,tess,YAF,angry,High
+YAF_note_disgust.wav,tess,YAF,disgust,High
+YAF_note_fear.wav,tess,YAF,fear,High
+YAF_note_happy.wav,tess,YAF,happy,Moderate
+YAF_note_neutral.wav,tess,YAF,neutral,Low
+YAF_note_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_note_sad.wav,tess,YAF,sad,Moderate
+YAF_numb_angry.wav,tess,YAF,angry,High
+YAF_numb_disgust.wav,tess,YAF,disgust,High
+YAF_numb_fear.wav,tess,YAF,fear,High
+YAF_numb_happy.wav,tess,YAF,happy,Moderate
+YAF_numb_neutral.wav,tess,YAF,neutral,Low
+YAF_numb_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_numb_sad.wav,tess,YAF,sad,Moderate
+YAF_pad_angry.wav,tess,YAF,angry,High
+YAF_pad_disgust.wav,tess,YAF,disgust,High
+YAF_pad_fear.wav,tess,YAF,fear,High
+YAF_pad_happy.wav,tess,YAF,happy,Moderate
+YAF_pad_neutral.wav,tess,YAF,neutral,Low
+YAF_pad_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_pad_sad.wav,tess,YAF,sad,Moderate
+YAF_page_angry.wav,tess,YAF,angry,High
+YAF_page_disgust.wav,tess,YAF,disgust,High
+YAF_page_fear.wav,tess,YAF,fear,High
+YAF_page_happy.wav,tess,YAF,happy,Moderate
+YAF_page_neutral.wav,tess,YAF,neutral,Low
+YAF_page_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_page_sad.wav,tess,YAF,sad,Moderate
+YAF_pain_angry.wav,tess,YAF,angry,High
+YAF_pain_disgust.wav,tess,YAF,disgust,High
+YAF_pain_fear.wav,tess,YAF,fear,High
+YAF_pain_happy.wav,tess,YAF,happy,Moderate
+YAF_pain_neutral.wav,tess,YAF,neutral,Low
+YAF_pain_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_pain_sad.wav,tess,YAF,sad,Moderate
+YAF_pass_angry.wav,tess,YAF,angry,High
+YAF_pass_disgust.wav,tess,YAF,disgust,High
+YAF_pass_fear.wav,tess,YAF,fear,High
+YAF_pass_happy.wav,tess,YAF,happy,Moderate
+YAF_pass_neutral.wav,tess,YAF,neutral,Low
+YAF_pass_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_pass_sad.wav,tess,YAF,sad,Moderate
+YAF_pearl_angry.wav,tess,YAF,angry,High
+YAF_pearl_disgust.wav,tess,YAF,disgust,High
+YAF_pearl_fear.wav,tess,YAF,fear,High
+YAF_pearl_happy.wav,tess,YAF,happy,Moderate
+YAF_pearl_neutral.wav,tess,YAF,neutral,Low
+YAF_pearl_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_pearl_sad.wav,tess,YAF,sad,Moderate
+YAF_peg_angry.wav,tess,YAF,angry,High
+YAF_peg_disgust.wav,tess,YAF,disgust,High
+YAF_peg_fear.wav,tess,YAF,fear,High
+YAF_peg_happy.wav,tess,YAF,happy,Moderate
+YAF_peg_neutral.wav,tess,YAF,neutral,Low
+YAF_peg_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_peg_sad.wav,tess,YAF,sad,Moderate
+YAF_perch_angry.wav,tess,YAF,angry,High
+YAF_perch_disgust.wav,tess,YAF,disgust,High
+YAF_perch_fear.wav,tess,YAF,fear,High
+YAF_perch_happy.wav,tess,YAF,happy,Moderate
+YAF_perch_neutral.wav,tess,YAF,neutral,Low
+YAF_perch_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_perch_sad.wav,tess,YAF,sad,Moderate
+YAF_phone_angry.wav,tess,YAF,angry,High
+YAF_phone_disgust.wav,tess,YAF,disgust,High
+YAF_phone_fear.wav,tess,YAF,fear,High
+YAF_phone_happy.wav,tess,YAF,happy,Moderate
+YAF_phone_neutral.wav,tess,YAF,neutral,Low
+YAF_phone_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_phone_sad.wav,tess,YAF,sad,Moderate
+YAF_pick_angry.wav,tess,YAF,angry,High
+YAF_pick_disgust.wav,tess,YAF,disgust,High
+YAF_pick_fear.wav,tess,YAF,fear,High
+YAF_pick_happy.wav,tess,YAF,happy,Moderate
+YAF_pick_neutral.wav,tess,YAF,neutral,Low
+YAF_pick_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_pick_sad.wav,tess,YAF,sad,Moderate
+YAF_pike_angry.wav,tess,YAF,angry,High
+YAF_pike_disgust.wav,tess,YAF,disgust,High
+YAF_pike_fear.wav,tess,YAF,fear,High
+YAF_pike_happy.wav,tess,YAF,happy,Moderate
+YAF_pike_neutral.wav,tess,YAF,neutral,Low
+YAF_pike_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_pike_sad.wav,tess,YAF,sad,Moderate
+YAF_pole_angry.wav,tess,YAF,angry,High
+YAF_pole_disgust.wav,tess,YAF,disgust,High
+YAF_pole_fear.wav,tess,YAF,fear,High
+YAF_pole_happy.wav,tess,YAF,happy,Moderate
+YAF_pole_neutral.wav,tess,YAF,neutral,Low
+YAF_pole_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_pole_sad.wav,tess,YAF,sad,Moderate
+YAF_pool_angry.wav,tess,YAF,angry,High
+YAF_pool_disgust.wav,tess,YAF,disgust,High
+YAF_pool_fear.wav,tess,YAF,fear,High
+YAF_pool_happy.wav,tess,YAF,happy,Moderate
+YAF_pool_neutral.wav,tess,YAF,neutral,Low
+YAF_pool_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_pool_sad.wav,tess,YAF,sad,Moderate
+YAF_puff_angry.wav,tess,YAF,angry,High
+YAF_puff_disgust.wav,tess,YAF,disgust,High
+YAF_puff_fear.wav,tess,YAF,fear,High
+YAF_puff_happy.wav,tess,YAF,happy,Moderate
+YAF_puff_neutral.wav,tess,YAF,neutral,Low
+YAF_puff_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_puff_sad.wav,tess,YAF,sad,Moderate
+YAF_rag_angry.wav,tess,YAF,angry,High
+YAF_rag_disgust.wav,tess,YAF,disgust,High
+YAF_rag_fear.wav,tess,YAF,fear,High
+YAF_rag_happy.wav,tess,YAF,happy,Moderate
+YAF_rag_neutral.wav,tess,YAF,neutral,Low
+YAF_rag_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_rag_sad.wav,tess,YAF,sad,Moderate
+YAF_raid_angry.wav,tess,YAF,angry,High
+YAF_raid_disgust.wav,tess,YAF,disgust,High
+YAF_raid_fear.wav,tess,YAF,fear,High
+YAF_raid_happy.wav,tess,YAF,happy,Moderate
+YAF_raid_neutral.wav,tess,YAF,neutral,Low
+YAF_raid_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_raid_sad.wav,tess,YAF,sad,Moderate
+YAF_rain_angry.wav,tess,YAF,angry,High
+YAF_rain_disgust.wav,tess,YAF,disgust,High
+YAF_rain_fear.wav,tess,YAF,fear,High
+YAF_rain_happy.wav,tess,YAF,happy,Moderate
+YAF_rain_neutral.wav,tess,YAF,neutral,Low
+YAF_rain_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_rain_sad.wav,tess,YAF,sad,Moderate
+YAF_raise_angry.wav,tess,YAF,angry,High
+YAF_raise_disgust.wav,tess,YAF,disgust,High
+YAF_raise_fear.wav,tess,YAF,fear,High
+YAF_raise_happy.wav,tess,YAF,happy,Moderate
+YAF_raise_neutral.wav,tess,YAF,neutral,Low
+YAF_raise_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_raise_sad.wav,tess,YAF,sad,Moderate
+YAF_rat_angry.wav,tess,YAF,angry,High
+YAF_rat_disgust.wav,tess,YAF,disgust,High
+YAF_rat_fear.wav,tess,YAF,fear,High
+YAF_rat_happy.wav,tess,YAF,happy,Moderate
+YAF_rat_neutral.wav,tess,YAF,neutral,Low
+YAF_rat_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_rat_sad.wav,tess,YAF,sad,Moderate
+YAF_reach_angry.wav,tess,YAF,angry,High
+YAF_reach_disgust.wav,tess,YAF,disgust,High
+YAF_reach_fear.wav,tess,YAF,fear,High
+YAF_reach_happy.wav,tess,YAF,happy,Moderate
+YAF_reach_neutral.wav,tess,YAF,neutral,Low
+YAF_reach_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_reach_sad.wav,tess,YAF,sad,Moderate
+YAF_read_angry.wav,tess,YAF,angry,High
+YAF_read_disgust.wav,tess,YAF,disgust,High
+YAF_read_fear.wav,tess,YAF,fear,High
+YAF_read_happy.wav,tess,YAF,happy,Moderate
+YAF_read_neutral.wav,tess,YAF,neutral,Low
+YAF_read_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_read_sad.wav,tess,YAF,sad,Moderate
+YAF_red_angry.wav,tess,YAF,angry,High
+YAF_red_disgust.wav,tess,YAF,disgust,High
+YAF_red_fear.wav,tess,YAF,fear,High
+YAF_red_happy.wav,tess,YAF,happy,Moderate
+YAF_red_neutral.wav,tess,YAF,neutral,Low
+YAF_red_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_red_sad.wav,tess,YAF,sad,Moderate
+YAF_ring_angry.wav,tess,YAF,angry,High
+YAF_ring_disgust.wav,tess,YAF,disgust,High
+YAF_ring_fear.wav,tess,YAF,fear,High
+YAF_ring_happy.wav,tess,YAF,happy,Moderate
+YAF_ring_neutral.wav,tess,YAF,neutral,Low
+YAF_ring_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_ring_sad.wav,tess,YAF,sad,Moderate
+YAF_ripe_angry.wav,tess,YAF,angry,High
+YAF_ripe_disgust.wav,tess,YAF,disgust,High
+YAF_ripe_fear.wav,tess,YAF,fear,High
+YAF_ripe_happy.wav,tess,YAF,happy,Moderate
+YAF_ripe_neutral.wav,tess,YAF,neutral,Low
+YAF_ripe_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_ripe_sad.wav,tess,YAF,sad,Moderate
+YAF_road_angry.wav,tess,YAF,angry,High
+YAF_road_disgust.wav,tess,YAF,disgust,High
+YAF_road_fear.wav,tess,YAF,fear,High
+YAF_road_happy.wav,tess,YAF,happy,Moderate
+YAF_road_neutral.wav,tess,YAF,neutral,Low
+YAF_road_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_road_sad.wav,tess,YAF,sad,Moderate
+YAF_room_angry.wav,tess,YAF,angry,High
+YAF_room_disgust.wav,tess,YAF,disgust,High
+YAF_room_fear.wav,tess,YAF,fear,High
+YAF_room_happy.wav,tess,YAF,happy,Moderate
+YAF_room_neutral.wav,tess,YAF,neutral,Low
+YAF_room_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_room_sad.wav,tess,YAF,sad,Moderate
+YAF_rose_angry.wav,tess,YAF,angry,High
+YAF_rose_disgust.wav,tess,YAF,disgust,High
+YAF_rose_fear.wav,tess,YAF,fear,High
+YAF_rose_happy.wav,tess,YAF,happy,Moderate
+YAF_rose_neutral.wav,tess,YAF,neutral,Low
+YAF_rose_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_rose_sad.wav,tess,YAF,sad,Moderate
+YAF_rot_angry.wav,tess,YAF,angry,High
+YAF_rot_disgust.wav,tess,YAF,disgust,High
+YAF_rot_fear.wav,tess,YAF,fear,High
+YAF_rot_happy.wav,tess,YAF,happy,Moderate
+YAF_rot_neutral.wav,tess,YAF,neutral,Low
+YAF_rot_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_rot_sad.wav,tess,YAF,sad,Moderate
+YAF_rough_angry.wav,tess,YAF,angry,High
+YAF_rough_disgust.wav,tess,YAF,disgust,High
+YAF_rough_fear.wav,tess,YAF,fear,High
+YAF_rough_happy.wav,tess,YAF,happy,Moderate
+YAF_rough_neutral.wav,tess,YAF,neutral,Low
+YAF_rough_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_rough_sad.wav,tess,YAF,sad,Moderate
+YAF_rush_angry.wav,tess,YAF,angry,High
+YAF_rush_disgust.wav,tess,YAF,disgust,High
+YAF_rush_fear.wav,tess,YAF,fear,High
+YAF_rush_happy.wav,tess,YAF,happy,Moderate
+YAF_rush_neutral.wav,tess,YAF,neutral,Low
+YAF_rush_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_rush_sad.wav,tess,YAF,sad,Moderate
+YAF_said_angry.wav,tess,YAF,angry,High
+YAF_said_disgust.wav,tess,YAF,disgust,High
+YAF_said_fear.wav,tess,YAF,fear,High
+YAF_said_happy.wav,tess,YAF,happy,Moderate
+YAF_said_neutral.wav,tess,YAF,neutral,Low
+YAF_said_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_said_sad.wav,tess,YAF,sad,Moderate
+YAF_sail_angry.wav,tess,YAF,angry,High
+YAF_sail_disgust.wav,tess,YAF,disgust,High
+YAF_sail_fear.wav,tess,YAF,fear,High
+YAF_sail_happy.wav,tess,YAF,happy,Moderate
+YAF_sail_neutral.wav,tess,YAF,neutral,Low
+YAF_sail_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_sail_sad.wav,tess,YAF,sad,Moderate
+YAF_search_angry.wav,tess,YAF,angry,High
+YAF_search_disgust.wav,tess,YAF,disgust,High
+YAF_search_fear.wav,tess,YAF,fear,High
+YAF_search_happy.wav,tess,YAF,happy,Moderate
+YAF_search_neutral.wav,tess,YAF,neutral,Low
+YAF_search_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_search_sad.wav,tess,YAF,sad,Moderate
+YAF_seize_angry.wav,tess,YAF,angry,High
+YAF_seize_disgust.wav,tess,YAF,disgust,High
+YAF_seize_fear.wav,tess,YAF,fear,High
+YAF_seize_happy.wav,tess,YAF,happy,Moderate
+YAF_seize_neutral.wav,tess,YAF,neutral,Low
+YAF_seize_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_seize_sad.wav,tess,YAF,sad,Moderate
+YAF_sell_angry.wav,tess,YAF,angry,High
+YAF_sell_disgust.wav,tess,YAF,disgust,High
+YAF_sell_fear.wav,tess,YAF,fear,High
+YAF_sell_happy.wav,tess,YAF,happy,Moderate
+YAF_sell_neutral.wav,tess,YAF,neutral,Low
+YAF_sell_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_sell_sad.wav,tess,YAF,sad,Moderate
+YAF_shack_angry.wav,tess,YAF,angry,High
+YAF_shack_disgust.wav,tess,YAF,disgust,High
+YAF_shack_fear.wav,tess,YAF,fear,High
+YAF_shack_happy.wav,tess,YAF,happy,Moderate
+YAF_shack_neutral.wav,tess,YAF,neutral,Low
+YAF_shack_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_shack_sad.wav,tess,YAF,sad,Moderate
+YAF_shall_angry.wav,tess,YAF,angry,High
+YAF_shall_disgust.wav,tess,YAF,disgust,High
+YAF_shall_fear.wav,tess,YAF,fear,High
+YAF_shall_happy.wav,tess,YAF,happy,Moderate
+YAF_shall_neutral.wav,tess,YAF,neutral,Low
+YAF_shall_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_shall_sad.wav,tess,YAF,sad,Moderate
+YAF_shawl_angry.wav,tess,YAF,angry,High
+YAF_shawl_disgust.wav,tess,YAF,disgust,High
+YAF_shawl_fear.wav,tess,YAF,fear,High
+YAF_shawl_happy.wav,tess,YAF,happy,Moderate
+YAF_shawl_neutral.wav,tess,YAF,neutral,Low
+YAF_shawl_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_shawl_sad.wav,tess,YAF,sad,Moderate
+YAF_sheep_angry.wav,tess,YAF,angry,High
+YAF_sheep_disgust.wav,tess,YAF,disgust,High
+YAF_sheep_fear.wav,tess,YAF,fear,High
+YAF_sheep_happy.wav,tess,YAF,happy,Moderate
+YAF_sheep_neutral.wav,tess,YAF,neutral,Low
+YAF_sheep_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_sheep_sad.wav,tess,YAF,sad,Moderate
+YAF_shirt_angry.wav,tess,YAF,angry,High
+YAF_shirt_disgust.wav,tess,YAF,disgust,High
+YAF_shirt_fear.wav,tess,YAF,fear,High
+YAF_shirt_happy.wav,tess,YAF,happy,Moderate
+YAF_shirt_neutral.wav,tess,YAF,neutral,Low
+YAF_shirt_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_shirt_sad.wav,tess,YAF,sad,Moderate
+YAF_should_angry.wav,tess,YAF,angry,High
+YAF_should_disgust.wav,tess,YAF,disgust,High
+YAF_should_fear.wav,tess,YAF,fear,High
+YAF_should_happy.wav,tess,YAF,happy,Moderate
+YAF_should_neutral.wav,tess,YAF,neutral,Low
+YAF_should_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_should_sad.wav,tess,YAF,sad,Moderate
+YAF_shout_angry.wav,tess,YAF,angry,High
+YAF_shout_disgust.wav,tess,YAF,disgust,High
+YAF_shout_fear.wav,tess,YAF,fear,High
+YAF_shout_happy.wav,tess,YAF,happy,Moderate
+YAF_shout_neutral.wav,tess,YAF,neutral,Low
+YAF_shout_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_shout_sad.wav,tess,YAF,sad,Moderate
+YAF_size_angry.wav,tess,YAF,angry,High
+YAF_size_disgust.wav,tess,YAF,disgust,High
+YAF_size_fear.wav,tess,YAF,fear,High
+YAF_size_happy.wav,tess,YAF,happy,Moderate
+YAF_size_neutral.wav,tess,YAF,neutral,Low
+YAF_size_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_size_sad.wav,tess,YAF,sad,Moderate
+YAF_soap_angry.wav,tess,YAF,angry,High
+YAF_soap_disgust.wav,tess,YAF,disgust,High
+YAF_soap_fear.wav,tess,YAF,fear,High
+YAF_soap_happy.wav,tess,YAF,happy,Moderate
+YAF_soap_neutral.wav,tess,YAF,neutral,Low
+YAF_soap_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_soap_sad.wav,tess,YAF,sad,Moderate
+YAF_soup_angry.wav,tess,YAF,angry,High
+YAF_soup_disgust.wav,tess,YAF,disgust,High
+YAF_soup_fear.wav,tess,YAF,fear,High
+YAF_soup_happy.wav,tess,YAF,happy,Moderate
+YAF_soup_neutral.wav,tess,YAF,neutral,Low
+YAF_soup_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_soup_sad.wav,tess,YAF,sad,Moderate
+YAF_sour_angry.wav,tess,YAF,angry,High
+YAF_sour_disgust.wav,tess,YAF,disgust,High
+YAF_sour_fear.wav,tess,YAF,fear,High
+YAF_sour_happy.wav,tess,YAF,happy,Moderate
+YAF_sour_neutral.wav,tess,YAF,neutral,Low
+YAF_sour_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_sour_sad.wav,tess,YAF,sad,Moderate
+YAF_south_angry.wav,tess,YAF,angry,High
+YAF_south_disgust.wav,tess,YAF,disgust,High
+YAF_south_fear.wav,tess,YAF,fear,High
+YAF_south_happy.wav,tess,YAF,happy,Moderate
+YAF_south_neutral.wav,tess,YAF,neutral,Low
+YAF_south_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_south_sad.wav,tess,YAF,sad,Moderate
+YAF_sub_angry.wav,tess,YAF,angry,High
+YAF_sub_disgust.wav,tess,YAF,disgust,High
+YAF_sub_fear.wav,tess,YAF,fear,High
+YAF_sub_happy.wav,tess,YAF,happy,Moderate
+YAF_sub_neutral.wav,tess,YAF,neutral,Low
+YAF_sub_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_sub_sad.wav,tess,YAF,sad,Moderate
+YAF_such_angry.wav,tess,YAF,angry,High
+YAF_such_disgust.wav,tess,YAF,disgust,High
+YAF_such_fear.wav,tess,YAF,fear,High
+YAF_such_happy.wav,tess,YAF,happy,Moderate
+YAF_such_neutral.wav,tess,YAF,neutral,Low
+YAF_such_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_such_sad.wav,tess,YAF,sad,Moderate
+YAF_sure_angry.wav,tess,YAF,angry,High
+YAF_sure_disgust.wav,tess,YAF,disgust,High
+YAF_sure_fear.wav,tess,YAF,fear,High
+YAF_sure_happy.wav,tess,YAF,happy,Moderate
+YAF_sure_neutral.wav,tess,YAF,neutral,Low
+YAF_sure_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_sure_sad.wav,tess,YAF,sad,Moderate
+YAF_take_angry.wav,tess,YAF,angry,High
+YAF_take_disgust.wav,tess,YAF,disgust,High
+YAF_take_fear.wav,tess,YAF,fear,High
+YAF_take_happy.wav,tess,YAF,happy,Moderate
+YAF_take_neutral.wav,tess,YAF,neutral,Low
+YAF_take_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_take_sad.wav,tess,YAF,sad,Moderate
+YAF_talk_angry.wav,tess,YAF,angry,High
+YAF_talk_disgust.wav,tess,YAF,disgust,High
+YAF_talk_fear.wav,tess,YAF,fear,High
+YAF_talk_happy.wav,tess,YAF,happy,Moderate
+YAF_talk_neutral.wav,tess,YAF,neutral,Low
+YAF_talk_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_talk_sad.wav,tess,YAF,sad,Moderate
+YAF_tape_angry.wav,tess,YAF,angry,High
+YAF_tape_disgust.wav,tess,YAF,disgust,High
+YAF_tape_fear.wav,tess,YAF,fear,High
+YAF_tape_happy.wav,tess,YAF,happy,Moderate
+YAF_tape_neutral.wav,tess,YAF,neutral,Low
+YAF_tape_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_tape_sad.wav,tess,YAF,sad,Moderate
+YAF_team_angry.wav,tess,YAF,angry,High
+YAF_team_disgust.wav,tess,YAF,disgust,High
+YAF_team_fear.wav,tess,YAF,fear,High
+YAF_team_happy.wav,tess,YAF,happy,Moderate
+YAF_team_neutral.wav,tess,YAF,neutral,Low
+YAF_team_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_team_sad.wav,tess,YAF,sad,Moderate
+YAF_tell_angry.wav,tess,YAF,angry,High
+YAF_tell_disgust.wav,tess,YAF,disgust,High
+YAF_tell_fear.wav,tess,YAF,fear,High
+YAF_tell_happy.wav,tess,YAF,happy,Moderate
+YAF_tell_neutral.wav,tess,YAF,neutral,Low
+YAF_tell_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_tell_sad.wav,tess,YAF,sad,Moderate
+YAF_thin_angry.wav,tess,YAF,angry,High
+YAF_thin_disgust.wav,tess,YAF,disgust,High
+YAF_thin_fear.wav,tess,YAF,fear,High
+YAF_thin_happy.wav,tess,YAF,happy,Moderate
+YAF_thin_neutral.wav,tess,YAF,neutral,Low
+YAF_thin_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_thin_sad.wav,tess,YAF,sad,Moderate
+YAF_third_angry.wav,tess,YAF,angry,High
+YAF_third_disgust.wav,tess,YAF,disgust,High
+YAF_third_fear.wav,tess,YAF,fear,High
+YAF_third_happy.wav,tess,YAF,happy,Moderate
+YAF_third_neutral.wav,tess,YAF,neutral,Low
+YAF_third_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_third_sad.wav,tess,YAF,sad,Moderate
+YAF_thought_angry.wav,tess,YAF,angry,High
+YAF_thought_disgust.wav,tess,YAF,disgust,High
+YAF_thought_fear.wav,tess,YAF,fear,High
+YAF_thought_happy.wav,tess,YAF,happy,Moderate
+YAF_thought_neutral.wav,tess,YAF,neutral,Low
+YAF_thought_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_thought_sad.wav,tess,YAF,sad,Moderate
+YAF_thumb_angry.wav,tess,YAF,angry,High
+YAF_thumb_disgust.wav,tess,YAF,disgust,High
+YAF_thumb_fear.wav,tess,YAF,fear,High
+YAF_thumb_happy.wav,tess,YAF,happy,Moderate
+YAF_thumb_neutral.wav,tess,YAF,neutral,Low
+YAF_thumb_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_thumb_sad.wav,tess,YAF,sad,Moderate
+YAF_time_angry.wav,tess,YAF,angry,High
+YAF_time_disgust.wav,tess,YAF,disgust,High
+YAF_time_fear.wav,tess,YAF,fear,High
+YAF_time_happy.wav,tess,YAF,happy,Moderate
+YAF_time_neutral.wav,tess,YAF,neutral,Low
+YAF_time_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_time_sad.wav,tess,YAF,sad,Moderate
+YAF_tip_angry.wav,tess,YAF,angry,High
+YAF_tip_disgust.wav,tess,YAF,disgust,High
+YAF_tip_fear.wav,tess,YAF,fear,High
+YAF_tip_happy.wav,tess,YAF,happy,Moderate
+YAF_tip_neutral.wav,tess,YAF,neutral,Low
+YAF_tip_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_tip_sad.wav,tess,YAF,sad,Moderate
+YAF_tire_angry.wav,tess,YAF,angry,High
+YAF_tire_disgust.wav,tess,YAF,disgust,High
+YAF_tire_fear.wav,tess,YAF,fear,High
+YAF_tire_happy.wav,tess,YAF,happy,Moderate
+YAF_tire_neutral.wav,tess,YAF,neutral,Low
+YAF_tire_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_tire_sad.wav,tess,YAF,sad,Moderate
+YAF_ton_angry.wav,tess,YAF,angry,High
+YAF_ton_disgust.wav,tess,YAF,disgust,High
+YAF_ton_fear.wav,tess,YAF,fear,High
+YAF_ton_happy.wav,tess,YAF,happy,Moderate
+YAF_ton_neutral.wav,tess,YAF,neutral,Low
+YAF_ton_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_ton_sad.wav,tess,YAF,sad,Moderate
+YAF_tool_angry.wav,tess,YAF,angry,High
+YAF_tool_disgust.wav,tess,YAF,disgust,High
+YAF_tool_fear.wav,tess,YAF,fear,High
+YAF_tool_happy.wav,tess,YAF,happy,Moderate
+YAF_tool_neutral.wav,tess,YAF,neutral,Low
+YAF_tool_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_tool_sad.wav,tess,YAF,sad,Moderate
+YAF_tough_angry.wav,tess,YAF,angry,High
+YAF_tough_disgust.wav,tess,YAF,disgust,High
+YAF_tough_fear.wav,tess,YAF,fear,High
+YAF_tough_happy.wav,tess,YAF,happy,Moderate
+YAF_tough_neutral.wav,tess,YAF,neutral,Low
+YAF_tough_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_tough_sad.wav,tess,YAF,sad,Moderate
+YAF_turn_angry.wav,tess,YAF,angry,High
+YAF_turn_disgust.wav,tess,YAF,disgust,High
+YAF_turn_fear.wav,tess,YAF,fear,High
+YAF_turn_happy.wav,tess,YAF,happy,Moderate
+YAF_turn_neutral.wav,tess,YAF,neutral,Low
+YAF_turn_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_turn_sad.wav,tess,YAF,sad,Moderate
+YAF_vine_angry.wav,tess,YAF,angry,High
+YAF_vine_disgust.wav,tess,YAF,disgust,High
+YAF_vine_fear.wav,tess,YAF,fear,High
+YAF_vine_happy.wav,tess,YAF,happy,Moderate
+YAF_vine_neutral.wav,tess,YAF,neutral,Low
+YAF_vine_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_vine_sad.wav,tess,YAF,sad,Moderate
+YAF_voice_angry.wav,tess,YAF,angry,High
+YAF_voice_disgust.wav,tess,YAF,disgust,High
+YAF_voice_fear.wav,tess,YAF,fear,High
+YAF_voice_happy.wav,tess,YAF,happy,Moderate
+YAF_voice_neutral.wav,tess,YAF,neutral,Low
+YAF_voice_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_voice_sad.wav,tess,YAF,sad,Moderate
+YAF_void_angry.wav,tess,YAF,angry,High
+YAF_void_disgust.wav,tess,YAF,disgust,High
+YAF_void_fear.wav,tess,YAF,fear,High
+YAF_void_happy.wav,tess,YAF,happy,Moderate
+YAF_void_neutral.wav,tess,YAF,neutral,Low
+YAF_void_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_void_sad.wav,tess,YAF,sad,Moderate
+YAF_vote_angry.wav,tess,YAF,angry,High
+YAF_vote_disgust.wav,tess,YAF,disgust,High
+YAF_vote_fear.wav,tess,YAF,fear,High
+YAF_vote_happy.wav,tess,YAF,happy,Moderate
+YAF_vote_neutral.wav,tess,YAF,neutral,Low
+YAF_vote_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_vote_sad.wav,tess,YAF,sad,Moderate
+YAF_wag_angry.wav,tess,YAF,angry,High
+YAF_wag_disgust.wav,tess,YAF,disgust,High
+YAF_wag_fear.wav,tess,YAF,fear,High
+YAF_wag_happy.wav,tess,YAF,happy,Moderate
+YAF_wag_neutral.wav,tess,YAF,neutral,Low
+YAF_wag_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_wag_sad.wav,tess,YAF,sad,Moderate
+YAF_walk_angry.wav,tess,YAF,angry,High
+YAF_walk_disgust.wav,tess,YAF,disgust,High
+YAF_walk_fear.wav,tess,YAF,fear,High
+YAF_walk_happy.wav,tess,YAF,happy,Moderate
+YAF_walk_neutral.wav,tess,YAF,neutral,Low
+YAF_walk_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_walk_sad.wav,tess,YAF,sad,Moderate
+YAF_wash_angry.wav,tess,YAF,angry,High
+YAF_wash_disgust.wav,tess,YAF,disgust,High
+YAF_wash_fear.wav,tess,YAF,fear,High
+YAF_wash_happy.wav,tess,YAF,happy,Moderate
+YAF_wash_neutral.wav,tess,YAF,neutral,Low
+YAF_wash_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_wash_sad.wav,tess,YAF,sad,Moderate
+YAF_week_angry.wav,tess,YAF,angry,High
+YAF_week_disgust.wav,tess,YAF,disgust,High
+YAF_week_fear.wav,tess,YAF,fear,High
+YAF_week_happy.wav,tess,YAF,happy,Moderate
+YAF_week_neutral.wav,tess,YAF,neutral,Low
+YAF_week_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_week_sad.wav,tess,YAF,sad,Moderate
+YAF_wheat_angry.wav,tess,YAF,angry,High
+YAF_wheat_disgust.wav,tess,YAF,disgust,High
+YAF_wheat_fear.wav,tess,YAF,fear,High
+YAF_wheat_happy.wav,tess,YAF,happy,Moderate
+YAF_wheat_neutral.wav,tess,YAF,neutral,Low
+YAF_wheat_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_wheat_sad.wav,tess,YAF,sad,Moderate
+YAF_when_angry.wav,tess,YAF,angry,High
+YAF_when_disgust.wav,tess,YAF,disgust,High
+YAF_when_fear.wav,tess,YAF,fear,High
+YAF_when_happy.wav,tess,YAF,happy,Moderate
+YAF_when_neutral.wav,tess,YAF,neutral,Low
+YAF_when_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_when_sad.wav,tess,YAF,sad,Moderate
+YAF_which_angry.wav,tess,YAF,angry,High
+YAF_which_disgust.wav,tess,YAF,disgust,High
+YAF_which_fear.wav,tess,YAF,fear,High
+YAF_which_happy.wav,tess,YAF,happy,Moderate
+YAF_which_neutral.wav,tess,YAF,neutral,Low
+YAF_which_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_which_sad.wav,tess,YAF,sad,Moderate
+YAF_whip_angry.wav,tess,YAF,angry,High
+YAF_whip_disgust.wav,tess,YAF,disgust,High
+YAF_whip_fear.wav,tess,YAF,fear,High
+YAF_whip_happy.wav,tess,YAF,happy,Moderate
+YAF_whip_neutral.wav,tess,YAF,neutral,Low
+YAF_whip_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_whip_sad.wav,tess,YAF,sad,Moderate
+YAF_white_angry.wav,tess,YAF,angry,High
+YAF_white_disgust.wav,tess,YAF,disgust,High
+YAF_white_fear.wav,tess,YAF,fear,High
+YAF_white_happy.wav,tess,YAF,happy,Moderate
+YAF_white_neutral.wav,tess,YAF,neutral,Low
+YAF_white_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_white_sad.wav,tess,YAF,sad,Moderate
+YAF_wife_angry.wav,tess,YAF,angry,High
+YAF_wife_disgust.wav,tess,YAF,disgust,High
+YAF_wife_fear.wav,tess,YAF,fear,High
+YAF_wife_happy.wav,tess,YAF,happy,Moderate
+YAF_wife_neutral.wav,tess,YAF,neutral,Low
+YAF_wife_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_wife_sad.wav,tess,YAF,sad,Moderate
+YAF_wire_angry.wav,tess,YAF,angry,High
+YAF_wire_disgust.wav,tess,YAF,disgust,High
+YAF_wire_fear.wav,tess,YAF,fear,High
+YAF_wire_happy.wav,tess,YAF,happy,Moderate
+YAF_wire_neutral.wav,tess,YAF,neutral,Low
+YAF_wire_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_wire_sad.wav,tess,YAF,sad,Moderate
+YAF_witch_angry.wav,tess,YAF,angry,High
+YAF_witch_disgust.wav,tess,YAF,disgust,High
+YAF_witch_fear.wav,tess,YAF,fear,High
+YAF_witch_happy.wav,tess,YAF,happy,Moderate
+YAF_witch_neutral.wav,tess,YAF,neutral,Low
+YAF_witch_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_witch_sad.wav,tess,YAF,sad,Moderate
+YAF_yearn_angry.wav,tess,YAF,angry,High
+YAF_yearn_disgust.wav,tess,YAF,disgust,High
+YAF_yearn_fear.wav,tess,YAF,fear,High
+YAF_yearn_happy.wav,tess,YAF,happy,Moderate
+YAF_yearn_neutral.wav,tess,YAF,neutral,Low
+YAF_yearn_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_yearn_sad.wav,tess,YAF,sad,Moderate
+YAF_yes_angry.wav,tess,YAF,angry,High
+YAF_yes_disgust.wav,tess,YAF,disgust,High
+YAF_yes_fear.wav,tess,YAF,fear,High
+YAF_yes_happy.wav,tess,YAF,happy,Moderate
+YAF_yes_neutral.wav,tess,YAF,neutral,Low
+YAF_yes_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_yes_sad.wav,tess,YAF,sad,Moderate
+YAF_young_angry.wav,tess,YAF,angry,High
+YAF_young_disgust.wav,tess,YAF,disgust,High
+YAF_young_fear.wav,tess,YAF,fear,High
+YAF_young_happy.wav,tess,YAF,happy,Moderate
+YAF_young_neutral.wav,tess,YAF,neutral,Low
+YAF_young_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_young_sad.wav,tess,YAF,sad,Moderate
+YAF_youth_angry.wav,tess,YAF,angry,High
+YAF_youth_disgust.wav,tess,YAF,disgust,High
+YAF_youth_fear.wav,tess,YAF,fear,High
+YAF_youth_happy.wav,tess,YAF,happy,Moderate
+YAF_youth_neutral.wav,tess,YAF,neutral,Low
+YAF_youth_ps.wav,tess,YAF,pleasant surprise,Moderate
+YAF_youth_sad.wav,tess,YAF,sad,Moderate
