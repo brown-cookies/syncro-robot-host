@@ -6,7 +6,9 @@ from pipeline.state import DialogueState
 
 
 def make_stt_node(stt):
+    """Create the speech-to-text graph node with its injected adapter."""
     def stt_node(state: DialogueState) -> DialogueState:
+        """Transcribe request audio and place the result into dialogue state."""
         audio = state.get("audio")
         sample_rate = state.get("sample_rate")
         if audio is None or sample_rate is None:

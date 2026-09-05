@@ -20,7 +20,9 @@ from pipeline.state import DialogueState
 
 
 def make_output_node(store):
+    """Create the output graph node with its injected speech synthesizer."""
     def output_node(state: DialogueState) -> DialogueState:
+        """Prepare the final response output from the completed dialogue state."""
         session_id = state.get("session_id")
         user_id = state.get("user_id")
         final_response = state.get("final_response")

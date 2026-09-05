@@ -17,6 +17,7 @@ from pipeline import HostPipeline
 
 
 def make_wav_bytes() -> bytes:
+    """Build deterministic WAV bytes for integration testing."""
     samples = np.array([0, 1000, -1000, 2000], dtype=np.int16)
     buffer = io.BytesIO()
     with wave.open(buffer, "wb") as wav:
@@ -28,11 +29,14 @@ def make_wav_bytes() -> bytes:
 
 
 def install_fake_runtime(monkeypatch):
+    """Install the controlled fake runtime dependencies used by the integration test."""
     class FakeWhisperModel:
         def __init__(self, model_size, device, compute_type):
+            """Initialize the FakeWhisperModel and establish its runtime state."""
             assert (model_size, device, compute_type) == ("small", "cpu", "int8")
 
         def transcribe(self, audio, language):
+            """Transcribe the supplied audio using the configured speech-to-text backend."""
             assert language == "en"
             assert audio.dtype == np.float32
             return [types.SimpleNamespace(text=" hello integration ")], object()
@@ -46,10 +50,12 @@ def install_fake_runtime(monkeypatch):
     class FakeVoice:
         @classmethod
         def load(cls, path):
+            """Load the configured test artifact or runtime resource."""
             assert path == "./models/test"
             return cls()
 
         def synthesize_wav(self, text, wav_file):
+            """Build deterministic synthesized WAV output for the integration test."""
             assert text == "hello from ollama"
             wav_file.setnchannels(1)
             wav_file.setsampwidth(2)
@@ -62,9 +68,11 @@ def install_fake_runtime(monkeypatch):
         text = '{"response":"hello from ollama"}'
 
         def raise_for_status(self):
+            """Provide the fake HTTP status-check behavior used by the test."""
             return None
 
         def json(self):
+            """Return the fake JSON payload used by the test."""
             return {"response": "hello from ollama"}
 
     monkeypatch.setattr(
@@ -76,6 +84,7 @@ def install_fake_runtime(monkeypatch):
 
     class FakeSD:
         def rec(self, frames, samplerate, channels, dtype, device):
+            """Provide the fake audio-recording behavior used by the test."""
             assert frames == 16_000
             assert samplerate == 16_000
             assert channels == 1
@@ -84,18 +93,21 @@ def install_fake_runtime(monkeypatch):
             return np.ones((frames, channels), dtype=np.float32)
 
         def play(self, audio, samplerate, device):
+            """Play supplied audio through the configured output device."""
             output["played_audio"] = audio
             output["played_rate"] = samplerate
             output["played"] = True
 
         def wait(self):
+            """Provide the fake blocking behavior used by the audio test."""
             output["waited"] = True
 
     monkeypatch.setitem(sys.modules, "sounddevice", FakeSD())
     return output
 
 
-def test_wp102_concrete_components_work_together(monkeypatch):
+def test_host_pipeline_concrete_components_work_together(monkeypatch):
+    """Verify that host pipeline concrete components work together."""
     output = install_fake_runtime(monkeypatch)
     settings = Settings(audio_capture_seconds=1.0, piper_model_path="./models/test")
 

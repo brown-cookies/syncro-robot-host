@@ -12,6 +12,7 @@ load_dotenv()
 
 
 def _int_env(name: str, default: int) -> int:
+    """Read and validate an integer environment setting."""
     raw = os.getenv(name)
     try:
         return default if raw is None or raw == "" else int(raw)
@@ -20,6 +21,7 @@ def _int_env(name: str, default: int) -> int:
 
 
 def _float_env(name: str, default: float) -> float:
+    """Read and validate a floating-point environment setting."""
     raw = os.getenv(name)
     try:
         return default if raw is None or raw == "" else float(raw)
@@ -28,6 +30,7 @@ def _float_env(name: str, default: float) -> float:
 
 
 def _bool_env(name: str, default: bool) -> bool:
+    """Read and validate a boolean environment setting."""
     raw = os.getenv(name)
     if raw is None or raw == "":
         return default
@@ -70,7 +73,8 @@ class Settings:
 
     # openSMILE / affect
     opensmile_executable: str = "openSMILE"
-    affect_classifier_path: str = "./models/affect_classifier.pkl"
+    affect_detector_backend: str = "classifier"
+    affect_classifier_path: str = "./models/affect/affect_svc_v1.joblib"
 
     # Policy
     adaptive_lead_time_enabled: bool = True
@@ -90,6 +94,7 @@ class Settings:
 
     @classmethod
     def from_env(cls) -> "Settings":
+        """Build application settings from the current environment."""
         defaults = cls()
 
         return cls(
@@ -143,6 +148,9 @@ class Settings:
             opensmile_executable=os.getenv(
                 "OPENSMILE_EXECUTABLE", defaults.opensmile_executable
             ),
+            affect_detector_backend=os.getenv(
+                "AFFECT_DETECTOR_BACKEND", defaults.affect_detector_backend
+            ),
             affect_classifier_path=os.getenv(
                 "AFFECT_CLASSIFIER_PATH",
                 defaults.affect_classifier_path,
@@ -194,6 +202,6 @@ class Settings:
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
-    """Return one immutable settings snapshot for the running process."""
+    """Return the immutable settings snapshot used by the running process."""
     return Settings.from_env()
 

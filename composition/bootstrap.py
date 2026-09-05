@@ -18,6 +18,7 @@ from storage.sqlite_store import SQLiteStore
 
 
 def build_wp102_pipeline(settings: Settings | None = None) -> HostPipeline:
+    """Assemble the host pipeline from the configured runtime components."""
     settings = settings or get_settings()
     return HostPipeline(
         audio_input=MicrophoneAudioInput(settings),
@@ -29,11 +30,7 @@ def build_wp102_pipeline(settings: Settings | None = None) -> HostPipeline:
 
 
 def build_wp103_components(settings: Settings | None = None, *, affect_detector=None):
-    """Assemble the WP-103 graph from concrete host adapters and SQLite.
-
-    This composition root keeps dependency construction outside the LangGraph
-    nodes, so the graph remains testable with technology-neutral fakes.
-    """
+    """Assemble the host components and graph dependencies used by the runtime."""
     settings = settings or get_settings()
     store = SQLiteStore(settings.db_path)
     stt = WhisperSTTAdapter(settings)
@@ -46,9 +43,11 @@ def build_wp103_components(settings: Settings | None = None, *, affect_detector=
     from pipeline.graph import build_dialogue_graph
 
     if affect_detector is None:
-        from adapters.affect import DevelopmentAffectDetector
+        if settings.affect_detector_backend != "classifier":
+            raise ValueError("AFFECT_DETECTOR_BACKEND must be 'classifier'")
+        from adapters.affect import ClassifierAffectDetector
 
-        affect_detector = DevelopmentAffectDetector()
+        affect_detector = ClassifierAffectDetector(settings.affect_classifier_path)
 
     graph = build_dialogue_graph(
         stt=stt,

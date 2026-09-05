@@ -11,7 +11,7 @@ class AudioInput(Protocol):
     """Source of host-captured PCM audio."""
 
     def capture(self) -> tuple[np.ndarray, int]:
-        """Return (mono float32 PCM samples, sample rate)."""
+        """Capture audio and return it in the format required by the host pipeline."""
         ...
 
 
@@ -19,5 +19,5 @@ class AudioOutput(Protocol):
     """Sink for host-produced PCM audio."""
 
     def play(self, audio: np.ndarray, sample_rate: int) -> None:
-        """Play the supplied PCM audio."""
+        """Play supplied audio through the configured output device."""
         ...

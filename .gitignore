@@ -22,6 +22,9 @@ migrations/*.sqlite
 
 # Model files (large binaries, gitignored per spec)
 models/
+!models/
+!models/affect/
+!models/affect/README.md
 *.pt
 *.pth
 *.onnx

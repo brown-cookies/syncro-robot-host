@@ -13,46 +13,57 @@ from pipeline import HostPipeline, PipelineStageError
 
 class FakeInput:
     def __init__(self, value=None, rate=16_000):
+        """Initialize the FakeInput and establish its runtime state."""
         self.value = np.asarray(value if value is not None else [0.1, 0.2], dtype=np.float32)
         self.rate = rate
         self.calls = 0
     def capture(self):
+        """Capture audio and return it in the format required by the host pipeline."""
         self.calls += 1
         return self.value, self.rate
 
 class FakeSTT:
     def __init__(self, value="hello"):
+        """Initialize the FakeSTT and establish its runtime state."""
         self.value = value
         self.calls = []
     def transcribe(self, audio, sample_rate):
+        """Transcribe the supplied audio using the configured speech-to-text backend."""
         self.calls.append((audio, sample_rate))
         return self.value
 
 class FakeLLM:
     def __init__(self, value="hi there"):
+        """Initialize the FakeLLM and establish its runtime state."""
         self.value = value
         self.calls = []
     def generate(self, prompt):
+        """Generate an LLM response from the supplied conversation state and context."""
         self.calls.append(prompt)
         return self.value
 
 class FakeTTS:
     def __init__(self, value=None, rate=22_050):
+        """Initialize the FakeTTS and establish its runtime state."""
         self.value = np.asarray(value if value is not None else [0.3, 0.4], dtype=np.float32)
         self.rate = rate
         self.calls = []
     def synthesize(self, text):
+        """Synthesize speech from the supplied text using the configured text-to-speech backend."""
         self.calls.append(text)
         return self.value, self.rate
 
 class FakeOutput:
     def __init__(self):
+        """Initialize the FakeOutput and establish its runtime state."""
         self.calls = []
     def play(self, audio, sample_rate):
+        """Play supplied audio through the configured output device."""
         self.calls.append((audio, sample_rate))
 
 
 def make_pipeline(**kwargs):
+    """Create the pipeline component used by the project."""
     return HostPipeline(
         audio_input=kwargs.get("audio_input", FakeInput()),
         stt=kwargs.get("stt", FakeSTT()),
@@ -63,6 +74,7 @@ def make_pipeline(**kwargs):
 
 
 def test_success_has_all_stages():
+    """Verify that success has all stages."""
     output = FakeOutput()
     stt = FakeSTT()
     llm = FakeLLM()
@@ -86,18 +98,24 @@ def test_success_has_all_stages():
     ],
 )
 def test_inv6_failure_stops_pipeline(stage, error_type):
+    """Verify that inv6 failure stops pipeline."""
     error = error_type("boom")
 
     class FailingTarget:
         def capture(self):
+            """Capture audio and return it in the format required by the host pipeline."""
             raise error
         def transcribe(self, *args, **kwargs):
+            """Transcribe the supplied audio using the configured speech-to-text backend."""
             raise error
         def generate(self, *args, **kwargs):
+            """Generate an LLM response from the supplied conversation state and context."""
             raise error
         def synthesize(self, *args, **kwargs):
+            """Synthesize speech from the supplied text using the configured text-to-speech backend."""
             raise error
         def play(self, *args, **kwargs):
+            """Play supplied audio through the configured output device."""
             raise error
 
     deps = {
@@ -118,10 +136,12 @@ def test_inv6_failure_stops_pipeline(stage, error_type):
 
 
 def test_unexpected_stage_error_is_wrapped_and_stops_pipeline():
+    """Verify that unexpected stage error is wrapped and stops pipeline."""
     boom = RuntimeError("unexpected boom")
 
     class FailingSTT(FakeSTT):
         def transcribe(self, *args, **kwargs):
+            """Transcribe the supplied audio using the configured speech-to-text backend."""
             raise boom
 
     with pytest.raises(PipelineStageError) as exc:
@@ -132,8 +152,10 @@ def test_unexpected_stage_error_is_wrapped_and_stops_pipeline():
 
 
 def test_keyboard_interrupt_at_stage_boundary_is_wrapped():
+    """Verify that keyboard interrupt at stage boundary is wrapped."""
     class InterruptingInput:
         def capture(self):
+            """Capture audio and return it in the format required by the host pipeline."""
             raise KeyboardInterrupt()
 
     with pytest.raises(PipelineStageError) as exc:
@@ -144,6 +166,7 @@ def test_keyboard_interrupt_at_stage_boundary_is_wrapped():
 
 
 def test_empty_transcript_stops_before_llm():
+    """Verify that empty transcript stops before llm."""
     llm = FakeLLM()
     with pytest.raises(PipelineStageError) as exc:
         make_pipeline(stt=FakeSTT(""), llm=llm).run_once()
@@ -152,6 +175,7 @@ def test_empty_transcript_stops_before_llm():
 
 
 def test_empty_llm_response_stops_before_tts():
+    """Verify that empty llm response stops before tts."""
     tts = FakeTTS()
     with pytest.raises(PipelineStageError) as exc:
         make_pipeline(llm=FakeLLM(""), tts=tts).run_once()

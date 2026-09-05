@@ -12,14 +12,10 @@ class AffectDetectionError(RuntimeError):
 
 
 def make_affect_node(detector):
-    """Create the parallel affect node.
-
-    The detector receives the same raw audio that enters Node 1. The concrete
-    openSMILE/classifier implementation belongs to WP-104; this node owns only
-    the host graph boundary and contract validation.
-    """
+    """Create the parallel affect graph node with its injected detector."""
 
     def affect_node(state: DialogueState) -> DialogueState:
+        """Detect affect from the same raw audio and store the validated level in dialogue state."""
         audio = state.get("audio")
         sample_rate = state.get("sample_rate")
         if audio is None or sample_rate is None:

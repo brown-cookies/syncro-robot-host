@@ -73,6 +73,7 @@ class DecisionTraceRecord(_Contract):
 
     @model_validator(mode="after")
     def validate_policy_domain(self) -> "DecisionTraceRecord":
+        """Validate that a policy trace uses only the allowed policy-domain values."""
         if self.policy_rule == "n/a":
             if self.deadline_proximity != "n/a":
                 raise ValueError(

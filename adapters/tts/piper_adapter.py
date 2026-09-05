@@ -16,6 +16,7 @@ class TTSAdapterError(RuntimeError):
 
 class PiperTTSAdapter:
     def __init__(self, settings: Settings | None = None) -> None:
+        """Initialize the PiperTTSAdapter and establish its runtime state."""
         settings = settings or get_settings()
         try:
             from piper import PiperVoice
@@ -31,6 +32,7 @@ class PiperTTSAdapter:
             ) from exc
 
     def synthesize(self, text: str) -> tuple[np.ndarray, int]:
+        """Synthesize speech from the supplied text using the configured text-to-speech backend."""
         if not text.strip():
             raise TTSAdapterError("Refusing to synthesize empty text.")
         try:

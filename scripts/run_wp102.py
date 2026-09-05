@@ -16,6 +16,7 @@ from composition.bootstrap import build_wp102_pipeline
 
 
 def main() -> int:
+    """Run the command-line entry point for this module."""
     settings = get_settings()
     print("WP-102 host-only pipeline")
     print(f"  Ollama:  {settings.ollama_url}  model={settings.llm_model}")

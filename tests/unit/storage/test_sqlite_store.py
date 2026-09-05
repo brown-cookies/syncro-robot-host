@@ -10,6 +10,7 @@ from storage.sqlite_store import SQLiteStore
 
 
 def test_context_returns_tasks_routine_and_overdue(tmp_path):
+    """Verify that context returns tasks routine and overdue."""
     store = SQLiteStore(str(tmp_path / "test.db"))
     now = datetime.now(timezone.utc)
     with sqlite3.connect(str(tmp_path / "test.db")) as conn:
@@ -36,6 +37,7 @@ def test_context_returns_tasks_routine_and_overdue(tmp_path):
 
 
 def test_sqlite_schema_matches_spec_section_9(tmp_path):
+    """Verify that sqlite schema matches spec section 9."""
     db_path = tmp_path / "schema.db"
     SQLiteStore(str(db_path))
     expected = {
@@ -58,6 +60,7 @@ def test_sqlite_schema_matches_spec_section_9(tmp_path):
 
 
 def test_seed_marks_past_deadline_task_overdue(tmp_path):
+    """Verify that seed marks past deadline task overdue."""
     from scripts.seed_wp103 import seed
 
     db_path = tmp_path / "seed.db"
@@ -71,6 +74,7 @@ def test_seed_marks_past_deadline_task_overdue(tmp_path):
 
 
 def test_storage_responsibilities_are_separated(tmp_path):
+    """Verify that storage responsibilities are separated."""
     db = SQLiteDatabase(str(tmp_path / "separation.db"))
     with db.connect() as conn:
         initialize_schema(conn)
@@ -82,6 +86,7 @@ def test_storage_responsibilities_are_separated(tmp_path):
 
 
 def test_context_is_scoped_to_requesting_user(tmp_path):
+    """Verify that context is scoped to requesting user."""
     store = SQLiteStore(str(tmp_path / "scope.db"))
     now = datetime.now(timezone.utc)
     with sqlite3.connect(str(tmp_path / "scope.db")) as conn:
@@ -99,6 +104,7 @@ def test_context_is_scoped_to_requesting_user(tmp_path):
 
 
 def test_r5_suppresses_other_pending_reminder_traces(tmp_path):
+    """Verify that r5 suppresses other pending reminder traces."""
     from uuid import uuid4
     from pipeline.nodes.output import make_output_node
 
@@ -133,6 +139,7 @@ def test_r5_suppresses_other_pending_reminder_traces(tmp_path):
 
 
 def test_overdue_task_does_not_count_as_imminent(tmp_path):
+    """Verify that overdue task does not count as imminent."""
     store = SQLiteStore(str(tmp_path / "deadline.db"))
     now = datetime.now(timezone.utc)
     with sqlite3.connect(str(tmp_path / "deadline.db")) as conn:
@@ -148,6 +155,7 @@ def test_overdue_task_does_not_count_as_imminent(tmp_path):
 
 
 def test_overdue_context_is_bounded(tmp_path):
+    """Verify that overdue context is bounded."""
     store = SQLiteStore(str(tmp_path / "bounded.db"))
     now = datetime.now(timezone.utc)
     with sqlite3.connect(str(tmp_path / "bounded.db")) as conn:
@@ -164,6 +172,7 @@ def test_overdue_context_is_bounded(tmp_path):
 
 
 def test_database_connection_context_closes_connection(tmp_path):
+    """Verify that database connection context closes connection."""
     db = SQLiteDatabase(str(tmp_path / "close.db"))
     with db.connection() as conn:
         conn.execute("SELECT 1")
@@ -172,6 +181,7 @@ def test_database_connection_context_closes_connection(tmp_path):
 
 
 def test_ensure_user_is_idempotent(tmp_path):
+    """Verify that ensure user is idempotent."""
     store = SQLiteStore(str(tmp_path / "user.db"))
     store.ensure_user("demo", declared_working_window_start="08:00", declared_working_window_end="22:00")
     store.ensure_user("demo", declared_working_window_start="09:00", declared_working_window_end="21:00")

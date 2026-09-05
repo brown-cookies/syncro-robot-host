@@ -6,10 +6,12 @@ from pipeline.state import DialogueState
 
 
 def make_context_node(store, top_k: int, deadline_proximity_hours: int):
+    """Create the context graph node with its injected storage dependency."""
     def context_node(state: DialogueState) -> DialogueState:
         # Low-confidence interactions are clarification-only. They still flow
         # through the graph so they receive a decision trace, but no context
         # lookup is needed and no downstream action can execute.
+        """Populate dialogue state with the bounded context required by the request."""
         if state.get("proposed_action") == "clarify":
             return {
                 "context": {"tasks": [], "recent_routine": None, "overdue_tasks": []},

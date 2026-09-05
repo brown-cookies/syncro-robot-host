@@ -20,7 +20,7 @@ POLICY_GOVERNED_INTENTS = frozenset({"dismiss_reminder", "snooze_reminder"})
 
 
 def apply_policy(affect_level: str, deadline_proximity: str) -> str:
-    """Return exactly the production R1-R5 mapping from SPEC §11.1."""
+    """Apply the production policy mapping to the current dialogue state."""
     if affect_level not in ALLOWED_AFFECT_LEVELS:
         raise ValueError(f"Invalid affect level: {affect_level!r}")
     if deadline_proximity not in ALLOWED_DEADLINE_PROXIMITY:
@@ -33,7 +33,9 @@ def apply_policy(affect_level: str, deadline_proximity: str) -> str:
 
 
 def make_policy_node(grace_window_minutes: int, default_lead_time: float, store=None):
+    """Create the policy graph node with its injected policy logic."""
     def policy_node(state: DialogueState) -> DialogueState:
+        """Apply policy decisions to the current dialogue state."""
         intent = state.get("intent")
         if intent is None:
             raise RuntimeError("Node 4 policy requires intent in DialogueState.")

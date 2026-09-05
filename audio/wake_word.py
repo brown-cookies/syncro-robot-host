@@ -31,6 +31,7 @@ class WakeWordMetadata:
     __slots__ = ("wake_word_detected_at",)
 
     def __init__(self, wake_word_detected_at: int) -> None:
+        """Initialize the WakeWordMetadata and establish its runtime state."""
         if wake_word_detected_at < 0:
             raise ValueError("wake_word_detected_at must be non-negative")
         self.wake_word_detected_at = wake_word_detected_at
