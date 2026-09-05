@@ -65,3 +65,7 @@ temp/
 
 # Local configuration (if any)
 config.local.py
+
+# Datasets RAVDESS/TESS
+datasets/affect/RAVDESS
+datasets/affect/TESS
