@@ -6,7 +6,7 @@ from collections import Counter
 from dataclasses import dataclass
 import csv
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Sequence
 
 from .label_mapping import (
     ALLOWED_LEVELS,
@@ -171,7 +171,7 @@ def write_manifest(records: Iterable[AffectRecord], path: str | Path) -> None:
             )
 
 
-def _validate_manifest_columns(fieldnames: list[str] | None, path: Path) -> None:
+def _validate_manifest_columns(fieldnames: Sequence[str] | None, path: Path) -> None:
     """Ensure a manifest exposes exactly the columns defined by the WP-104 contract."""
     if fieldnames is None:
         raise ValueError(f"Manifest has no header: {path}")
