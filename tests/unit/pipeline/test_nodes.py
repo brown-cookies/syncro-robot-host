@@ -43,10 +43,12 @@ def test_node3_parser_rejects_invalid_json():
 def test_node3_degrades_unexecuted_mutation_claim():
     from pipeline.nodes.llm import _reject_unexecuted_mutation_claim
 
-    result = _reject_unexecuted_mutation_claim(
-        "add_task", "I've added the task to your schedule."
-    )
-    assert result.startswith("I can help with that")
+    claim = "I've added the task to your schedule."
+    result = _reject_unexecuted_mutation_claim("add_task", claim)
+    assert result != claim
+    assert claim not in result
+    assert "I've added" not in result
+    assert "have not added" in result
 
 
 def test_node3_allows_proposed_mutation_language():
@@ -80,7 +82,10 @@ def test_node3_mutation_guard_flags_affirmative_completion_beyond_i_have():
 
     text = "The task was added successfully."
     result = _reject_unexecuted_mutation_claim("add_task", text)
-    assert result.startswith("I can help with that")
+    assert result != text
+    assert text not in result
+    assert "successfully" not in result
+    assert "have not added" in result
 
 
 def test_node3_mutation_guard_allows_prospective_successful_language():

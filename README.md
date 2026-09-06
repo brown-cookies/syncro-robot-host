@@ -154,6 +154,7 @@ STT_COMPUTE_TYPE=int8
 STT_DEVICE=cpu
 PIPER_MODEL_PATH=./models/en_US-lessac-medium
 DB_PATH=./syncro.db
+INTENT_CONFIDENCE_THRESHOLD=0.60
 ```
 
 `.env` is local configuration and must not be committed.
@@ -301,6 +302,20 @@ external systems
 
 This is the expected way to extend the host: add or replace an adapter at the boundary and wire it through the composition root rather than importing the concrete technology directly into the graph.
 
+### Known limitations of the unexecuted-mutation guard
+
+No mutation executor is connected to the graph. Node 3 drafts a reply and nothing can actually add a task, dismiss a reminder, snooze one, or reschedule anything. `_reject_unexecuted_mutation_claim` in `pipeline/nodes/llm.py` therefore exists to stop a drafted reply asserting that a mutation already happened: if it did, the user would hear a spoken confirmation for something that never occurred, and would not retry.
+
+The guard is a lexical rule, not a parser, so it is deliberately imperfect in two known ways. Both are documented here rather than fixed, because closing either would break a more common case:
+
+- **Cross-clause negation is not tracked.** A reply that denies and then claims in the same sentence passes through unguarded, for example `"You told me not to, but this was added anyway."` Catching it would require distinguishing a negator that governs the verb from one that does not, which the current clause-scope model cannot do without also re-breaking `"I have not, however, dismissed that reminder."`
+
+- **Comma-coordinated denials are over-caught.** A denial whose subject is a comma-separated list, for example `"None of the milk, eggs, or bread was added."`, is replaced by the generic reply `"I have not added that yet, but I can add it to your list if you would like."` This is over-caution rather than a false statement - both sentences tell the user nothing was added - but it loses which items were meant. It does not affect object-position lists, parentheticals, or comma-free lists.
+
+Two smaller gaps are known and accepted for the same reason: a completed verb followed by a bare noun with no colon (`"Added task buy milk."`), and mutation verbs outside the per-intent word lists (`"Bumped the call to 6pm."`).
+
+When changing this guard, test both directions. Claims that must be caught and ordinary wording that must pass through untouched are held together in `tests/unit/pipeline/test_llm.py`, and the two parametrised tests there pick up new rows automatically. Widening the rule to catch one more phrasing has twice introduced a false positive on a commoner one, so treat a reported example as a sample of a class rather than as the thing to patch.
+
 ## 9. Testing the WP-103 scaffold
 
 Run all tests:
@@ -312,7 +327,7 @@ python -m pytest -q
 Run the WP-103 integration tests specifically:
 
 ```bash
-python -m pytest -q tests/integration/test_wp103_integration.py tests/test_wp103_graph.py
+python -m pytest -q tests/integration/test_wp103_integration.py tests/unit/pipeline/test_graph.py
 ```
 
 The WP-103 graph tests inject a fake affect detector. That is intentional: **WP-103 validates graph wiring and policy behavior without depending on the future WP-104 acoustic classifier.**
