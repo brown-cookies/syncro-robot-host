@@ -1,0 +1,23 @@
+{
+  "go_no_go": "NO-GO",
+  "ravdess": {
+    "macro_f1": 0.6322582442748598,
+    "n_splits": 6,
+    "per_class_f1": {
+      "High": 0.7697501688048616,
+      "Low": 0.6526655896607432,
+      "Moderate": 0.47435897435897434
+    },
+    "records": 1440
+  },
+  "tess": {
+    "macro_f1": 0.1999833208239513,
+    "per_class_f1": {
+      "High": 0.5999499624718538,
+      "Low": 0.0,
+      "Moderate": 0.0
+    },
+    "records": 2800
+  },
+  "threshold": 0.7
+}

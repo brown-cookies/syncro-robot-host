@@ -60,7 +60,7 @@ evaluated, versioned, and replaced independently of the host pipeline.
   `ml/affect/` and an input to the runtime adapter; it is not a Python package.
 - **`datasets/affect/` contains manifests and acquisition/instructions only.** Raw RAVDESS/TESS
   corpora are external/local assets and are not committed to the repository.
-- **`evidences/wp104/` contains acceptance evidence** such as the method note, metrics, and
+- **`evidences/ml/` contains acceptance evidence** such as the method note, metrics, and
   confusion matrix.
 
 The concrete repository layout is therefore:
@@ -293,8 +293,8 @@ Numbered; each has an observable pass/fail condition.
 3. **Training pipeline matches the fixed design.** The training script builds a `sklearn.pipeline.Pipeline` of exactly `StandardScaler` → `SVC(kernel="rbf", class_weight="balanced")`. A separate `MLPClassifier` run may be trained and reported only as the comparison required by `MLAlgo.md`; it is not the shipped default. *Pass:* inspecting the fitted pipeline's `named_steps` shows both stages in that order; no hand-written threshold rule is used as the classifier.
 4. **Speaker-independent evaluation is used, not a random split.** Cross-validation is `GroupKFold` grouped by RAVDESS speaker ID, run over RAVDESS only; TESS is scored as a held-out generalisation check and never appears inside a `GroupKFold` fold with RAVDESS or with itself. *Pass:* the evaluation code path constructs `groups=` from speaker ID (not from `None`/row index), and the same speaker's samples never appear in both the train and test side of a fold — verifiable by asserting `set(train_speakers) & set(test_speakers) == set()` for every fold in a test.
 5. **Macro-F1 is computed and reported, whatever its value.** `sklearn.metrics.f1_score(..., average="macro")` is computed over the GroupKFold predictions. *Pass:* a numeric macro-F1 value is produced and written into the method note (criterion 7) regardless of whether it clears 0.70 — a result below 0.70 is reported as a finding, not withheld or re-run until it passes.
-6. **Per-class F1 and a confusion matrix are produced.** *Pass:* a confusion matrix (3×3, for `{Low, Moderate, High}`) and per-class F1 scores are saved as an artifact (image, CSV, or both) under `evidences/wp104/`.
-7. **A method note exists.** *Pass:* a document under `evidences/wp104/` or `ml/affect/` states: corpora and clip counts used, the label mapping (or a link to criterion 1's file), the exact CV scheme (GroupKFold, k, grouping key), the classifier(s) and hyperparameters, the random seed, the macro-F1 and per-class F1 results, and the go/no-go outcome against the 0.70 threshold (NFR-3).
+6. **Per-class F1 and a confusion matrix are produced.** *Pass:* a confusion matrix (3×3, for `{Low, Moderate, High}`) and per-class F1 scores are saved as an artifact (image, CSV, or both) under `evidences/ml/`.
+7. **A method note exists.** *Pass:* a document under `evidences/ml/` or `ml/affect/` states: corpora and clip counts used, the label mapping (or a link to criterion 1's file), the exact CV scheme (GroupKFold, k, grouping key), the classifier(s) and hyperparameters, the random seed, the macro-F1 and per-class F1 results, and the go/no-go outcome against the 0.70 threshold (NFR-3).
 8. **The model is persisted and versioned.** The fitted `Pipeline` (scaler + classifier) is serialized with `joblib` under `models/affect/`, with a version string embedded in the filename or a sidecar metadata file. *Pass:* loading the artifact with `joblib.load(...)` reproduces the same predictions on a held-out sample as were reported in criterion 5/6, and the version string is retrievable programmatically.
 9. **A production detector implements the existing contract, unchanged.** A class, `adapters/affect/classifier_detector.py::ClassifierAffectDetector` (per §0.1's structural decision — `adapters/affect/` is the runtime package), implements `detect(self, audio, sample_rate: int) -> str`, internally running openSMILE feature extraction then the loaded joblib pipeline, and returning one of exactly `"Low"`, `"Moderate"`, `"High"`. *Pass:* `pipeline/nodes/affect.py` and `make_affect_node` are not modified; a test instantiates the new detector, passes it to `make_affect_node`, and confirms it returns a valid `DialogueState` update with no code change to that module.
 10. **Wiring replaces the stub.** `composition/bootstrap.py` is updated to construct `ClassifierAffectDetector` (loading the persisted model) as the runtime affect detector. No development or rule-based detector is shipped by WP-104. If the artifact is missing or corrupt, startup fails explicitly rather than silently substituting a fake affect result. *Pass:* running the integration path with a valid classifier artifact uses the persisted WP-104 detector and the existing graph boundary remains unchanged.
@@ -372,10 +372,7 @@ Every one of these is a choice made here rather than asked about; each is cheap 
    sampling. Any corpus clips at a different native rate are resampled to 16 kHz mono before
    feature extraction, and this resampling step is documented in the method note.
 8. **The config flag gating real vs. stub detector** (criterion 10) is a simple boolean/enum
-   in `config/settings.py` (e.g. `affect_detector_backend: "development" | "classifier"`),
-   defaulting to `"classifier"` once the model artifact exists, falling back to
-   `"development"` only if no artifact is found at startup (fail-soft, logged loudly — not a
-   silent fallback).
+   in `config/settings.py` as the classifier runtime backend. The classifier artifact is a required WP-104 dependency; missing or corrupt artifacts must fail startup explicitly.
 9. **This specification does not include shipping a fallback for macro-F1 < 0.70** beyond
    "report it honestly" (RSK-05's stated mitigation). No separate contingency classifier or
    rule-based fallback is scoped here; if the figure is below 0.70, WP-104 still ships the

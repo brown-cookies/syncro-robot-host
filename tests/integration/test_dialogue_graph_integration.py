@@ -36,6 +36,7 @@ class FakeLLM:
 def test_dialogue_graph_runs_full_processing_path_and_trace(tmp_path):
     """Verify that dialogue graph runs full processing path and trace."""
     store = SQLiteStore(str(tmp_path / "wp103.db"))
+    store.ensure_user("u1")
     graph = build_dialogue_graph(
         stt=FakeSTT(),
         intent_classifier=FakeIntent(),

@@ -35,6 +35,7 @@ class FakeLLM:
 def test_graph_runs_all_four_nodes_and_writes_trace(tmp_path):
     """Verify that graph runs all four nodes and writes trace."""
     store = SQLiteStore(str(tmp_path / "test.db"))
+    store.ensure_user("u1")
     graph = build_dialogue_graph(
         stt=FakeSTT(), intent_classifier=FakeIntent(), llm=FakeLLM(), store=store, affect_detector=FakeAffect(),
         confidence_threshold=0.60, context_top_k=5, deadline_proximity_hours=2,
