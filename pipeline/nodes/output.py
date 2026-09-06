@@ -142,6 +142,9 @@ def make_output_node(store):
             ),
             latency_basis="host_observed_only",
         )
+        # The trace insert has a foreign key to users(user_id); guarantee the
+        # parent row exists before writing the trace.
+        store.ensure_user(user_id)
         store.save_decision_trace(trace.model_dump(mode="json"))
 
         return {

@@ -181,3 +181,96 @@ def test_ensure_user_is_idempotent(tmp_path):
             ("demo",),
         ).fetchone()
     assert row == ("demo", "08:00", "22:00")
+
+
+def _output_state(user_id, session_id="s1"):
+    return {
+        "session_id": session_id,
+        "user_id": user_id,
+        "final_response": "You have one priority task.",
+        "intent": "ask_status",
+        "intent_confidence": 0.9,
+        "affect_level": "Low",
+    }
+
+
+def test_output_node_writes_trace_on_fresh_database_with_no_seeding(tmp_path):
+    from pipeline.nodes.output import make_output_node
+
+    store = SQLiteStore(str(tmp_path / "fresh.db"))
+    output_node = make_output_node(store)
+
+    output_node(_output_state("new-user"))
+
+    traces = store.list_decision_traces("new-user")
+    assert len(traces) == 1
+
+
+def test_output_node_leaves_existing_user_row_untouched(tmp_path):
+    from pipeline.nodes.output import make_output_node
+
+    db_path = tmp_path / "existing-user.db"
+    store = SQLiteStore(str(db_path))
+    older_created_at = "2020-01-01T00:00:00+00:00"
+    with sqlite3.connect(str(db_path)) as conn:
+        conn.execute(
+            """INSERT INTO users(
+                user_id, created_at, declared_working_window_start, declared_working_window_end
+            ) VALUES (?, ?, ?, ?)""",
+            ("existing-user", older_created_at, "08:00", "22:00"),
+        )
+
+    output_node = make_output_node(store)
+    output_node(_output_state("existing-user"))
+
+    with sqlite3.connect(str(db_path)) as conn:
+        rows = conn.execute(
+            "SELECT created_at, declared_working_window_start, declared_working_window_end "
+            "FROM users WHERE user_id = ?",
+            ("existing-user",),
+        ).fetchall()
+    assert rows == [(older_created_at, "08:00", "22:00")]
+
+
+def test_output_node_repeat_interactions_yield_one_user_row_and_n_traces(tmp_path):
+    from pipeline.nodes.output import make_output_node
+
+    db_path = tmp_path / "repeat.db"
+    store = SQLiteStore(str(db_path))
+    output_node = make_output_node(store)
+
+    n = 4
+    for i in range(n):
+        output_node(_output_state("repeat-user", session_id=f"s{i}"))
+
+    with sqlite3.connect(str(db_path)) as conn:
+        user_rows = conn.execute(
+            "SELECT COUNT(*) FROM users WHERE user_id = ?", ("repeat-user",)
+        ).fetchone()[0]
+    assert user_rows == 1
+    assert len(store.list_decision_traces("repeat-user")) == n
+
+
+def test_output_node_scopes_traces_per_user_across_two_users(tmp_path):
+    from pipeline.nodes.output import make_output_node
+
+    db_path = tmp_path / "two-users.db"
+    store = SQLiteStore(str(db_path))
+    output_node = make_output_node(store)
+
+    output_node(_output_state("user-a"))
+    output_node(_output_state("user-b"))
+
+    with sqlite3.connect(str(db_path)) as conn:
+        for user_id in ("user-a", "user-b"):
+            count = conn.execute(
+                "SELECT COUNT(*) FROM users WHERE user_id = ?", (user_id,)
+            ).fetchone()[0]
+            assert count == 1
+
+    traces_a = store.list_decision_traces("user-a")
+    traces_b = store.list_decision_traces("user-b")
+    assert len(traces_a) == 1
+    assert len(traces_b) == 1
+    assert traces_a[0]["session_id"] == "s1"
+    assert traces_b[0]["session_id"] == "s1"
