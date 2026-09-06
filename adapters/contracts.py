@@ -17,3 +17,7 @@ class LLM(Protocol):
 
 class TTS(Protocol):
     def synthesize(self, text: str) -> tuple[np.ndarray, int]: ...
+
+
+class IntentClassifier(Protocol):
+    def classify(self, transcript: str) -> tuple[str, float, dict[str, object]]: ...
