@@ -1,6 +1,6 @@
 # SYNCRO Host
 
-Host-side runtime for the SYNCRO robot stack. This repository contains the **WP-102 host pipeline** and the **WP-103 dialogue-graph scaffold**. WP-104 owns the production acoustic-affect classifier and is intentionally **not** implemented here.
+Host-side runtime for the SYNCRO robot stack. This repository contains the **WP-102 host pipeline**, the **WP-103 dialogue-graph scaffold**, and the **WP-104 acoustic-affect ML pipeline/runtime boundary**.
 
 ## What is implemented
 
@@ -59,20 +59,20 @@ WP-103 adds the dialogue graph and its policy/storage boundaries:
 
 `composition/bootstrap.py` is the **composition root**. It creates concrete adapters and storage dependencies and injects them into the graph. The graph itself should remain technology-neutral so tests can replace hardware, STT, LLM, TTS, and affect components with fakes.
 
-The WP-103 affect implementation is deliberately only a contract-boundary stub:
+The affect runtime exposes a stable contract-boundary detector. WP-104 supplies the production classifier:
 
 ```python
 ClassifierAffectDetector(model_path).detect(audio, sample_rate)  # -> "Low" | "Moderate" | "High"
 ```
 
-Do **not** add the WP-104 classifier to this work package. The production affect model, feature extraction, training, evaluation, and macro-F1 evidence belong to WP-104.
+The WP-104 production affect model, feature extraction, training, evaluation, and macro-F1 evidence are documented under `techdocs/MLSPEC.md` and implemented under `ml/affect/`, with runtime loading through `adapters/affect/`.
 
 ## Project layout
 
 ```text
 api/                 FastAPI application and HTTP/WebSocket surfaces
 adapters/            External technology adapters
-  affect.py          WP-103 affect contract + development stub
+  affect/             WP-104 affect runtime adapter
   llm/               Ollama adapter
   stt/               faster-whisper adapter
   tts/               Piper adapter
@@ -330,7 +330,7 @@ Run the WP-103 integration tests specifically:
 python -m pytest -q tests/integration/test_dialogue_graph_integration.py tests/unit/pipeline/test_graph.py
 ```
 
-The WP-103 graph tests inject a fake affect detector. That is intentional: **WP-103 validates graph wiring and policy behavior without depending on the future WP-104 acoustic classifier.**
+The graph tests may inject a fake affect detector where the test is intended to isolate graph behavior. Runtime composition uses the WP-104 classifier artifact directly.
 
 ## 10. Model boundaries: WP-103 vs WP-104
 
@@ -343,7 +343,7 @@ WP-103 uses these external model boundaries:
 | TTS | Piper + configured local voice | Existing host pipeline |
 | Affect | `ClassifierAffectDetector` → `Low` / `Moderate` / `High` | **WP-104** |
 
-WP-103 therefore does **not** require an affect model file, openSMILE feature extraction, a scikit-learn classifier, or affect-training data to exercise its scaffold.
+WP-104 owns the affect model file, openSMILE feature extraction, scikit-learn classifier, training/evaluation data, and acceptance evidence described in `techdocs/MLSPEC.md`.
 
 When WP-104 is developed, it should replace the implementation behind the affect adapter contract and then supply the real model/evaluation evidence required by the roadmap.
 

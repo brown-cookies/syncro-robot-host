@@ -5,7 +5,7 @@ import numpy as np
 from ml.affect.evaluate import evaluate_ravdess
 
 
-def test_groupkfold_has_speaker_disjoint_splits(tmp_path, monkeypatch):
+def test_groupkfold_has_speaker_disjoint_splits(tmp_path):
     """Verify that groupkfold has speaker disjoint splits."""
     speakers = ["s1", "s2", "s3", "s4"]
     rows = []
@@ -15,7 +15,7 @@ def test_groupkfold_has_speaker_disjoint_splits(tmp_path, monkeypatch):
         source_label, target_label = labels[i]
         for j in range(2):
             rows.append([f"x_{i}_{j}.wav", "RAVDESS", speaker, source_label, target_label])
-            features.append([float(i), float(j)])
+            features.append([float(i), float(j)] + [0.0] * 86)
     manifest = tmp_path / "ravdess.csv"
     with manifest.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)

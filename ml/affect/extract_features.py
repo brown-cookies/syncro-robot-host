@@ -9,6 +9,7 @@ from typing import Callable
 
 import numpy as np
 
+from .dataset import write_feature_alignment_sidecar
 from .features import EXPECTED_FEATURE_COUNT, FeatureExtractionResult, extract_features
 
 FEATURE_COLUMNS = tuple(
@@ -111,6 +112,7 @@ def extract_corpus(manifest: Path, audio_root: Path, output: Path, *, progress_e
         progress_label=manifest.stem.upper(),
     )
     write_feature_table(matrix, output)
+    write_feature_alignment_sidecar(manifest, output)
     print(f"[{manifest.stem.upper()}] Wrote {matrix.shape[0]} rows to {output}", flush=True)
     return matrix
 

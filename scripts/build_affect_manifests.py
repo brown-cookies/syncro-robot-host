@@ -59,7 +59,7 @@ def build_ravdess_records(root: str | Path) -> list[AffectRecord]:
                     f"Unsupported RAVDESS emotion code: {audio_path.name}")
             records.append(
                 AffectRecord(
-                    audio_path=audio_path.relative_to(base),
+                    audio_path=Path(audio_path.relative_to(base).as_posix()),
                     corpus="ravdess",
                     speaker_id=speaker_id,
                     source_label=source_label,
@@ -83,7 +83,7 @@ def build_tess_records(root: str | Path) -> list[AffectRecord]:
             source_label = "pleasant surprise"
         records.append(
             AffectRecord(
-                audio_path=audio_path.relative_to(base),
+                audio_path=Path(audio_path.relative_to(base).as_posix()),
                 corpus="tess",
                 speaker_id=match.group("speaker").upper(),
                 source_label=source_label,

@@ -17,6 +17,7 @@ from pipeline.host_pipeline import HostPipeline
 from storage.sqlite_store import SQLiteStore
 
 
+
 def build_wp102_pipeline(settings: Settings | None = None) -> HostPipeline:
     """Assemble the host pipeline from the configured runtime components."""
     settings = settings or get_settings()
@@ -46,7 +47,6 @@ def build_wp103_components(settings: Settings | None = None, *, affect_detector=
         if settings.affect_detector_backend != "classifier":
             raise ValueError("AFFECT_DETECTOR_BACKEND must be 'classifier'")
         from adapters.affect import ClassifierAffectDetector
-
         affect_detector = ClassifierAffectDetector(settings.affect_classifier_path)
 
     graph = build_dialogue_graph(

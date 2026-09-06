@@ -5,21 +5,15 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-import numpy as np
-
 from .artifacts import save_model_artifact
-from .dataset import load_manifest
+from .dataset import load_manifest, validate_feature_table
 from .model import RANDOM_STATE, build_svc_pipeline
 
 
 def train_from_features(feature_csv: str | Path, manifest_csv: str | Path, output_path: str | Path):
     """Fit the fixed affect classifier from aligned feature data and labels."""
-    features = np.loadtxt(feature_csv, delimiter=",", skiprows=1)
-    if features.ndim == 1:
-        features = features.reshape(1, -1)
+    features = validate_feature_table(feature_csv, manifest_csv)
     records = load_manifest(manifest_csv)
-    if len(records) != len(features):
-        raise ValueError(f"Feature rows ({len(features)}) != manifest rows ({len(records)})")
     model = build_svc_pipeline()
     model.fit(features, [record.target_label for record in records])
     save_model_artifact(model, output_path, extra_metadata={"random_state": RANDOM_STATE})

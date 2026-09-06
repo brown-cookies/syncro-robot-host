@@ -5,6 +5,8 @@ from __future__ import annotations
 from collections import Counter
 from dataclasses import dataclass
 import csv
+import hashlib
+import json
 from pathlib import Path
 from typing import Iterable, Sequence
 
@@ -26,6 +28,11 @@ EXPECTED_COUNTS = {
     "ravdess": {"records": 1440, "speakers": 24, "source_labels": 8},
     "tess": {"records": 2800, "speakers": 2, "source_labels": 7},
 }
+EXPECTED_FEATURE_COUNT = 88
+EXPECTED_FEATURE_COLUMNS = tuple(
+    f"feature_{index:02d}" for index in range(EXPECTED_FEATURE_COUNT)
+)
+
 EXPECTED_SOURCE_LABELS = {
     "ravdess": frozenset(RAVDESS_LABEL_MAP),
     "tess": frozenset(TESS_LABEL_MAP),
@@ -162,7 +169,7 @@ def write_manifest(records: Iterable[AffectRecord], path: str | Path) -> None:
         for record in records:
             writer.writerow(
                 {
-                    "audio_path": str(record.audio_path),
+                    "audio_path": record.audio_path.as_posix(),
                     "corpus": record.corpus,
                     "speaker_id": record.speaker_id,
                     "source_label": record.source_label,
@@ -203,6 +210,10 @@ def _validate_manifest_row(row: dict[str, str], row_number: int, path: Path) -> 
             f"Manifest label mismatch at row {row_number}: expected {expected!r}, got {row['target_label']!r}"
         )
 
+    if "\\" in row["audio_path"]:
+        raise ValueError(
+            f"Manifest audio_path must use POSIX separators at row {row_number}")
+
     if Path(row["audio_path"]).is_absolute():
         raise ValueError(
             f"Manifest audio_path must be relative at row {row_number}")
@@ -236,3 +247,96 @@ def _verify_audio_files(records: Iterable[AffectRecord], audio_root: Path) -> No
         raise FileNotFoundError(
             f"Manifest references {len(missing)} missing audio files; first examples: {missing[:5]}"
         )
+
+
+def manifest_fingerprint(records: Iterable[AffectRecord]) -> str:
+    """Hash ordered manifest identity fields used to align features with labels."""
+    digest = hashlib.sha256()
+    for record in records:
+        line = "\x1f".join((
+            record.audio_path.as_posix(),
+            record.corpus,
+            record.speaker_id,
+            record.source_label,
+            record.target_label,
+        ))
+        digest.update(line.encode("utf-8"))
+        digest.update(b"\n")
+    return digest.hexdigest()
+
+
+def write_feature_alignment_sidecar(
+    manifest_csv: str | Path,
+    feature_csv: str | Path,
+) -> Path:
+    """Record the manifest fingerprint and feature schema used for positional alignment."""
+    records = load_manifest(manifest_csv)
+    target = Path(feature_csv)
+    sidecar = target.with_name(f"{target.stem}.alignment.json")
+    payload = {
+        "manifest_sha256": manifest_fingerprint(records),
+        "record_count": len(records),
+        "feature_columns": list(EXPECTED_FEATURE_COLUMNS),
+    }
+    sidecar.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return sidecar
+
+
+def validate_feature_table(
+    feature_csv: str | Path,
+    manifest_csv: str | Path,
+) -> "np.ndarray":
+    """Load a feature CSV and verify schema, values, row count, and manifest alignment."""
+    import numpy as np
+
+    feature_path = Path(feature_csv)
+    records = load_manifest(manifest_csv)
+    with feature_path.open("r", encoding="utf-8", newline="") as handle:
+        reader = csv.reader(handle)
+        header = next(reader, None)
+        if header != list(EXPECTED_FEATURE_COLUMNS):
+            raise ValueError(
+                f"Feature columns mismatch for {feature_path}: "
+                f"expected {list(EXPECTED_FEATURE_COLUMNS)}, got {header}"
+            )
+        rows = list(reader)
+
+    matrix = np.asarray(rows, dtype=np.float64)
+    if matrix.size == 0:
+        matrix = np.empty((0, EXPECTED_FEATURE_COUNT), dtype=np.float64)
+    if matrix.ndim != 2 or matrix.shape[1] != EXPECTED_FEATURE_COUNT:
+        raise ValueError(
+            f"Feature table must have exactly {EXPECTED_FEATURE_COUNT} columns"
+        )
+    if matrix.shape[0] != len(records):
+        raise ValueError(
+            f"Feature rows ({matrix.shape[0]}) != manifest rows ({len(records)})"
+        )
+    if not np.isfinite(matrix).all():
+        raise ValueError(f"Feature table contains non-finite values: {feature_path}")
+
+    sidecar = feature_path.with_name(f"{feature_path.stem}.alignment.json")
+    if not sidecar.exists():
+        raise ValueError(f"Feature alignment sidecar not found: {sidecar}")
+    try:
+        metadata = json.loads(sidecar.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"Could not read feature alignment sidecar: {sidecar}") from exc
+    expected_hash = manifest_fingerprint(records)
+    if metadata.get("manifest_sha256") != expected_hash:
+        raise ValueError(
+            f"Feature/manifest alignment mismatch for {feature_path}: "
+            "manifest fingerprint differs from extraction sidecar"
+        )
+    if metadata.get("record_count") != len(records):
+        raise ValueError(
+            f"Feature alignment record count mismatch for {feature_path}"
+        )
+    if metadata.get("feature_columns") != list(EXPECTED_FEATURE_COLUMNS):
+        raise ValueError(
+            f"Feature alignment schema mismatch for {feature_path}"
+        )
+    return matrix

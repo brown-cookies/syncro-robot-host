@@ -10,7 +10,7 @@ import numpy as np
 from sklearn.metrics import classification_report, confusion_matrix, f1_score
 from sklearn.model_selection import GroupKFold
 
-from .dataset import load_manifest
+from .dataset import load_manifest, validate_feature_table
 from .model import build_svc_pipeline, RANDOM_STATE
 
 ALLOWED_LEVELS = ("Low", "Moderate", "High")
@@ -39,6 +39,11 @@ def evaluate_ravdess(
     if any(record.corpus.strip().lower() != "ravdess" for record in records):
         raise ValueError(
             "RAVDESS GroupKFold manifest must contain RAVDESS records only")
+    features = np.asarray(features, dtype=np.float64)
+    if features.ndim != 2 or features.shape[1] != 88:
+        raise ValueError("Evaluation features must have exactly 88 columns")
+    if not np.isfinite(features).all():
+        raise ValueError("Evaluation features must contain only finite values")
     if len(records) != len(features):
         raise ValueError(
             f"Feature rows ({len(features)}) != manifest rows ({len(records)})")
