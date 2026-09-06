@@ -66,6 +66,9 @@ temp/
 # Local configuration (if any)
 config.local.py
 
-# Datasets RAVDESS/TESS
+# Datasets RAVDESS/TESS path
 datasets/affect/RAVDESS
 datasets/affect/TESS
+
+# Datasets feature extraction path
+datasets/features/
