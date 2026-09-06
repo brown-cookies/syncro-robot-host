@@ -26,7 +26,6 @@ class SQLiteStore:
         """Return the configured path used by the backing storage."""
         return self.database.path
 
-
     def ensure_user(
         self,
         user_id: str,
