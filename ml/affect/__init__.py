@@ -6,12 +6,13 @@ training modules.
 """
 
 from .label_mapping import ALLOWED_LEVELS, RAVDESS_LABEL_MAP, TESS_LABEL_MAP, map_label
-from .model import build_svc_pipeline
+from .model import build_mlp_pipeline, build_svc_pipeline
 
 __all__ = [
     "ALLOWED_LEVELS",
     "RAVDESS_LABEL_MAP",
     "TESS_LABEL_MAP",
     "map_label",
+    "build_mlp_pipeline",
     "build_svc_pipeline",
 ]

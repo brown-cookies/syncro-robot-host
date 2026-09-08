@@ -12,11 +12,11 @@
 
 - Pipeline: `StandardScaler -> SVC(kernel=\"rbf\", class_weight=\"balanced\")`.
 - Random state: 42.
-- scikit-learn used for this run: 1.9.0.
+- Training environment used for the final verification: scikit-learn 1.8.0; repository requirement remains pinned to 1.9.0 for reproducible deployment environments.
 - joblib used for this run: 1.6.0.
 - Shipped artifact: `models/affect/affect_svc_v1.joblib`.
 - Artifact version: `affect_svc_v1`.
-- MLPClassifier comparison: not run in this baseline evidence; SVC is the fixed prototype classifier pending the planned comparison.
+- MLPClassifier comparison: completed on the identical six-fold RAVDESS GroupKFold protocol; SVC remains the fixed prototype classifier.
 
 ## RAVDESS Evaluation
 
@@ -29,6 +29,18 @@
 - Low: 0.652666
 - Moderate: 0.474359
 - High: 0.769750
+
+## SVC vs MLP Comparison
+
+- Protocol: identical 6-fold `GroupKFold` grouped by `speaker_id`; no speaker overlap between train and validation partitions.
+- SVC: `StandardScaler -> SVC(kernel="rbf", class_weight="balanced")`.
+- MLP: `StandardScaler -> MLPClassifier(hidden_layer_sizes=(64,), activation="relu", solver="adam", alpha=1e-4, learning_rate_init=1e-3, max_iter=1000, random_state=42, early_stopping=False)`.
+- SVC macro-F1: **0.632258**.
+- MLP macro-F1: **0.625254**.
+- Difference (MLP - SVC): **-0.007005**.
+- Comparison result: **SVC wins** and remains the prototype classifier.
+- Deployment gate: both results are **NO-GO** at macro-F1 0.70.
+- Full comparison evidence: `evidences/ml/svc_vs_mlp_comparison.json`.
 
 ### Confusion matrix
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from collections.abc import Callable
 from typing import Any, cast
 
 import numpy as np
@@ -91,9 +92,12 @@ def evaluate_ravdess(
     manifest_csv: str | Path,
     *,
     n_splits: int = DEFAULT_N_SPLITS,
+    model_factory: Callable[[], Any] | None = None,
 ) -> EvaluationResult:
     """Evaluate RAVDESS using speaker-grouped cross-validation and OOF predictions."""
     records = load_manifest(manifest_csv)
+    if model_factory is None:
+        model_factory = build_svc_pipeline
     if any(record.corpus != "ravdess" for record in records):
         raise ValueError(
             "RAVDESS GroupKFold manifest must contain RAVDESS records only")
@@ -120,7 +124,7 @@ def evaluate_ravdess(
             raise AssertionError(
                 f"Speaker leakage detected in GroupKFold fold {fold_number}"
             )
-        model = build_svc_pipeline()
+        model = model_factory()
         model.fit(features[train_idx], y[train_idx])
         predictions = model.predict(features[test_idx])
         y_true.extend(y[test_idx].tolist())

@@ -42,8 +42,10 @@ def train_from_features(
             "training_corpus": "RAVDESS",
             "training_records": len(records),
             "deployment_threshold_macro_f1": DEPLOYMENT_THRESHOLD,
-            "pinned_scikit_learn_version": "1.9.0",
-            "pinned_joblib_version": "1.6.0",
+            "required_scikit_learn_version": "1.9.0",
+            "required_joblib_version": "1.6.0",
+            "training_scikit_learn_version": sklearn.__version__,
+            "training_joblib_version": joblib.__version__,
         },
     )
     return model, result

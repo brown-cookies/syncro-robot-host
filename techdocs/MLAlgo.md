@@ -169,6 +169,30 @@ not meaningful within TESS alone. The workable arrangement is to run GroupKFold 
 speakers and treat TESS as a held-out generalisation check rather than folding it into training. A
 TESS-heavy training set will learn two voices.
 
+### 6.2a Model comparison protocol
+
+The SVC-to-MLP comparison uses exactly the same RAVDESS feature table, label mapping, six-fold `GroupKFold`,
+speaker grouping, and macro-F1 definition. The comparison model is deliberately shallow and fixed before
+reading the final comparison result:
+
+```text
+StandardScaler
+    -> MLPClassifier(
+         hidden_layer_sizes=(64,),
+         activation="relu",
+         solver="adam",
+         alpha=1e-4,
+         learning_rate_init=1e-3,
+         max_iter=1000,
+         random_state=42,
+         early_stopping=False,
+       )
+```
+
+No hyperparameter search is performed against the six evaluation folds. The MLP is a comparison model, not
+a reason to relax the macro-F1 gate. If the MLP does not beat the SVC under the fixed protocol, SVC remains the
+selected prototype model.
+
 ### 6.3 Metric and go/no-go
 
 - Primary metric: `f1_score(y_true, y_pred, average="macro")`.
@@ -226,5 +250,5 @@ limitation and is handled in `archive/SYNCRO-mock-panel-QA.md`.
 |---:|:--|:--|:--|
 | 1 | Write down the 8/7-emotion -> 3-stress-level mapping explicitly (§6.1) | Team | Yes — blocks training |
 | 2 | Decide RAVDESS-train / TESS-holdout split versus pooling (§6.2) | Team | Yes — blocks the F1 figure |
-| 3 | Confirm SVC versus MLPClassifier empirically; report both | Team | No — either satisfies the written design |
+| 3 | Confirm SVC versus MLPClassifier empirically; report both | Team | **Done** — SVC 0.632258 vs MLP 0.625254; SVC retained |
 | 4 | Record the chosen scikit-learn version once training begins (§6.4) | Team | No, but do it before deployment |

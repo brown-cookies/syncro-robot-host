@@ -1,0 +1,11 @@
+{
+  "artifact_verification": "trained_persisted_loaded_and_sample_predicted",
+  "artifact_version": "affect_svc_v1",
+  "go_no_go": "NO-GO",
+  "ravdess_macro_f1": 0.6322582442748598,
+  "required_sklearn_version": "1.9.0",
+  "selected_model": "SVC(kernel=\"rbf\", class_weight=\"balanced\")",
+  "tess_macro_f1": 0.1999833208239513,
+  "threshold": 0.7,
+  "verification_sklearn_version": "1.8.0"
+}

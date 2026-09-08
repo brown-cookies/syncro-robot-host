@@ -1,0 +1,97 @@
+{
+  "best": {
+    "C": 3.0,
+    "class_weight": "balanced",
+    "gamma": 0.01,
+    "macro_f1": 0.637831003911524
+  },
+  "protocol": {
+    "baseline": 0.6322582442748598,
+    "corpus": "RAVDESS",
+    "cv_scheme": "GroupKFold",
+    "grouping_key": "speaker_id",
+    "metric": "macro_f1",
+    "n_splits": 6,
+    "threshold": 0.7
+  },
+  "search": {
+    "C": [
+      0.3,
+      1.0,
+      3.0,
+      10.0
+    ],
+    "class_weight": [
+      "balanced",
+      null
+    ],
+    "config_count": 24,
+    "gamma": [
+      "scale",
+      0.003,
+      0.01
+    ]
+  },
+  "top_results": [
+    {
+      "C": 3.0,
+      "class_weight": "balanced",
+      "gamma": 0.01,
+      "macro_f1": 0.637831003911524
+    },
+    {
+      "C": 3.0,
+      "class_weight": "balanced",
+      "gamma": "scale",
+      "macro_f1": 0.6350909861613899
+    },
+    {
+      "C": 1.0,
+      "class_weight": "balanced",
+      "gamma": 0.01,
+      "macro_f1": 0.6322840639866156
+    },
+    {
+      "C": 1.0,
+      "class_weight": "balanced",
+      "gamma": "scale",
+      "macro_f1": 0.6322582442748598
+    },
+    {
+      "C": 10.0,
+      "class_weight": "balanced",
+      "gamma": 0.003,
+      "macro_f1": 0.6290334576586608
+    },
+    {
+      "C": 3.0,
+      "class_weight": "balanced",
+      "gamma": 0.003,
+      "macro_f1": 0.6281950060632374
+    },
+    {
+      "C": 3.0,
+      "class_weight": null,
+      "gamma": 0.003,
+      "macro_f1": 0.6235246694377444
+    },
+    {
+      "C": 3.0,
+      "class_weight": null,
+      "gamma": 0.01,
+      "macro_f1": 0.6221596713730837
+    },
+    {
+      "C": 3.0,
+      "class_weight": null,
+      "gamma": "scale",
+      "macro_f1": 0.6198352207140084
+    },
+    {
+      "C": 10.0,
+      "class_weight": null,
+      "gamma": 0.01,
+      "macro_f1": 0.616448393677289
+    }
+  ]
+}

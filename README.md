@@ -280,6 +280,28 @@ python -m ml.affect.train \
 
 The current fixed SVC baseline measures RAVDESS macro-F1 **0.632258**, below the **0.70** deployment threshold, so the honest status is **NO-GO**. The model remains a prototype affect signal rather than a validated clinical stress detector.
 
+### 6c. Compare SVC with the shallow MLP
+
+Run the comparison with the same RAVDESS features, six speaker-disjoint `GroupKFold` folds, 88 features, and macro-F1 metric:
+
+```bash
+python -m ml.affect.compare \
+  --ravdess-features datasets/features/ravdess.csv \
+  --ravdess-manifest datasets/affect/manifests/ravdess.csv \
+  --n-splits 6 \
+  --output evidences/ml/svc_vs_mlp_comparison.json
+```
+
+The MLP comparison is a single prespecified shallow `MLPClassifier(hidden_layer_sizes=(64,), activation="relu", solver="adam", alpha=1e-4, learning_rate_init=1e-3, max_iter=1000, random_state=42)` behind the same `StandardScaler` used by SVC. It is compared on the identical outer GroupKFold partitions rather than tuned against the evaluation folds.
+
+The measured RAVDESS macro-F1 values are **SVC 0.632258** and **MLP 0.625254** (MLP − SVC = **−0.007005**), so **SVC remains the selected prototype classifier**. Both remain below the 0.70 gate. Full metrics and confusion matrices are recorded in `evidences/ml/svc_vs_mlp_comparison.json`.
+
+### 6d. Fine-tuning experiment
+
+The fixed baseline above is frozen. Subsequent SVC tuning is recorded separately so it cannot silently replace the acceptance result. A small prespecified search around the baseline reached **0.637831** with `C=3.0`, `gamma=0.01`, and `class_weight="balanced"` on the same six-fold partitions. Because selecting a configuration on the same evaluation folds is optimistic, the candidate was also evaluated with nested three-fold speaker-grouped inner selection; the resulting outer macro-F1 was **0.633728**. Neither result clears the **0.70** gate. Evidence is in `evidences/ml/svc_tuning_search.json` and `evidences/ml/svc_nested_tuning.json`.
+
+This means the current tuning pass does **not** justify changing the selected baseline artifact. Further improvement work should use a predeclared validation protocol or additional data/feature work rather than repeatedly optimizing against the final six folds.
+
 ## 7. Run WP-103
 
 Start Ollama first, make sure your Piper model path is valid, and connect the microphone/speaker you want to use.
