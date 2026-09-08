@@ -1,6 +1,16 @@
-# WP-104 Affect Model Artifacts
+# WP-104 runtime artifacts
 
-Persisted joblib models and sidecar metadata belong here.
+The trained classifier artifact is intentionally not committed because it is a generated binary.
 
-Model binaries are gitignored. The repository should contain the artifact-generation code and
-version metadata conventions, while the trained binary is supplied as local/release evidence.
+Generate it locally with:
+
+```bash
+python -m ml.affect.train \
+  --ravdess-features datasets/features/ravdess.csv \
+  --ravdess-manifest datasets/affect/manifests/ravdess.csv \
+  --tess-features datasets/features/tess.csv \
+  --tess-manifest datasets/affect/manifests/tess.csv \
+  --output models/affect/affect_svc_v1.joblib
+```
+
+The command also writes the artifact metadata sidecar at `models/affect/affect_svc_v1.joblib.json`.

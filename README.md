@@ -65,7 +65,7 @@ The affect runtime exposes a stable contract-boundary detector. WP-104 supplies 
 ClassifierAffectDetector(model_path).detect(audio, sample_rate)  # -> "Low" | "Moderate" | "High"
 ```
 
-The WP-104 production affect model, feature extraction, training, evaluation, and macro-F1 evidence are documented under `techdocs/MLSPEC.md` and implemented under `ml/affect/`, with runtime loading through `adapters/affect/`.
+The WP-104 affect model, feature extraction, training, evaluation, and macro-F1 evidence are documented under `techdocs/MLSPEC.md` and implemented under `ml/affect/`, with runtime loading through `adapters/affect/`. A clean clone defaults to the deterministic development affect detector; the persisted classifier is selected when explicitly configured and successfully loaded.
 
 ## Project layout
 
@@ -84,7 +84,8 @@ storage/             SQLite schema, context retrieval, and decision traces
 scripts/             Manual operational runners and WP-103 seeding
 techdocs/            SPEC / ARCH / roadmap and supporting documents
 tests/               Unit, contract, architecture, and integration tests
-models/              Local model files; keep these out of Git
+models/              Local model files; keep binary artifacts out of Git
+  affect/             WP-104 artifact instructions and generated classifier metadata
 ```
 
 ## Requirements
@@ -98,6 +99,8 @@ Recommended environment for the current repository:
 - Internet access on the first faster-whisper model load so the selected Whisper model can be downloaded/cached
 
 The exact Python package versions are pinned in `requirements.txt`.
+
+WP-104 training also relies on the committed feature tables in `datasets/features/` and their committed `.alignment.json` sidecars. These sidecars bind each feature table to the exact manifest fingerprint used during extraction.
 
 ## 1. Create the Python environment
 
@@ -155,6 +158,8 @@ STT_DEVICE=cpu
 PIPER_MODEL_PATH=./models/en_US-lessac-medium
 DB_PATH=./syncro.db
 INTENT_CONFIDENCE_THRESHOLD=0.60
+AFFECT_DETECTOR_BACKEND=development
+AFFECT_CLASSIFIER_PATH=./models/affect/affect_svc_v1.joblib
 ```
 
 `.env` is local configuration and must not be committed.
@@ -242,6 +247,38 @@ python -m scripts.seed_wp103 --no-reset
 ```
 
 The live runner does **not** call the resetting seeder automatically.
+
+## 6a. Prepare WP-104 affect runtime
+
+A clean checkout does not require a trained binary to start. The default is:
+
+```dotenv
+AFFECT_DETECTOR_BACKEND=development
+```
+
+This returns the deterministic `Low` fallback. To use the trained classifier after generating the artifact locally, set:
+
+```dotenv
+AFFECT_DETECTOR_BACKEND=classifier
+AFFECT_CLASSIFIER_PATH=./models/affect/affect_svc_v1.joblib
+```
+
+If the classifier cannot be loaded, the graph falls back to `Low` for that turn instead of aborting the dialogue.
+
+## 6b. Reproduce the WP-104 baseline
+
+The committed RAVDESS/TESS feature tables can be used directly because their alignment sidecars are checked in with the repository:
+
+```bash
+python -m ml.affect.train \
+  --ravdess-features datasets/features/ravdess.csv \
+  --ravdess-manifest datasets/affect/manifests/ravdess.csv \
+  --tess-features datasets/features/tess.csv \
+  --tess-manifest datasets/affect/manifests/tess.csv \
+  --output models/affect/affect_svc_v1.joblib
+```
+
+The current fixed SVC baseline measures RAVDESS macro-F1 **0.632258**, below the **0.70** deployment threshold, so the honest status is **NO-GO**. The model remains a prototype affect signal rather than a validated clinical stress detector.
 
 ## 7. Run WP-103
 

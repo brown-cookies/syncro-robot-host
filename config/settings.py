@@ -73,7 +73,7 @@ class Settings:
 
     # openSMILE / affect
     opensmile_executable: str = "openSMILE"
-    affect_detector_backend: str = "classifier"
+    affect_detector_backend: str = "development"
     affect_classifier_path: str = "./models/affect/affect_svc_v1.joblib"
 
     # Policy

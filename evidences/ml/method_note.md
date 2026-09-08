@@ -14,9 +14,9 @@
 - Random state: 42.
 - scikit-learn used for this run: 1.9.0.
 - joblib used for this run: 1.6.0.
-- Shipped artifact: `models\affect\affect_svc_v1.joblib`.
+- Shipped artifact: `models/affect/affect_svc_v1.joblib`.
 - Artifact version: `affect_svc_v1`.
-- MLPClassifier comparison: not run; SVC is the fixed shipped classifier.
+- MLPClassifier comparison: not run in this baseline evidence; SVC is the fixed prototype classifier pending the planned comparison.
 
 ## RAVDESS Evaluation
 
@@ -76,3 +76,7 @@ Threshold: **macro-F1 >= 0.70**.
 Measured outcome: **NO-GO**.
 
 The measured macro-F1 is below 0.70; report the classifier as the best measured prototype signal and do not describe it as a validated clinical stress detector.
+
+## Reproduction
+
+The committed feature tables and alignment sidecars can be retrained with `python -m ml.affect.train` using the command documented in `README.md`. The binary artifact is intentionally not committed; `models/affect/README.md` documents its regeneration.

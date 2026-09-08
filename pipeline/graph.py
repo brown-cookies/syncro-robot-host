@@ -1,4 +1,4 @@
-"""WP-103 LangGraph dialogue graph."""
+"""WP-103 LangGraph dialogue graph with WP-104 affect degradation."""
 
 from __future__ import annotations
 

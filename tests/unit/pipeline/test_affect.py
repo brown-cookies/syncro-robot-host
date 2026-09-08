@@ -16,6 +16,12 @@ class FakeAffect:
         return self.level
 
 
+class FailingAffect:
+    def detect(self, audio, sample_rate):
+        """Simulate a detector failure during a live turn."""
+        raise RuntimeError("classifier unavailable")
+
+
 def test_affect_node_uses_same_audio_contract():
     """Verify that affect node uses same audio contract."""
     detector = FakeAffect("Moderate")
@@ -25,8 +31,23 @@ def test_affect_node_uses_same_audio_contract():
     assert detector.calls == [(audio, 16000)]
 
 
-def test_affect_node_rejects_invalid_level():
-    """Verify that affect node rejects invalid level."""
-    with pytest.raises(AffectDetectionError):
-        make_affect_node(FakeAffect("medium"))({"audio": [1], "sample_rate": 16000})
+def test_affect_node_rejects_invalid_detector_level():
+    """Verify that invalid detector output degrades instead of aborting the turn."""
+    result = make_affect_node(FakeAffect("medium"))(
+        {"audio": [1], "sample_rate": 16000}
+    )
+    assert result == {"affect_level": "Low"}
 
+
+def test_affect_node_degrades_when_detector_fails():
+    """Verify that detector failures are converted to a safe fallback level."""
+    result = make_affect_node(FailingAffect())(
+        {"audio": [1], "sample_rate": 16000}
+    )
+    assert result == {"affect_level": "Low"}
+
+
+def test_affect_node_rejects_missing_audio():
+    """Verify that missing audio remains an input contract error."""
+    with pytest.raises(AffectDetectionError):
+        make_affect_node(FakeAffect("Low"))({"sample_rate": 16000})

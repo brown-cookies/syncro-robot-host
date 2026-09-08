@@ -72,3 +72,7 @@ datasets/affect/TESS
 
 # Datasets feature extraction path
 datasets/features/
+datasets/features/*
+!datasets/features/
+!datasets/features/*.csv
+!datasets/features/*.alignment.json
