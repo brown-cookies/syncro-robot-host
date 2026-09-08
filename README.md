@@ -265,9 +265,108 @@ AFFECT_CLASSIFIER_PATH=./models/affect/affect_svc_v1.joblib
 
 If the classifier cannot be loaded, the graph falls back to `Low` for that turn instead of aborting the dialogue.
 
-## 6b. Reproduce the WP-104 baseline
+## 6b. WP-104 command guide
 
-The committed RAVDESS/TESS feature tables can be used directly because their alignment sidecars are checked in with the repository:
+All commands in this section are run from the repository root after activating the Python virtual environment. The commands use the repository's committed scripts directly; there is no separate experiment notebook or undocumented generation step.
+
+### WP-104 workflow order
+
+Use this order when rebuilding the affect dataset and experiments from raw audio:
+
+```bash
+# 1. Build canonical RAVDESS/TESS manifests
+python -m scripts.build_affect_manifests \
+  --ravdess-root datasets/raw/ravdess \
+  --tess-root datasets/raw/tess \
+  --output-dir datasets/affect/manifests
+
+# 2. Verify the manifests and dataset structure
+python -m scripts.verify_affect_manifests \
+  --ravdess-manifest datasets/affect/manifests/ravdess.csv \
+  --tess-manifest datasets/affect/manifests/tess.csv \
+  --ravdess-root datasets/raw/ravdess \
+  --tess-root datasets/raw/tess
+
+# 3. Extract the committed 88-feature eGeMAPSv02 feature tables
+python -m ml.affect.extract_features \
+  --ravdess-root datasets/raw/ravdess \
+  --tess-root datasets/raw/tess \
+  --manifest-dir datasets/affect/manifests \
+  --output-dir datasets/features
+
+# 4. Train the frozen WP-104 SVC baseline and write acceptance evidence
+python -m ml.affect.train \
+  --ravdess-features datasets/features/ravdess.csv \
+  --ravdess-manifest datasets/affect/manifests/ravdess.csv \
+  --tess-features datasets/features/tess.csv \
+  --tess-manifest datasets/affect/manifests/tess.csv \
+  --output models/affect/affect_svc_v1.joblib \
+  --evidence-dir evidences/ml/experiment \
+  --n-splits 6
+
+# 5. Compare the frozen SVC against the prespecified shallow MLP
+python -m ml.affect.compare \
+  --ravdess-features datasets/features/ravdess.csv \
+  --ravdess-manifest datasets/affect/manifests/ravdess.csv \
+  --n-splits 6 \
+  --output evidences/ml/experiment/svc_vs_mlp_comparison.json
+
+# 6. Reproduce the fine-tuning/search evidence
+python -m ml.affect.tune \
+  --ravdess-features datasets/features/ravdess.csv \
+  --ravdess-manifest datasets/affect/manifests/ravdess.csv \
+  --tess-features datasets/features/tess.csv \
+  --tess-manifest datasets/affect/manifests/tess.csv \
+  --output-dir evidences/ml/finetune \
+  --n-splits 6 \
+  --inner-splits 3
+```
+
+The repository also supports rebuilding only the already-committed experiment results. In that case, start at step 4 because `datasets/affect/manifests/` and `datasets/features/` are already present.
+
+### 6c. Manifest commands
+
+Build both canonical manifests from the two downloaded corpora:
+
+```bash
+python -m scripts.build_affect_manifests \
+  --ravdess-root datasets/raw/ravdess \
+  --tess-root datasets/raw/tess \
+  --output-dir datasets/affect/manifests
+```
+
+Verify them without rebuilding anything:
+
+```bash
+python -m scripts.verify_affect_manifests
+```
+
+To also verify that the manifest audio paths exist under the raw corpus directories:
+
+```bash
+python -m scripts.verify_affect_manifests \
+  --ravdess-root datasets/raw/ravdess \
+  --tess-root datasets/raw/tess
+```
+
+### 6d. Feature extraction
+
+Extract RAVDESS and TESS features using the canonical manifests:
+
+```bash
+python -m ml.affect.extract_features \
+  --ravdess-root datasets/raw/ravdess \
+  --tess-root datasets/raw/tess \
+  --manifest-dir datasets/affect/manifests \
+  --output-dir datasets/features \
+  --progress-every 25
+```
+
+This writes the feature tables plus their alignment sidecars. The sidecars bind each feature table to the manifest fingerprint used for extraction.
+
+### 6e. Frozen baseline training and acceptance evidence
+
+Train the fixed SVC baseline:
 
 ```bash
 python -m ml.affect.train \
@@ -276,14 +375,15 @@ python -m ml.affect.train \
   --tess-features datasets/features/tess.csv \
   --tess-manifest datasets/affect/manifests/tess.csv \
   --output models/affect/affect_svc_v1.joblib \
-  --evidence-dir evidences/ml/experiment
+  --evidence-dir evidences/ml/experiment \
+  --n-splits 6
 ```
 
-The current fixed SVC baseline measures RAVDESS macro-F1 **0.632258**, below the **0.70** deployment threshold, so the honest status is **NO-GO**. The model remains a prototype affect signal rather than a validated clinical stress detector.
+The frozen acceptance baseline is **0.632258 macro-F1** on RAVDESS, below the **0.70** gate, so the acceptance result is **NO-GO**. This model remains a prototype affect signal and is not a clinical stress detector.
 
-### 6c. Compare SVC with the shallow MLP
+### 6f. SVC versus MLP comparison
 
-Run the comparison with the same RAVDESS features, six speaker-disjoint `GroupKFold` folds, 88 features, and macro-F1 metric:
+Run the fixed SVC/MLP comparison using the same speaker-disjoint folds:
 
 ```bash
 python -m ml.affect.compare \
@@ -293,15 +393,13 @@ python -m ml.affect.compare \
   --output evidences/ml/experiment/svc_vs_mlp_comparison.json
 ```
 
-The MLP comparison is a single prespecified shallow `MLPClassifier(hidden_layer_sizes=(64,), activation="relu", solver="adam", alpha=1e-4, learning_rate_init=1e-3, max_iter=1000, random_state=42)` behind the same `StandardScaler` used by SVC. It is compared on the identical outer GroupKFold partitions rather than tuned against the evaluation folds.
+This writes the comparison JSON, including both macro-F1 values, the delta, the selected winner, and confusion matrices. It does not modify the shipped classifier.
 
-The measured RAVDESS macro-F1 values are **SVC 0.632258** and **MLP 0.625254** (MLP − SVC = **−0.007005**), so **SVC remains the selected prototype classifier**. Both remain below the 0.70 gate. Full metrics and confusion matrices are recorded in `evidences/ml/experiment/svc_vs_mlp_comparison.json`.
+### 6g. Reproducible fine-tuning
 
-### 6d. Fine-tuning experiment
+Fine-tuning is a separate research experiment and must not silently replace the frozen acceptance baseline.
 
-The fixed baseline above is frozen. Fine-tuning is recorded separately and cannot silently replace the acceptance result.
-
-The committed runner:
+Run the committed producer:
 
 ```bash
 python -m ml.affect.tune \
@@ -309,18 +407,116 @@ python -m ml.affect.tune \
   --ravdess-manifest datasets/affect/manifests/ravdess.csv \
   --tess-features datasets/features/tess.csv \
   --tess-manifest datasets/affect/manifests/tess.csv \
-  --output-dir evidences/ml/finetune
+  --output-dir evidences/ml/finetune \
+  --n-splits 6 \
+  --inner-splits 3
 ```
 
-reproduces the complete research bundle:
+The command produces all currently tracked fine-tuning evidence from committed code:
 
-- fixed-fold OVR + `SelectKBest(k=50)` search: **0.651618** macro-F1;
-- nested 3-fold-inner / 6-fold-outer OVR estimate: **0.650564** macro-F1;
-- TESS holdout after fitting that fixed candidate on all RAVDESS: **0.240470** macro-F1.
+| Artifact | Producer | Purpose |
+|---|---|---|
+| `svc_finetune_current.json` | `ml.affect.tune` | Fixed-fold OVR + SelectKBest search |
+| `svc_ovr_nested_tuning.json` | `ml.affect.tune` | Nested speaker-disjoint model selection |
+| `tess_holdout.json` | `ml.affect.tune` | RAVDESS → TESS cross-corpus holdout |
+| `fine_tuning_summary.md` | `ml.affect.tune` | Human-readable summary generated from the fresh results |
 
-All tuning results are generated by `ml/affect/tune.py`. The JSON evidence records the actual Python/NumPy/scikit-learn versions and SHA-256 fingerprints of the exact feature tables and manifests used.
+Recorded research results are approximately:
 
-The fixed-fold score is a research model-selection result, not an acceptance metric. The nested result and TESS holdout also remain below the **0.70** gate. The selected shipped model therefore remains the frozen baseline SVC and the overall acceptance status remains **NO-GO**.
+```text
+Frozen SVC acceptance baseline:       0.632258
+OVR + SelectKBest research candidate: 0.651618
+Nested OVR research estimate:         0.650564
+TESS cross-corpus holdout:             0.240470
+Deployment gate:                      0.700000
+Acceptance status:                    NO-GO
+```
+
+The **0.651618** and **0.650564** values are research candidates, not replacement baseline values. The baseline remains **0.632258**.
+
+The fine-tuning evidence records runtime provenance, including Python/NumPy/scikit-learn versions, the required scikit-learn pin, random state, and SHA-256/fingerprint information for the input feature tables and manifests. This makes the evidence traceable to exact inputs rather than treating committed JSON files as the source of truth.
+
+### 6h. Full WP-104 tests
+
+Run the whole test suite:
+
+```bash
+python -m pytest -q
+```
+
+Run only the WP-104 unit tests:
+
+```bash
+python -m pytest -q tests/unit/ml_affect
+```
+
+Run only the reproducibility tests:
+
+```bash
+python -m pytest -q tests/unit/ml_affect/test_tune.py
+```
+
+For a clean verification before merge, use:
+
+```bash
+python -m pytest -q tests/unit/ml_affect tests/integration/test_ml_affect_integration.py
+```
+
+### 6i. Useful inspection commands
+
+See the command-line options for any executable module:
+
+```bash
+python -m ml.affect.train --help
+python -m ml.affect.compare --help
+python -m ml.affect.tune --help
+python -m ml.affect.extract_features --help
+python -m scripts.build_affect_manifests --help
+python -m scripts.verify_affect_manifests --help
+python -m scripts.seed_wp103 --help
+```
+
+The other repository modules under `ml/affect/` (`dataset.py`, `features.py`, `label_mapping.py`, `model.py`, `evaluate.py`, and `artifacts.py`) are library modules used by these command-line entry points; they are not standalone CLI scripts.
+
+## 6j. WP-103 operational scripts
+
+The repository's `scripts/` directory contains the operational runners for WP-102 and WP-103 in addition to the WP-104 dataset helpers.
+
+### Run the WP-102 host-only pipeline
+
+```bash
+python -m scripts.run_wp102
+```
+
+This requires the configured Ollama, faster-whisper, Piper, microphone, and speaker/audio output.
+
+### Seed the deterministic WP-103 SQLite dataset
+
+Reset the demo rows first:
+
+```bash
+python -m scripts.seed_wp103
+```
+
+Preserve existing demo rows:
+
+```bash
+python -m scripts.seed_wp103 --no-reset
+```
+
+Use a specific SQLite database:
+
+```bash
+python -m scripts.seed_wp103 --db ./syncro.db
+```
+
+### Run the live WP-103 dialogue graph
+
+```bash
+python -m scripts.run_wp103
+```
+
+The runner creates/uses the `wp103-demo-user`, simulates the edge-owned wake-word event, captures microphone audio, executes the graph, speaks the final response, and prints the decision-trace ID.
 
 
 ## 7. Run WP-103
@@ -425,7 +621,7 @@ WP-103 uses these external model boundaries:
 
 WP-104 owns the affect model file, openSMILE feature extraction, scikit-learn classifier, training/evaluation data, and acceptance evidence described in `techdocs/MLSPEC.md`.
 
-When WP-104 is developed, it should replace the implementation behind the affect adapter contract and then supply the real model/evaluation evidence required by the roadmap.
+WP-104 now supplies the implementation behind the affect adapter contract together with the model/evaluation evidence required by the roadmap.
 
 ## 11. Common startup problems
 
