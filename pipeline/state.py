@@ -18,6 +18,7 @@ class DialogueState(TypedDict, total=False):
     context: dict[str, Any]
     retrieved_context_ids: list[str]
     affect_level: str
+    degradation_reason: str | None
     deadline_proximity: str
     draft_response: str
     proposed_action: str

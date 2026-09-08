@@ -27,7 +27,7 @@ def test_affect_node_uses_same_audio_contract():
     detector = FakeAffect("Moderate")
     audio = np.zeros(160, dtype=np.float32)
     result = make_affect_node(detector)({"audio": audio, "sample_rate": 16000})
-    assert result == {"affect_level": "Moderate"}
+    assert result == {"affect_level": "Moderate", "degradation_reason": None}
     assert detector.calls == [(audio, 16000)]
 
 
@@ -36,7 +36,7 @@ def test_affect_node_rejects_invalid_detector_level():
     result = make_affect_node(FakeAffect("medium"))(
         {"audio": [1], "sample_rate": 16000}
     )
-    assert result == {"affect_level": "Low"}
+    assert result == {"affect_level": "Low", "degradation_reason": "affect_detector_failure"}
 
 
 def test_affect_node_degrades_when_detector_fails():
@@ -44,10 +44,18 @@ def test_affect_node_degrades_when_detector_fails():
     result = make_affect_node(FailingAffect())(
         {"audio": [1], "sample_rate": 16000}
     )
-    assert result == {"affect_level": "Low"}
+    assert result == {"affect_level": "Low", "degradation_reason": "affect_detector_failure"}
 
 
 def test_affect_node_rejects_missing_audio():
     """Verify that missing audio remains an input contract error."""
     with pytest.raises(AffectDetectionError):
         make_affect_node(FakeAffect("Low"))({"sample_rate": 16000})
+
+
+def test_affect_node_preserves_genuine_low_without_degradation():
+    """Verify a genuine Low classifier result carries no degradation reason."""
+    result = make_affect_node(FakeAffect("Low"))(
+        {"audio": [1], "sample_rate": 16000}
+    )
+    assert result == {"affect_level": "Low", "degradation_reason": None}

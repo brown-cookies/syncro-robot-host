@@ -6,10 +6,12 @@
   "deployment_threshold_macro_f1": 0.7,
   "feature_count": 88,
   "grouping_key": "speaker_id",
-  "pinned_joblib_version": "1.6.0",
-  "pinned_scikit_learn_version": "1.9.0",
   "random_state": 42,
+  "required_joblib_version": "1.6.0",
+  "required_scikit_learn_version": "1.9.0",
   "scikit_learn_version": "1.9.0",
   "training_corpus": "RAVDESS",
-  "training_records": 1440
+  "training_joblib_version": "1.6.0",
+  "training_records": 1440,
+  "training_scikit_learn_version": "1.9.0"
 }

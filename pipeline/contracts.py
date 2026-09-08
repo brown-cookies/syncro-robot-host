@@ -25,6 +25,7 @@ DegradationReason = Literal[
     "session_timeout",
     "activity_unavailable",
     "queue_overflow",
+    "affect_detector_failure",
 ]
 NetworkEvent = Literal[
     "connect_attempt",

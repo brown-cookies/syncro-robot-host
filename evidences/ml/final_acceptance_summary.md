@@ -48,7 +48,7 @@ The verification environment used scikit-learn **1.8.0**; the repository require
 ## Reproduction
 
 ```bash
-python -m ml.affect.train --ravdess-features datasets/features/ravdess.csv --ravdess-manifest datasets/affect/manifests/ravdess.csv --tess-features datasets/features/tess.csv --tess-manifest datasets/affect/manifests/tess.csv --output models/affect/affect_svc_v1.joblib
+python -m ml.affect.train --ravdess-features datasets/features/ravdess.csv --ravdess-manifest datasets/affect/manifests/ravdess.csv --tess-features datasets/features/tess.csv --tess-manifest datasets/affect/manifests/tess.csv --output models/affect/affect_svc_v1.joblib --evidence-dir evidences/ml/experiment
 ```
 
 ```bash

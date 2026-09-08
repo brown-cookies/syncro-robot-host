@@ -1,3 +1,5 @@
+from pathlib import Path
+
 """Tests for the WP-104 training orchestration."""
 
 import csv
@@ -70,3 +72,72 @@ def test_held_out_evaluation_uses_frozen_model(tmp_path):
     assert result.n_splits is None
     assert 0.0 <= result.macro_f1 <= 1.0
     assert result.confusion_matrix.shape == (3, 3)
+
+
+def test_method_note_matches_canonical_template_structure(tmp_path):
+    """Verify generated method notes preserve the canonical template structure."""
+    from ml.affect.train import _method_note
+    from ml.affect.evaluate import EvaluationResult
+
+    # Reuse a minimal result-shaped object to exercise only template rendering.
+    result = EvaluationResult(
+        macro_f1=0.632258,
+        per_class_f1={
+            "Low": 0.652666,
+            "Moderate": 0.474359,
+            "High": 0.769750,
+        },
+        confusion_matrix=np.zeros((3, 3), dtype=int),
+        y_true=["Low"],
+        y_pred=["Low"],
+        n_splits=6,
+    )
+    tess = EvaluationResult(
+        macro_f1=0.199983,
+        per_class_f1={"Low": 0.0, "Moderate": 0.0, "High": 0.599950},
+        confusion_matrix=np.zeros((3, 3), dtype=int),
+        y_true=["High"],
+        y_pred=["High"],
+        n_splits=None,
+    )
+
+    generated = _method_note(
+        result,
+        tess,
+        artifact_path=tmp_path / "affect_svc_v1.joblib",
+        n_splits=6,
+    )
+    template = (
+        Path(__file__).resolve().parents[3]
+        / "techdocs"
+        / "method_note_template.md"
+    ).read_text(encoding="utf-8")
+
+    assert generated.splitlines()[0] == template.splitlines()[0]
+    for heading in (
+        "## 1. Dataset",
+        "## 2. Label mapping",
+        "## 3. Feature extraction",
+        "## 4. Classifier",
+        "## 5. Evaluation",
+        "## 6. Go / no-go",
+        "## 7. Runtime artifact",
+    ):
+        assert heading in generated
+
+    for marker in (
+        "<scikit_learn_version>",
+        "<joblib_version>",
+        "<mlp_status>",
+        "<fold_count>",
+        "<leakage_check>",
+        "<ravdess_macro_f1>",
+        "<low_f1>",
+        "<moderate_f1>",
+        "<high_f1>",
+        "<tess_result>",
+        "<go_no_go>",
+        "<artifact_path>",
+        "<metadata_path>",
+    ):
+        assert marker not in generated

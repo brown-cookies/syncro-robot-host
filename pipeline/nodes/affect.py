@@ -28,6 +28,7 @@ def make_affect_node(detector, *, fallback_level: str = "Low"):
                 "Affect detection requires audio and sample_rate in DialogueState."
             )
 
+        degradation_reason = None
         try:
             affect_level = detector.detect(audio, sample_rate=sample_rate)
             if affect_level not in ALLOWED_AFFECT_LEVELS:
@@ -35,12 +36,16 @@ def make_affect_node(detector, *, fallback_level: str = "Low"):
                     f"Affect detector returned invalid level: {affect_level!r}"
                 )
         except Exception as exc:
+            degradation_reason = "affect_detector_failure"
             logger.warning(
                 "WP-104 affect detection degraded to %s after detector failure: %s",
                 fallback_level,
                 exc,
             )
             affect_level = fallback_level
-        return {"affect_level": affect_level}
+        return {
+            "affect_level": affect_level,
+            "degradation_reason": degradation_reason,
+        }
 
     return affect_node

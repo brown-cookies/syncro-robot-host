@@ -69,39 +69,17 @@ def test_tess_holdout_reproduces_recorded_cross_corpus_result() -> None:
 
 @pytest.mark.ml
 def test_finetune_evidence_has_a_committed_producer_schema() -> None:
-    """Verify the reproducible fine-tuning artifacts exist and carry provenance."""
     evidence_dir = ROOT / "evidences/ml/finetune"
-
     expected = {
         "svc_finetune_current.json",
         "svc_ovr_nested_tuning.json",
         "tess_holdout.json",
     }
-
-    actual = {
-        path.name
-        for path in evidence_dir.glob("*.json")
-    }
-
-    # The finetune directory may contain additional evidence artifacts.
-    # The reproducibility contract only requires these producer-generated files.
-    assert expected.issubset(actual)
+    actual = {path.name for path in evidence_dir.glob("*.json")}
+    assert actual == expected
 
     for filename in expected:
-        payload = json.loads(
-            (evidence_dir / filename).read_text(
-                encoding="utf-8"
-            )
-        )
-
+        payload = json.loads((evidence_dir / filename).read_text(encoding="utf-8"))
         assert "provenance" in payload
-
-        assert (
-            payload["provenance"]["scikit_learn"]
-            == sklearn.__version__
-        )
-
-        assert (
-            payload["provenance"]["random_state"]
-            == 42
-        )
+        assert payload["provenance"]["scikit_learn"] == sklearn.__version__
+        assert payload["provenance"]["random_state"] == 42
