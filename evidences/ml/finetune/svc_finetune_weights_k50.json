@@ -1,0 +1,185 @@
+{
+  "best": {
+    "class_weight": {
+      "Low": 1.5,
+      "Moderate": 1.8,
+      "High": 1.0
+    },
+    "C": 3.5,
+    "gamma": 0.012,
+    "k": 50,
+    "macro_f1": 0.6439206044288853
+  },
+  "top_results": [
+    {
+      "class_weight": {
+        "Low": 1.5,
+        "Moderate": 1.8,
+        "High": 1.0
+      },
+      "C": 3.5,
+      "gamma": 0.012,
+      "k": 50,
+      "macro_f1": 0.6439206044288853
+    },
+    {
+      "class_weight": {
+        "Low": 1.4,
+        "Moderate": 1.8,
+        "High": 1.0
+      },
+      "C": 3.5,
+      "gamma": 0.012,
+      "k": 50,
+      "macro_f1": 0.6386899739786226
+    },
+    {
+      "class_weight": {
+        "Low": 1.25,
+        "Moderate": 1.8,
+        "High": 1.0
+      },
+      "C": 3.5,
+      "gamma": 0.012,
+      "k": 50,
+      "macro_f1": 0.6363489419294912
+    },
+    {
+      "class_weight": {
+        "Low": 1.5,
+        "Moderate": 2.0,
+        "High": 1.0
+      },
+      "C": 3.5,
+      "gamma": 0.012,
+      "k": 50,
+      "macro_f1": 0.6363415049070505
+    },
+    {
+      "class_weight": {
+        "Low": 1.1,
+        "Moderate": 1.8,
+        "High": 1.0
+      },
+      "C": 3.5,
+      "gamma": 0.012,
+      "k": 50,
+      "macro_f1": 0.6354138925130357
+    },
+    {
+      "class_weight": {
+        "Low": 1.4,
+        "Moderate": 2.0,
+        "High": 1.0
+      },
+      "C": 3.5,
+      "gamma": 0.012,
+      "k": 50,
+      "macro_f1": 0.6351917999302765
+    },
+    {
+      "class_weight": {
+        "Low": 1.4,
+        "Moderate": 1.6,
+        "High": 1.0
+      },
+      "C": 3.5,
+      "gamma": 0.012,
+      "k": 50,
+      "macro_f1": 0.6348239767049341
+    },
+    {
+      "class_weight": {
+        "Low": 1.5,
+        "Moderate": 1.6,
+        "High": 1.0
+      },
+      "C": 3.5,
+      "gamma": 0.012,
+      "k": 50,
+      "macro_f1": 0.6341898162762186
+    },
+    {
+      "class_weight": {
+        "Low": 1.25,
+        "Moderate": 1.4,
+        "High": 1.0
+      },
+      "C": 3.5,
+      "gamma": 0.012,
+      "k": 50,
+      "macro_f1": 0.6338093210981984
+    },
+    {
+      "class_weight": {
+        "Low": 1.25,
+        "Moderate": 2.0,
+        "High": 1.0
+      },
+      "C": 3.5,
+      "gamma": 0.012,
+      "k": 50,
+      "macro_f1": 0.633529210565325
+    },
+    {
+      "class_weight": {
+        "Low": 1.25,
+        "Moderate": 1.6,
+        "High": 1.0
+      },
+      "C": 3.5,
+      "gamma": 0.012,
+      "k": 50,
+      "macro_f1": 0.6307450562156306
+    },
+    {
+      "class_weight": {
+        "Low": 1.4,
+        "Moderate": 1.4,
+        "High": 1.0
+      },
+      "C": 3.5,
+      "gamma": 0.012,
+      "k": 50,
+      "macro_f1": 0.6303073875277508
+    },
+    {
+      "class_weight": {
+        "Low": 1.5,
+        "Moderate": 1.4,
+        "High": 1.0
+      },
+      "C": 3.5,
+      "gamma": 0.012,
+      "k": 50,
+      "macro_f1": 0.6289601349369538
+    },
+    {
+      "class_weight": {
+        "Low": 1.1,
+        "Moderate": 2.0,
+        "High": 1.0
+      },
+      "C": 3.5,
+      "gamma": 0.012,
+      "k": 50,
+      "macro_f1": 0.6280566383053802
+    },
+    {
+      "class_weight": {
+        "Low": 1.0,
+        "Moderate": 1.8,
+        "High": 1.0
+      },
+      "C": 3.5,
+      "gamma": 0.012,
+      "k": 50,
+      "macro_f1": 0.6271131363238722
+    }
+  ],
+  "protocol": {
+    "cv": "6-fold GroupKFold",
+    "baseline": 0.6322582442748598,
+    "threshold": 0.7
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "protocol": {
+    "outer_cv": "6-fold GroupKFold",
+    "inner_cv": "3-fold GroupKFold",
+    "grouping_key": "speaker_id",
+    "metric": "macro_f1",
+    "baseline": 0.6322582442748598,
+    "fixed_fold_tuned": 0.6516183148186734,
+    "threshold": 0.7
+  },
+  "search": {
+    "k": 50,
+    "configs": [
+      {
+        "C": 2.5,
+        "gamma": 0.0085,
+        "class_weight": "balanced",
+        "estimator": "OneVsRestClassifier(SVC)"
+      },
+      {
+        "C": 2.75,
+        "gamma": 0.009,
+        "class_weight": "balanced",
+        "estimator": "OneVsRestClassifier(SVC)"
+      },
+      {
+        "C": 3.0,
+        "gamma": 0.0095,
+        "class_weight": "balanced",
+        "estimator": "OneVsRestClassifier(SVC)"
+      }
+    ]
+  },
+  "outer_macro_f1": 0.6505641026555925,
+  "outer_fold_macro_f1": [
+    0.7004023444940101,
+    0.6739471788015478,
+    0.619447930043417,
+    0.5974488401689583,
+    0.6608298898071626,
+    0.6353276353276353
+  ],
+  "selected_parameters_by_fold": [
+    {
+      "fold": 1,
+      "inner_macro_f1": 0.6525111265635603,
+      "C": 3.0,
+      "gamma": 0.0095
+    },
+    {
+      "fold": 2,
+      "inner_macro_f1": 0.6225589640502678,
+      "C": 3.0,
+      "gamma": 0.0095
+    },
+    {
+      "fold": 3,
+      "inner_macro_f1": 0.6675865811880749,
+      "C": 2.5,
+      "gamma": 0.0085
+    },
+    {
+      "fold": 4,
+      "inner_macro_f1": 0.650709546998436,
+      "C": 3.0,
+      "gamma": 0.0095
+    },
+    {
+      "fold": 5,
+      "inner_macro_f1": 0.6356038708367128,
+      "C": 2.5,
+      "gamma": 0.0085
+    },
+    {
+      "fold": 6,
+      "inner_macro_f1": 0.6257956489028634,
+      "C": 3.0,
+      "gamma": 0.0095
+    }
+  ],
+  "elapsed_seconds": 8.65775728225708,
+  "go_no_go": "NO-GO"
+}

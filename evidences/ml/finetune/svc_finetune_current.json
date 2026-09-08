@@ -1,0 +1,50 @@
+{
+  "protocol": {
+    "corpus": "RAVDESS",
+    "cv_scheme": "6-fold GroupKFold",
+    "grouping_key": "speaker_id",
+    "metric": "macro_f1",
+    "baseline": 0.6322582442748598,
+    "threshold": 0.7,
+    "feature_selection": "SelectKBest(f_classif), fitted inside each fold",
+    "classifier": "OneVsRestClassifier(SVC(kernel='rbf', class_weight='balanced'))"
+  },
+  "search": [
+    {
+      "k": 50,
+      "C": 2.75,
+      "gamma": 0.009,
+      "macro_f1": 0.6516183148186734
+    },
+    {
+      "k": 50,
+      "C": 3.0,
+      "gamma": 0.0095,
+      "macro_f1": 0.6489073493482996
+    },
+    {
+      "k": 50,
+      "C": 2.5,
+      "gamma": 0.0085,
+      "macro_f1": 0.6451309593409564
+    },
+    {
+      "k": 45,
+      "C": 2.5,
+      "gamma": 0.0085,
+      "macro_f1": 0.6428693753142283
+    },
+    {
+      "k": 55,
+      "C": 2.75,
+      "gamma": 0.009,
+      "macro_f1": 0.6374242239200051
+    }
+  ],
+  "best": {
+    "k": 50,
+    "C": 2.75,
+    "gamma": 0.009,
+    "macro_f1": 0.6516183148186734
+  }
+}

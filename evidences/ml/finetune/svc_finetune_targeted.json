@@ -1,0 +1,113 @@
+{
+  "protocol": {
+    "corpus": "RAVDESS",
+    "cv_scheme": "6-fold GroupKFold",
+    "grouping_key": "speaker_id",
+    "metric": "macro_f1",
+    "baseline": 0.6322582442748598,
+    "threshold": 0.7
+  },
+  "best": {
+    "C": 4.0,
+    "gamma": 0.01,
+    "cw": {
+      "Low": 1.5,
+      "Moderate": 2.0,
+      "High": 1.0
+    },
+    "macro_f1": 0.6356549555059422
+  },
+  "results": [
+    {
+      "C": 4.0,
+      "gamma": 0.01,
+      "cw": {
+        "Low": 1.5,
+        "Moderate": 2.0,
+        "High": 1.0
+      },
+      "macro_f1": 0.6356549555059422
+    },
+    {
+      "C": 3.0,
+      "gamma": 0.0125,
+      "cw": {
+        "Low": 1.5,
+        "Moderate": 2.0,
+        "High": 1.0
+      },
+      "macro_f1": 0.6335235788222766
+    },
+    {
+      "C": 2.0,
+      "gamma": 0.0125,
+      "cw": {
+        "Low": 1.5,
+        "Moderate": 2.0,
+        "High": 1.0
+      },
+      "macro_f1": 0.6326400410186787
+    },
+    {
+      "C": 2.0,
+      "gamma": 0.01,
+      "cw": {
+        "Low": 1.5,
+        "Moderate": 2.0,
+        "High": 1.0
+      },
+      "macro_f1": 0.6322534046396879
+    },
+    {
+      "C": 3.0,
+      "gamma": 0.01,
+      "cw": {
+        "Low": 1.5,
+        "Moderate": 2.0,
+        "High": 1.0
+      },
+      "macro_f1": 0.6271276488332342
+    },
+    {
+      "C": 4.0,
+      "gamma": 0.0125,
+      "cw": {
+        "Low": 1.5,
+        "Moderate": 2.0,
+        "High": 1.0
+      },
+      "macro_f1": 0.6245374548240664
+    },
+    {
+      "C": 2.0,
+      "gamma": 0.0075,
+      "cw": {
+        "Low": 1.5,
+        "Moderate": 2.0,
+        "High": 1.0
+      },
+      "macro_f1": 0.6245326172593478
+    },
+    {
+      "C": 4.0,
+      "gamma": 0.0075,
+      "cw": {
+        "Low": 1.5,
+        "Moderate": 2.0,
+        "High": 1.0
+      },
+      "macro_f1": 0.6193202518364291
+    },
+    {
+      "C": 3.0,
+      "gamma": 0.0075,
+      "cw": {
+        "Low": 1.5,
+        "Moderate": 2.0,
+        "High": 1.0
+      },
+      "macro_f1": 0.6178707397371999
+    }
+  ],
+  "elapsed_seconds": 6.180593490600586
+}

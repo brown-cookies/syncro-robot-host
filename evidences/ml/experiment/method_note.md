@@ -40,7 +40,7 @@
 - Difference (MLP - SVC): **-0.007005**.
 - Comparison result: **SVC wins** and remains the prototype classifier.
 - Deployment gate: both results are **NO-GO** at macro-F1 0.70.
-- Full comparison evidence: `evidences/ml/svc_vs_mlp_comparison.json`.
+- Full comparison evidence: `evidences/ml/experiment/svc_vs_mlp_comparison.json`.
 
 ### Confusion matrix
 

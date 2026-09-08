@@ -33,11 +33,11 @@ The verification environment used scikit-learn **1.8.0**; the repository require
 
 ## Evidence
 
-- `evidences/ml/metrics.json`
-- `evidences/ml/svc_vs_mlp_comparison.json`
-- `evidences/ml/method_note.md`
-- `evidences/ml/ravdess_confusion_matrix.csv`
-- `evidences/ml/tess_confusion_matrix.csv`
+- `evidences/ml/experiment/metrics.json`
+- `evidences/ml/experiment/svc_vs_mlp_comparison.json`
+- `evidences/ml/experiment/method_note.md`
+- `evidences/ml/experiment/ravdess_confusion_matrix.csv`
+- `evidences/ml/experiment/tess_confusion_matrix.csv`
 - `datasets/features/ravdess.alignment.json`
 - `datasets/features/tess.alignment.json`
 
@@ -48,5 +48,5 @@ python -m ml.affect.train --ravdess-features datasets/features/ravdess.csv --rav
 ```
 
 ```bash
-python -m ml.affect.compare --ravdess-features datasets/features/ravdess.csv --ravdess-manifest datasets/affect/manifests/ravdess.csv --n-splits 6 --output evidences/ml/svc_vs_mlp_comparison.json
+python -m ml.affect.compare --ravdess-features datasets/features/ravdess.csv --ravdess-manifest datasets/affect/manifests/ravdess.csv --n-splits 6 --output evidences/ml/experiment/svc_vs_mlp_comparison.json
 ```
