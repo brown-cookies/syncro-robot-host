@@ -1,37 +1,5 @@
 {
-  "protocol": {
-    "outer_cv": "6-fold GroupKFold",
-    "inner_cv": "3-fold GroupKFold",
-    "grouping_key": "speaker_id",
-    "metric": "macro_f1",
-    "baseline": 0.6322582442748598,
-    "fixed_fold_tuned": 0.6516183148186734,
-    "threshold": 0.7
-  },
-  "search": {
-    "k": 50,
-    "configs": [
-      {
-        "C": 2.5,
-        "gamma": 0.0085,
-        "class_weight": "balanced",
-        "estimator": "OneVsRestClassifier(SVC)"
-      },
-      {
-        "C": 2.75,
-        "gamma": 0.009,
-        "class_weight": "balanced",
-        "estimator": "OneVsRestClassifier(SVC)"
-      },
-      {
-        "C": 3.0,
-        "gamma": 0.0095,
-        "class_weight": "balanced",
-        "estimator": "OneVsRestClassifier(SVC)"
-      }
-    ]
-  },
-  "outer_macro_f1": 0.6505641026555925,
+  "go_no_go": "NO-GO",
   "outer_fold_macro_f1": [
     0.7004023444940101,
     0.6739471788015478,
@@ -40,44 +8,92 @@
     0.6608298898071626,
     0.6353276353276353
   ],
+  "outer_macro_f1": 0.6505641026555925,
+  "protocol": {
+    "baseline": 0.6322582442748598,
+    "corpus": "RAVDESS",
+    "feature_selection": "SelectKBest(f_classif, k=50), fitted inside each fold",
+    "fixed_fold_tuned": 0.6516183148186734,
+    "grouping_key": "speaker_id",
+    "inner_cv": "3-fold GroupKFold",
+    "metric": "macro_f1",
+    "outer_cv": "6-fold GroupKFold",
+    "threshold": 0.7
+  },
+  "provenance": {
+    "numpy": "2.5.2",
+    "python": "3.14.5",
+    "random_state": 42,
+    "ravdess": {
+      "feature_sha256": "becadfdc9fcfb97d2b80658fed47b245d93cbb3dfedd26b4dbe616e97afb61c9",
+      "manifest_sha256": "81144e80e213653b59d4870d893bf65be2a124e2d08496dd30872df5825c013a"
+    },
+    "required_scikit_learn": "1.9.0",
+    "scikit_learn": "1.9.0",
+    "tess": {
+      "feature_sha256": "6d5a17f9a081f60e148c057977aa648270d7170b855820a6d69f5e3b3ad88314",
+      "manifest_sha256": "2a7943f2ce5266ed0ae63140d7c1dde0af850e995ec2211d736b31fd4b5fe260"
+    }
+  },
+  "search": {
+    "configs": [
+      {
+        "C": 2.5,
+        "class_weight": "balanced",
+        "estimator": "OneVsRestClassifier(SVC)",
+        "gamma": 0.0085
+      },
+      {
+        "C": 2.75,
+        "class_weight": "balanced",
+        "estimator": "OneVsRestClassifier(SVC)",
+        "gamma": 0.009
+      },
+      {
+        "C": 3.0,
+        "class_weight": "balanced",
+        "estimator": "OneVsRestClassifier(SVC)",
+        "gamma": 0.0095
+      }
+    ],
+    "k": 50
+  },
   "selected_parameters_by_fold": [
     {
+      "C": 3.0,
       "fold": 1,
-      "inner_macro_f1": 0.6525111265635603,
-      "C": 3.0,
-      "gamma": 0.0095
+      "gamma": 0.0095,
+      "inner_macro_f1": 0.6525111265635603
     },
     {
+      "C": 3.0,
       "fold": 2,
-      "inner_macro_f1": 0.6225589640502678,
-      "C": 3.0,
-      "gamma": 0.0095
+      "gamma": 0.0095,
+      "inner_macro_f1": 0.6225589640502678
     },
     {
+      "C": 2.5,
       "fold": 3,
-      "inner_macro_f1": 0.6675865811880749,
-      "C": 2.5,
-      "gamma": 0.0085
+      "gamma": 0.0085,
+      "inner_macro_f1": 0.6675865811880749
     },
     {
+      "C": 3.0,
       "fold": 4,
-      "inner_macro_f1": 0.650709546998436,
-      "C": 3.0,
-      "gamma": 0.0095
+      "gamma": 0.0095,
+      "inner_macro_f1": 0.650709546998436
     },
     {
-      "fold": 5,
-      "inner_macro_f1": 0.6356038708367128,
       "C": 2.5,
-      "gamma": 0.0085
+      "fold": 5,
+      "gamma": 0.0085,
+      "inner_macro_f1": 0.6356038708367128
     },
     {
-      "fold": 6,
-      "inner_macro_f1": 0.6257956489028634,
       "C": 3.0,
-      "gamma": 0.0095
+      "fold": 6,
+      "gamma": 0.0095,
+      "inner_macro_f1": 0.6257956489028634
     }
-  ],
-  "elapsed_seconds": 8.65775728225708,
-  "go_no_go": "NO-GO"
+  ]
 }

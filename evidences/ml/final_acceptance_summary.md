@@ -40,6 +40,10 @@ The verification environment used scikit-learn **1.8.0**; the repository require
 - `evidences/ml/experiment/tess_confusion_matrix.csv`
 - `datasets/features/ravdess.alignment.json`
 - `datasets/features/tess.alignment.json`
+- `evidences/ml/finetune/fine_tuning_summary.md`
+- `evidences/ml/finetune/svc_finetune_current.json`
+- `evidences/ml/finetune/svc_ovr_nested_tuning.json`
+- `evidences/ml/finetune/tess_holdout.json`
 
 ## Reproduction
 

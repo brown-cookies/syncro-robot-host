@@ -1,50 +1,65 @@
 {
+  "best": {
+    "C": 2.75,
+    "gamma": 0.009,
+    "k": 50,
+    "macro_f1": 0.6516183148186734
+  },
   "protocol": {
+    "baseline": 0.6322582442748598,
+    "classifier": "OneVsRestClassifier(SVC(kernel='rbf', class_weight='balanced'))",
     "corpus": "RAVDESS",
     "cv_scheme": "6-fold GroupKFold",
+    "feature_selection": "SelectKBest(f_classif, k), fitted inside each fold",
     "grouping_key": "speaker_id",
     "metric": "macro_f1",
-    "baseline": 0.6322582442748598,
-    "threshold": 0.7,
-    "feature_selection": "SelectKBest(f_classif), fitted inside each fold",
-    "classifier": "OneVsRestClassifier(SVC(kernel='rbf', class_weight='balanced'))"
+    "threshold": 0.7
+  },
+  "provenance": {
+    "numpy": "2.5.2",
+    "python": "3.14.5",
+    "random_state": 42,
+    "ravdess": {
+      "feature_sha256": "becadfdc9fcfb97d2b80658fed47b245d93cbb3dfedd26b4dbe616e97afb61c9",
+      "manifest_sha256": "81144e80e213653b59d4870d893bf65be2a124e2d08496dd30872df5825c013a"
+    },
+    "required_scikit_learn": "1.9.0",
+    "scikit_learn": "1.9.0",
+    "tess": {
+      "feature_sha256": "6d5a17f9a081f60e148c057977aa648270d7170b855820a6d69f5e3b3ad88314",
+      "manifest_sha256": "2a7943f2ce5266ed0ae63140d7c1dde0af850e995ec2211d736b31fd4b5fe260"
+    }
   },
   "search": [
     {
-      "k": 50,
       "C": 2.75,
       "gamma": 0.009,
+      "k": 50,
       "macro_f1": 0.6516183148186734
     },
     {
-      "k": 50,
       "C": 3.0,
       "gamma": 0.0095,
+      "k": 50,
       "macro_f1": 0.6489073493482996
     },
     {
-      "k": 50,
       "C": 2.5,
       "gamma": 0.0085,
+      "k": 50,
       "macro_f1": 0.6451309593409564
     },
     {
-      "k": 45,
       "C": 2.5,
       "gamma": 0.0085,
+      "k": 45,
       "macro_f1": 0.6428693753142283
     },
     {
-      "k": 55,
       "C": 2.75,
       "gamma": 0.009,
+      "k": 55,
       "macro_f1": 0.6374242239200051
     }
-  ],
-  "best": {
-    "k": 50,
-    "C": 2.75,
-    "gamma": 0.009,
-    "macro_f1": 0.6516183148186734
-  }
+  ]
 }
