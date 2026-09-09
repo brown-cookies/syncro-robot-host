@@ -27,6 +27,8 @@ See `techdocs/label_mapping.md`.
 
 MLPClassifier comparison status: `run; SVC 0.632258 vs MLP 0.625254 on the identical six-fold GroupKFold protocol; SVC remains selected`.
 
+Tuning exploration record: PCA dimensionality reduction, oversampling, alternative class-weight schemes, and One-vs-Rest (OVR) SVC configurations were explored as separate research variants and discarded from selection. None established a methodologically preferred result that meets the 0.70 deployment gate; the retained research candidate is the OVR + SelectKBest configuration documented in `evidences/ml/finetune/svc_finetune_current.json`, while the shipped acceptance model remains the baseline SVC.
+
 ## 5. Evaluation
 
 - Cross-validation: `GroupKFold`
