@@ -74,12 +74,11 @@ def test_held_out_evaluation_uses_frozen_model(tmp_path):
     assert result.confusion_matrix.shape == (3, 3)
 
 
-def test_method_note_matches_canonical_template_structure(tmp_path):
-    """Verify generated method notes preserve the canonical template structure."""
+def test_method_note_is_self_contained(tmp_path):
+    """Verify generated method notes do not depend on an external template."""
     from ml.affect.train import _method_note
     from ml.affect.evaluate import EvaluationResult
 
-    # Reuse a minimal result-shaped object to exercise only template rendering.
     result = EvaluationResult(
         macro_f1=0.632258,
         per_class_f1={
@@ -107,37 +106,15 @@ def test_method_note_matches_canonical_template_structure(tmp_path):
         artifact_path=tmp_path / "affect_svc_v1.joblib",
         n_splits=6,
     )
-    template = (
-        Path(__file__).resolve().parents[3]
-        / "techdocs"
-        / "method_note_template.md"
-    ).read_text(encoding="utf-8")
 
-    assert generated.splitlines()[0] == template.splitlines()[0]
+    assert generated.startswith("# WP-104 Affect Classifier Method Note")
     for heading in (
-        "## 1. Dataset",
-        "## 2. Label mapping",
-        "## 3. Feature extraction",
-        "## 4. Classifier",
-        "## 5. Evaluation",
-        "## 6. Go / no-go",
-        "## 7. Runtime artifact",
+        "## Dataset",
+        "## Classifier",
+        "## RAVDESS Evaluation",
+        "## TESS Held-Out Evaluation",
+        "## Go / No-Go",
     ):
         assert heading in generated
 
-    for marker in (
-        "<scikit_learn_version>",
-        "<joblib_version>",
-        "<mlp_status>",
-        "<fold_count>",
-        "<leakage_check>",
-        "<ravdess_macro_f1>",
-        "<low_f1>",
-        "<moderate_f1>",
-        "<high_f1>",
-        "<tess_result>",
-        "<go_no_go>",
-        "<artifact_path>",
-        "<metadata_path>",
-    ):
-        assert marker not in generated
+    assert "<" not in generated

@@ -113,46 +113,20 @@ def _method_note(
     artifact_path: str | Path,
     n_splits: int,
 ) -> str:
-    """Render the tracked method-note template from current evaluation results."""
-    template_path = (
-        Path(__file__).resolve().parents[2]
-        / "techdocs"
-        / "method_note_template.md"
-    )
-    template = template_path.read_text(encoding="utf-8")
+    """Build the reproducibility note containing the fixed method and measured results."""
     outcome = "GO" if ravdess.macro_f1 >= DEPLOYMENT_THRESHOLD else "NO-GO"
-    mlp_status = (
-        "run; SVC 0.632258 vs MLP 0.625254 on the identical six-fold "
-        "GroupKFold protocol; SVC remains selected"
+    scope_down = (
+        "The measured macro-F1 is below 0.70; report the classifier as the best measured prototype signal and do not describe it as a validated clinical stress detector."
+        if outcome == "NO-GO"
+        else "The measured macro-F1 clears the 0.70 deployment gate under the specified speaker-independent evaluation."
     )
-    values = {
-        "<scikit_learn_version>": sklearn.__version__,
-        "<joblib_version>": joblib.__version__,
-        "<mlp_status>": mlp_status,
-        "<fold_count>": str(n_splits),
-        "<leakage_check>": (
-            "no speaker appeared in both train and validation sides of any fold"
-        ),
-        "<ravdess_macro_f1>": f"{ravdess.macro_f1:.6f}",
-        "<low_f1>": f"{ravdess.per_class_f1['Low']:.6f}",
-        "<moderate_f1>": f"{ravdess.per_class_f1['Moderate']:.6f}",
-        "<high_f1>": f"{ravdess.per_class_f1['High']:.6f}",
-        "<tess_result>": f"{tess.macro_f1:.6f} macro-F1",
-        "<go_no_go>": outcome,
-        "<artifact_path>": str(Path(artifact_path)),
-        "<metadata_path>": (
-            str(Path(artifact_path).with_suffix(Path(artifact_path).suffix + ".json"))
-        ),
-    }
-    for placeholder, value in values.items():
-        template = template.replace(placeholder, value)
-
-    if re.search(r"<[A-Za-z_][^>]*>", template):
-        raise RuntimeError(
-            "Method-note template contains unresolved placeholders"
-        )
-
-    return template
+    per_class = "\n".join(
+        f"- {label}: {ravdess.per_class_f1[label]:.6f}" for label in ALLOWED_LEVELS
+    )
+    tess_per_class = "\n".join(
+        f"- {label}: {tess.per_class_f1[label]:.6f}" for label in ALLOWED_LEVELS
+    )
+    return f"""# WP-104 Affect Classifier Method Note\n\n## Dataset\n\n- RAVDESS: 1,440 clips / 24 speakers; primary evaluation corpus.\n- TESS: 2,800 clips / 2 speakers; held-out generalisation check only.\n- Audio normalization: 16 kHz, mono.\n- Feature table: exactly 88 eGeMAPSv02 Functionals features.\n- Label mapping: see `techdocs/label_mapping.md`.\n\n## Classifier\n\n- Pipeline: `StandardScaler -> SVC(kernel=\\\"rbf\\\", class_weight=\\\"balanced\\\")`.\n- Random state: {RANDOM_STATE}.\n- scikit-learn used for this run: {sklearn.__version__}.\n- joblib used for this run: {joblib.__version__}.\n- Shipped artifact: `{Path(artifact_path)}`.\n- Artifact version: `{ARTIFACT_VERSION}`.\n- MLPClassifier comparison: not run; SVC is the fixed shipped classifier.\n\n## RAVDESS Evaluation\n\n- Scheme: `GroupKFold`.\n- Folds: {n_splits}.\n- Grouping key: `speaker_id`.\n- Leakage check: no speaker appeared in both train and validation sides of any fold.\n- Macro-F1: **{ravdess.macro_f1:.6f}**.\n- Per-class F1:\n{per_class}\n\n### Confusion matrix\n\nClass order: `Low, Moderate, High`. See `ravdess_confusion_matrix.csv`.\n\n```text\n{format_metrics(ravdess)}\n```\n\n## TESS Held-Out Evaluation\n\n- TESS was not included in RAVDESS GroupKFold.\n- Macro-F1: **{tess.macro_f1:.6f}**.\n- Per-class F1:\n{tess_per_class}\n\n### Confusion matrix\n\nClass order: `Low, Moderate, High`. See `tess_confusion_matrix.csv`.\n\n```text\n{format_metrics(tess)}\n```\n\n## Go / No-Go\n\nThreshold: **macro-F1 >= {DEPLOYMENT_THRESHOLD:.2f}**.\n\nMeasured outcome: **{outcome}**.\n\n{scope_down}\n"""
 
 
 def main() -> int:

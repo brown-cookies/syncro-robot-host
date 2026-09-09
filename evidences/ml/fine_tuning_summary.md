@@ -30,11 +30,17 @@ After fitting the candidate on all RAVDESS data, the fixed TESS holdout produced
 
 The tuned OVR+feature-selection pipeline remains a research candidate until a subsequent experiment improves both speaker-independent RAVDESS performance and cross-corpus robustness without compromising the stated methodology.
 
+## Explored and discarded variants
+
+Additional research variants included PCA-based dimensionality reduction, oversampling, alternative class-weight settings, and OVR configurations. These variants were not retained as acceptance evidence because they did not provide a stronger, methodologically preferred result than the recorded OVR + SelectKBest candidate; the committed fine-tuning runner retains the reproducible producer path for the results that are reported.
+
 ## Reproduction
 
 ```text
 python -m ml.affect.tune \
   --ravdess-features datasets/features/ravdess.csv \
   --ravdess-manifest datasets/affect/manifests/ravdess.csv \
-  --output evidences/ml/svc_finetune_current.json
+  --tess-features datasets/features/tess.csv \
+  --tess-manifest datasets/affect/manifests/tess.csv \
+  --output-dir evidences/ml/finetune
 ```
