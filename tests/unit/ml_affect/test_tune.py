@@ -15,8 +15,22 @@ RAVDESS_MANIFEST = ROOT / "datasets/affect/manifests/ravdess.csv"
 TESS_FEATURES = ROOT / "datasets/features/tess.csv"
 TESS_MANIFEST = ROOT / "datasets/affect/manifests/tess.csv"
 
+# The macro-F1 values recorded below are only reproducible on the exact pinned scikit-learn
+# release: cross-version drift (observed ~4.4e-3 on 1.6.1 vs 1.9.0) is larger than any tolerance
+# we could widen to without also accepting a genuinely different, unpinned result. Skip on any
+# other version rather than loosen the assertions, per requirements.txt's scikit-learn==1.9.0 pin.
+REQUIRED_SCIKIT_LEARN_VERSION = "1.9.0"
+requires_pinned_sklearn = pytest.mark.skipif(
+    sklearn.__version__ != REQUIRED_SCIKIT_LEARN_VERSION,
+    reason=(
+        "Recorded macro-F1 values only reproduce on the pinned "
+        f"scikit-learn=={REQUIRED_SCIKIT_LEARN_VERSION}; found {sklearn.__version__}."
+    ),
+)
+
 
 @pytest.mark.ml
+@requires_pinned_sklearn
 def test_finetune_search_reproduces_recorded_baseline_and_candidate() -> None:
     baseline = run_baseline(RAVDESS_FEATURES, RAVDESS_MANIFEST)
     result = run_search(
@@ -33,6 +47,7 @@ def test_finetune_search_reproduces_recorded_baseline_and_candidate() -> None:
 
 
 @pytest.mark.ml
+@requires_pinned_sklearn
 def test_nested_ovr_reproduces_recorded_candidate() -> None:
     baseline = run_baseline(RAVDESS_FEATURES, RAVDESS_MANIFEST)
     fixed = run_search(
@@ -53,6 +68,7 @@ def test_nested_ovr_reproduces_recorded_candidate() -> None:
 
 
 @pytest.mark.ml
+@requires_pinned_sklearn
 def test_tess_holdout_reproduces_recorded_cross_corpus_result() -> None:
     result = run_tess_holdout(
         RAVDESS_FEATURES,
@@ -76,7 +92,7 @@ def test_finetune_evidence_has_a_committed_producer_schema() -> None:
         "tess_holdout.json",
     }
     actual = {path.name for path in evidence_dir.glob("*.json")}
-    assert expected.issubset(actual)
+    assert actual == expected
 
     for filename in expected:
         payload = json.loads((evidence_dir / filename).read_text(encoding="utf-8"))
