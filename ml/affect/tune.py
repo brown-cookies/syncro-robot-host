@@ -482,6 +482,10 @@ After fitting the fixed best research candidate on all RAVDESS training data, th
 
 This is evidence of weak cross-corpus transfer; it does not constitute in-domain acceptance evidence.
 
+## Explored and discarded variants
+
+Additional research variants included PCA-based dimensionality reduction, oversampling, alternative class-weight settings, and OVR configurations. These variants were not retained as acceptance evidence because they did not provide a stronger, methodologically preferred result than the recorded OVR + SelectKBest candidate; the committed fine-tuning runner retains the reproducible producer path for the results that are reported.
+
 ## Reproduction
 
 All results above are produced by the committed `ml/affect/tune.py` runner. The generated JSON records the pinned Python/scikit-learn/NumPy versions and SHA-256 fingerprints of the exact feature tables and manifests used.
