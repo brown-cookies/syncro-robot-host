@@ -294,7 +294,16 @@ python -m ml.affect.extract_features \
   --manifest-dir datasets/affect/manifests \
   --output-dir datasets/features
 
-# 4. Train the frozen WP-104 SVC baseline and write acceptance evidence
+# 4. Compare the frozen SVC against the prespecified shallow MLP
+python -m ml.affect.compare \
+  --ravdess-features datasets/features/ravdess.csv \
+  --ravdess-manifest datasets/affect/manifests/ravdess.csv \
+  --n-splits 6 \
+  --output evidences/ml/experiment/svc_vs_mlp_comparison.json
+
+# 5. Train the frozen WP-104 SVC baseline and write acceptance evidence
+# (run after step 4 so the method note can report the real, measured MLP
+# comparison result instead of a placeholder "not run" status)
 python -m ml.affect.train \
   --ravdess-features datasets/features/ravdess.csv \
   --ravdess-manifest datasets/affect/manifests/ravdess.csv \
@@ -303,13 +312,6 @@ python -m ml.affect.train \
   --output models/affect/affect_svc_v1.joblib \
   --evidence-dir evidences/ml/experiment \
   --n-splits 6
-
-# 5. Compare the frozen SVC against the prespecified shallow MLP
-python -m ml.affect.compare \
-  --ravdess-features datasets/features/ravdess.csv \
-  --ravdess-manifest datasets/affect/manifests/ravdess.csv \
-  --n-splits 6 \
-  --output evidences/ml/experiment/svc_vs_mlp_comparison.json
 
 # 6. Reproduce the fine-tuning/search evidence
 python -m ml.affect.tune \
@@ -320,6 +322,12 @@ python -m ml.affect.tune \
   --output-dir evidences/ml/finetune \
   --n-splits 6 \
   --inner-splits 3
+
+# 7. Verify the shipped artifact loads, predicts, and record the check
+python -m ml.affect.verify_runtime \
+  --model models/affect/affect_svc_v1.joblib \
+  --metrics evidences/ml/experiment/metrics.json \
+  --output evidences/ml/experiment/runtime_verification.json
 ```
 
 The repository also supports rebuilding only the already-committed experiment results. In that case, start at step 4 because `datasets/affect/manifests/` and `datasets/features/` are already present.
@@ -380,6 +388,8 @@ python -m ml.affect.train \
 ```
 
 The frozen acceptance baseline is **0.632258 macro-F1** on RAVDESS, below the **0.70** gate, so the acceptance result is **NO-GO**. This model remains a prototype affect signal and is not a clinical stress detector.
+
+Run [6f](#6f-svc-versus-mlp-comparison) first if you want `evidences/ml/experiment/method_note.md` to report the real, measured MLP comparison result. `ml.affect.train` looks for `evidences/ml/experiment/svc_vs_mlp_comparison.json` (overridable with `--mlp-comparison`) and reports its actual `not run` status only when that file is absent; it is never hardcoded.
 
 ### 6f. SVC versus MLP comparison
 
@@ -462,7 +472,20 @@ For a clean verification before merge, use:
 python -m pytest -q tests/unit/ml_affect tests/integration/test_ml_affect_integration.py
 ```
 
-### 6i. Useful inspection commands
+### 6i. Runtime verification
+
+`evidences/ml/experiment/runtime_verification.json` confirms the shipped artifact loads, predicts a valid affect label, and folds in the accepted RAVDESS/TESS metrics. It has a committed producer, `ml.affect.verify_runtime`, so it can never silently drift to a hand-typed scikit-learn version:
+
+```bash
+python -m ml.affect.verify_runtime \
+  --model models/affect/affect_svc_v1.joblib \
+  --metrics evidences/ml/experiment/metrics.json \
+  --output evidences/ml/experiment/runtime_verification.json
+```
+
+The `verification_sklearn_version` field always reflects the scikit-learn version installed when this command is run; it should match the pinned `required_sklearn_version` (`1.9.0`) on a clean-pull reproduction.
+
+### 6j. Useful inspection commands
 
 See the command-line options for any executable module:
 
@@ -470,6 +493,7 @@ See the command-line options for any executable module:
 python -m ml.affect.train --help
 python -m ml.affect.compare --help
 python -m ml.affect.tune --help
+python -m ml.affect.verify_runtime --help
 python -m ml.affect.extract_features --help
 python -m scripts.build_affect_manifests --help
 python -m scripts.verify_affect_manifests --help
@@ -478,7 +502,7 @@ python -m scripts.seed_wp103 --help
 
 The other repository modules under `ml/affect/` (`dataset.py`, `features.py`, `label_mapping.py`, `model.py`, `evaluate.py`, and `artifacts.py`) are library modules used by these command-line entry points; they are not standalone CLI scripts.
 
-## 6j. WP-103 operational scripts
+## 6k. WP-103 operational scripts
 
 The repository's `scripts/` directory contains the operational runners for WP-102 and WP-103 in addition to the WP-104 dataset helpers.
 
