@@ -7,5 +7,5 @@
   "selected_model": "SVC(kernel=\"rbf\", class_weight=\"balanced\")",
   "tess_macro_f1": 0.1999833208239513,
   "threshold": 0.7,
-  "verification_sklearn_version": "1.8.0"
+  "verification_sklearn_version": "1.9.0"
 }
