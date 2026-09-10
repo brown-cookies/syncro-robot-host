@@ -3,6 +3,7 @@ from pathlib import Path
 """Tests for the WP-104 training orchestration."""
 
 import csv
+import json
 
 import numpy as np
 
@@ -118,3 +119,98 @@ def test_method_note_is_self_contained(tmp_path):
         assert heading in generated
 
     assert "<" not in generated
+    # Regression: the classifier pipeline description must not over-escape quotes.
+    assert 'SVC(kernel="rbf", class_weight="balanced")' in generated
+    assert '\\"' not in generated
+    # No comparison artifact was supplied, so the status must stay honest, not claim a run.
+    assert "MLPClassifier comparison: not run; SVC is the fixed shipped classifier." in generated
+
+
+def test_method_note_reports_measured_mlp_comparison_when_available(tmp_path):
+    """The MLP comparison status must come from real evidence, never a hardcoded literal."""
+    from ml.affect.train import _method_note
+    from ml.affect.evaluate import EvaluationResult
+
+    result = EvaluationResult(
+        macro_f1=0.632258,
+        per_class_f1={"Low": 0.652666, "Moderate": 0.474359, "High": 0.769750},
+        confusion_matrix=np.zeros((3, 3), dtype=int),
+        y_true=["Low"],
+        y_pred=["Low"],
+        n_splits=6,
+    )
+    tess = EvaluationResult(
+        macro_f1=0.199983,
+        per_class_f1={"Low": 0.0, "Moderate": 0.0, "High": 0.599950},
+        confusion_matrix=np.zeros((3, 3), dtype=int),
+        y_true=["High"],
+        y_pred=["High"],
+        n_splits=None,
+    )
+    comparison_path = tmp_path / "svc_vs_mlp_comparison.json"
+    comparison_path.write_text(
+        json.dumps(
+            {
+                "protocol": {"n_splits": 6},
+                "svc": {"macro_f1": 0.6322582442748598},
+                "mlp": {"macro_f1": 0.6252536484681824},
+                "comparison": {
+                    "macro_f1_delta_mlp_minus_svc": -0.007004595806677338,
+                    "winner": "SVC",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    generated = _method_note(
+        result,
+        tess,
+        artifact_path=tmp_path / "affect_svc_v1.joblib",
+        n_splits=6,
+        mlp_comparison_path=comparison_path,
+    )
+
+    assert (
+        "MLPClassifier comparison: run; SVC 0.632258 vs MLP 0.625254 on the identical "
+        "6-fold GroupKFold protocol; SVC remains selected." in generated
+    )
+    assert "not run" not in generated
+
+
+def test_method_note_fails_loudly_on_a_malformed_comparison_file(tmp_path):
+    """A corrupt comparison file must raise, not silently report a false 'not run' status."""
+    from ml.affect.train import _method_note
+    from ml.affect.evaluate import EvaluationResult
+
+    result = EvaluationResult(
+        macro_f1=0.632258,
+        per_class_f1={"Low": 0.652666, "Moderate": 0.474359, "High": 0.769750},
+        confusion_matrix=np.zeros((3, 3), dtype=int),
+        y_true=["Low"],
+        y_pred=["Low"],
+        n_splits=6,
+    )
+    tess = EvaluationResult(
+        macro_f1=0.199983,
+        per_class_f1={"Low": 0.0, "Moderate": 0.0, "High": 0.599950},
+        confusion_matrix=np.zeros((3, 3), dtype=int),
+        y_true=["High"],
+        y_pred=["High"],
+        n_splits=None,
+    )
+    comparison_path = tmp_path / "svc_vs_mlp_comparison.json"
+    comparison_path.write_text(json.dumps({"not": "the expected schema"}), encoding="utf-8")
+
+    try:
+        _method_note(
+            result,
+            tess,
+            artifact_path=tmp_path / "affect_svc_v1.joblib",
+            n_splits=6,
+            mlp_comparison_path=comparison_path,
+        )
+    except ValueError as exc:
+        assert str(comparison_path) in str(exc)
+    else:
+        raise AssertionError("Expected a malformed comparison file to raise ValueError")

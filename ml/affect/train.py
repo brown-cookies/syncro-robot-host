@@ -59,6 +59,7 @@ def write_evidence(
     evidence_dir: str | Path,
     artifact_path: str | Path,
     n_splits: int,
+    mlp_comparison_path: str | Path | None = None,
 ) -> None:
     """Write WP-104 metrics, confusion matrices, and method note to the evidence directory."""
     target = Path(evidence_dir)
@@ -101,8 +102,46 @@ def write_evidence(
         json.dumps(metrics, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     (target / "method_note.md").write_text(
-        _method_note(ravdess, tess, artifact_path=artifact_path, n_splits=n_splits),
+        _method_note(
+            ravdess,
+            tess,
+            artifact_path=artifact_path,
+            n_splits=n_splits,
+            mlp_comparison_path=mlp_comparison_path,
+        ),
         encoding="utf-8",
+    )
+
+
+def _mlp_comparison_status(comparison_path: str | Path | None) -> str:
+    """Describe the MLP comparison status from committed comparison evidence, if present.
+
+    The status is derived from the `ml.affect.compare` output rather than hardcoded, so the
+    method note cannot drift into a false claim once a comparison has actually been run.
+    """
+    if comparison_path is None:
+        return "not run; SVC is the fixed shipped classifier."
+    path = Path(comparison_path)
+    if not path.exists():
+        return "not run; SVC is the fixed shipped classifier."
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        svc_f1 = payload["svc"]["macro_f1"]
+        mlp_f1 = payload["mlp"]["macro_f1"]
+        winner = payload["comparison"]["winner"]
+        n_splits = payload["protocol"]["n_splits"]
+    except (json.JSONDecodeError, KeyError, TypeError) as exc:
+        # A comparison file exists but cannot be read as real evidence. Reporting "not run"
+        # here would repeat the original bug in a new form (a false claim in the method note),
+        # so fail loudly instead and point at how to fix it.
+        raise ValueError(
+            f"MLP comparison evidence at {path} exists but is not a valid "
+            "ml.affect.compare payload. Regenerate it with `python -m ml.affect.compare "
+            "...` or pass a different --mlp-comparison path."
+        ) from exc
+    return (
+        f"run; SVC {svc_f1:.6f} vs MLP {mlp_f1:.6f} on the identical "
+        f"{n_splits}-fold GroupKFold protocol; {winner} remains selected."
     )
 
 
@@ -112,6 +151,7 @@ def _method_note(
     *,
     artifact_path: str | Path,
     n_splits: int,
+    mlp_comparison_path: str | Path | None = None,
 ) -> str:
     """Build the reproducibility note containing the fixed method and measured results."""
     outcome = "GO" if ravdess.macro_f1 >= DEPLOYMENT_THRESHOLD else "NO-GO"
@@ -126,7 +166,8 @@ def _method_note(
     tess_per_class = "\n".join(
         f"- {label}: {tess.per_class_f1[label]:.6f}" for label in ALLOWED_LEVELS
     )
-    return f"""# WP-104 Affect Classifier Method Note\n\n## Dataset\n\n- RAVDESS: 1,440 clips / 24 speakers; primary evaluation corpus.\n- TESS: 2,800 clips / 2 speakers; held-out generalisation check only.\n- Audio normalization: 16 kHz, mono.\n- Feature table: exactly 88 eGeMAPSv02 Functionals features.\n- Label mapping: see `techdocs/label_mapping.md`.\n\n## Classifier\n\n- Pipeline: `StandardScaler -> SVC(kernel=\\\"rbf\\\", class_weight=\\\"balanced\\\")`.\n- Random state: {RANDOM_STATE}.\n- scikit-learn used for this run: {sklearn.__version__}.\n- joblib used for this run: {joblib.__version__}.\n- Shipped artifact: `{Path(artifact_path)}`.\n- Artifact version: `{ARTIFACT_VERSION}`.\n- MLPClassifier comparison: not run; SVC is the fixed shipped classifier.\n\n## RAVDESS Evaluation\n\n- Scheme: `GroupKFold`.\n- Folds: {n_splits}.\n- Grouping key: `speaker_id`.\n- Leakage check: no speaker appeared in both train and validation sides of any fold.\n- Macro-F1: **{ravdess.macro_f1:.6f}**.\n- Per-class F1:\n{per_class}\n\n### Confusion matrix\n\nClass order: `Low, Moderate, High`. See `ravdess_confusion_matrix.csv`.\n\n```text\n{format_metrics(ravdess)}\n```\n\n## TESS Held-Out Evaluation\n\n- TESS was not included in RAVDESS GroupKFold.\n- Macro-F1: **{tess.macro_f1:.6f}**.\n- Per-class F1:\n{tess_per_class}\n\n### Confusion matrix\n\nClass order: `Low, Moderate, High`. See `tess_confusion_matrix.csv`.\n\n```text\n{format_metrics(tess)}\n```\n\n## Go / No-Go\n\nThreshold: **macro-F1 >= {DEPLOYMENT_THRESHOLD:.2f}**.\n\nMeasured outcome: **{outcome}**.\n\n{scope_down}\n"""
+    mlp_status = _mlp_comparison_status(mlp_comparison_path)
+    return f"""# WP-104 Affect Classifier Method Note\n\n## Dataset\n\n- RAVDESS: 1,440 clips / 24 speakers; primary evaluation corpus.\n- TESS: 2,800 clips / 2 speakers; held-out generalisation check only.\n- Audio normalization: 16 kHz, mono.\n- Feature table: exactly 88 eGeMAPSv02 Functionals features.\n- Label mapping: see `techdocs/label_mapping.md`.\n\n## Classifier\n\n- Pipeline: `StandardScaler -> SVC(kernel="rbf", class_weight="balanced")`.\n- Random state: {RANDOM_STATE}.\n- scikit-learn used for this run: {sklearn.__version__}.\n- joblib used for this run: {joblib.__version__}.\n- Shipped artifact: `{Path(artifact_path)}`.\n- Artifact version: `{ARTIFACT_VERSION}`.\n- MLPClassifier comparison: {mlp_status}\n\n## RAVDESS Evaluation\n\n- Scheme: `GroupKFold`.\n- Folds: {n_splits}.\n- Grouping key: `speaker_id`.\n- Leakage check: no speaker appeared in both train and validation sides of any fold.\n- Macro-F1: **{ravdess.macro_f1:.6f}**.\n- Per-class F1:\n{per_class}\n\n### Confusion matrix\n\nClass order: `Low, Moderate, High`. See `ravdess_confusion_matrix.csv`.\n\n```text\n{format_metrics(ravdess)}\n```\n\n## TESS Held-Out Evaluation\n\n- TESS was not included in RAVDESS GroupKFold.\n- Macro-F1: **{tess.macro_f1:.6f}**.\n- Per-class F1:\n{tess_per_class}\n\n### Confusion matrix\n\nClass order: `Low, Moderate, High`. See `tess_confusion_matrix.csv`.\n\n```text\n{format_metrics(tess)}\n```\n\n## Go / No-Go\n\nThreshold: **macro-F1 >= {DEPLOYMENT_THRESHOLD:.2f}**.\n\nMeasured outcome: **{outcome}**.\n\n{scope_down}\n"""
 
 
 def main() -> int:
@@ -139,7 +180,21 @@ def main() -> int:
     parser.add_argument("--output", type=Path, default=Path("models/affect/affect_svc_v1.joblib"))
     parser.add_argument("--evidence-dir", type=Path, default=Path("evidences/ml"))
     parser.add_argument("--n-splits", type=int, default=DEFAULT_N_SPLITS)
+    parser.add_argument(
+        "--mlp-comparison",
+        type=Path,
+        default=None,
+        help=(
+            "Path to the ml.affect.compare JSON evidence. When given (or when found at "
+            "<evidence-dir>/svc_vs_mlp_comparison.json), the method note reports the actual "
+            "measured MLP comparison instead of a hardcoded 'not run' status."
+        ),
+    )
     args = parser.parse_args()
+
+    mlp_comparison_path = args.mlp_comparison
+    if mlp_comparison_path is None:
+        mlp_comparison_path = args.evidence_dir / "svc_vs_mlp_comparison.json"
 
     model, ravdess = train_from_features(
         args.ravdess_features,
@@ -155,6 +210,7 @@ def main() -> int:
         evidence_dir=args.evidence_dir,
         artifact_path=args.output,
         n_splits=args.n_splits,
+        mlp_comparison_path=mlp_comparison_path,
     )
     print("RAVDESS")
     print(format_metrics(ravdess))

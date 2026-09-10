@@ -1,58 +1,78 @@
 # WP-104 Affect Classifier Method Note
 
-## 1. Dataset
+## Dataset
 
-- RAVDESS: 1,440 clips / 24 speakers; primary GroupKFold corpus.
+- RAVDESS: 1,440 clips / 24 speakers; primary evaluation corpus.
 - TESS: 2,800 clips / 2 speakers; held-out generalisation check only.
 - Audio normalization: 16 kHz, mono.
+- Feature table: exactly 88 eGeMAPSv02 Functionals features.
+- Label mapping: see `techdocs/label_mapping.md`.
 
-## 2. Label mapping
+## Classifier
 
-See `techdocs/label_mapping.md`.
+- Pipeline: `StandardScaler -> SVC(kernel="rbf", class_weight="balanced")`.
+- Random state: 42.
+- scikit-learn used for this run: 1.9.0.
+- joblib used for this run: 1.6.0.
+- Shipped artifact: `models/affect/affect_svc_v1.joblib`.
+- Artifact version: `affect_svc_v1`.
+- MLPClassifier comparison: run; SVC 0.632258 vs MLP 0.625254 on the identical 6-fold GroupKFold protocol; SVC remains selected.
 
-## 3. Feature extraction
+## RAVDESS Evaluation
 
-- openSMILE version: `2.6.0`
-- Feature set: `eGeMAPSv02`
-- Feature level: `Functionals`
-- Feature count: 88
+- Scheme: `GroupKFold`.
+- Folds: 6.
+- Grouping key: `speaker_id`.
+- Leakage check: no speaker appeared in both train and validation sides of any fold.
+- Macro-F1: **0.632258**.
+- Per-class F1:
+- Low: 0.652666
+- Moderate: 0.474359
+- High: 0.769750
 
-## 4. Classifier
+### Confusion matrix
 
-- Shipped default: SVC
-- Pipeline: `StandardScaler -> SVC(kernel="rbf", class_weight="balanced")`
-- Random seed: `42`
-- scikit-learn version: `1.8.0`
-- joblib version: `1.5.3`
+Class order: `Low, Moderate, High`. See `ravdess_confusion_matrix.csv`.
 
-MLPClassifier comparison status: `run; SVC 0.632258 vs MLP 0.625254 on the identical six-fold GroupKFold protocol; SVC remains selected`.
+```text
+macro-F1: 0.632258
+Low F1: 0.652666
+Moderate F1: 0.474359
+High F1: 0.769750
+confusion matrix [Low, Moderate, High]:
+  202 63 23
+  79 185 120
+  50 148 570
+```
 
-Tuning exploration record: PCA dimensionality reduction, oversampling, alternative class-weight schemes, and One-vs-Rest (OVR) SVC configurations were explored as separate research variants and discarded from selection. None established a methodologically preferred result that meets the 0.70 deployment gate; the retained research candidate is the OVR + SelectKBest configuration documented in `evidences/ml/finetune/svc_finetune_current.json`, while the shipped acceptance model remains the baseline SVC.
+## TESS Held-Out Evaluation
 
-## 5. Evaluation
+- TESS was not included in RAVDESS GroupKFold.
+- Macro-F1: **0.199983**.
+- Per-class F1:
+- Low: 0.000000
+- Moderate: 0.000000
+- High: 0.599950
 
-- Cross-validation: `GroupKFold`
-- Number of folds: `6`
-- Grouping key: `speaker_id`
-- Leakage check: `no speaker appeared in both train and validation sides of any fold`
-- RAVDESS macro-F1: `0.632258`
-- Low F1: `0.652666`
-- Moderate F1: `0.474359`
-- High F1: `0.769750`
-- TESS held-out result: `0.199983 macro-F1`
+### Confusion matrix
 
-## 6. Go / no-go
+Class order: `Low, Moderate, High`. See `tess_confusion_matrix.csv`.
+
+```text
+macro-F1: 0.199983
+Low F1: 0.000000
+Moderate F1: 0.000000
+High F1: 0.599950
+confusion matrix [Low, Moderate, High]:
+  0 0 400
+  2 0 1198
+  1 0 1199
+```
+
+## Go / No-Go
 
 Threshold: **macro-F1 >= 0.70**.
 
-Measured outcome: `NO-GO`.
+Measured outcome: **NO-GO**.
 
-If below threshold, scope-down statement: report the measured result and retain the classifier as
-the best available measured prototype signal; do not describe it as a validated clinical stress detector.
-
-## 7. Runtime artifact
-
-- Artifact: `models/affect/affect_svc_v1.joblib`
-- Metadata sidecar: `models/affect/affect_svc_v1.joblib.json`
-- Runtime adapter: `adapters/affect/classifier_detector.py`
-- Latency logging: `feature extraction and classifier inference are measured separately by the runtime adapter`
+The measured macro-F1 is below 0.70; report the classifier as the best measured prototype signal and do not describe it as a validated clinical stress detector.
