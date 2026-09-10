@@ -29,7 +29,7 @@ The baseline is frozen and will not be replaced by later tuning results. Any att
 
 The documented training command was verified against the committed RAVDESS/TESS feature tables and alignment sidecars. A fresh `affect_svc_v1.joblib` was persisted, loaded through `ml.affect.artifacts.load_model_artifact`, and used for sample predictions from the committed RAVDESS feature table.
 
-The verification environment used scikit-learn **1.8.0**; the repository requirement remains pinned to **1.9.0**. The training metadata now records both the required version and the actual runtime version instead of conflating them.
+The verification environment used the pinned scikit-learn **1.9.0** environment required by the repository. `runtime_verification.json` is produced by `ml.affect.verify_runtime` and records both the required version and the actual verification version.
 
 ## Evidence
 
