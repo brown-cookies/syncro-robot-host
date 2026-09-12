@@ -23,6 +23,25 @@ class SQLiteDatabase:
         conn = sqlite3.connect(self.path)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys = ON")
+        # WAL lets readers and writers proceed concurrently instead of blocking
+        # on SQLite's default rollback-journal exclusive lock. WP-105 adds a
+        # worker thread writing traces alongside FastAPI's own writers, so more
+        # than one writer becomes possible for the first time (finding S3).
+        # journal_mode=WAL is a per-file setting (persists in the database file
+        # itself after the first connection sets it) but is re-issued on every
+        # connect() here since that has no cost and removes any ordering
+        # dependency on which connection opens first. It is a no-op for
+        # ":memory:" databases, which have no file to hold WAL's separate log.
+        conn.execute("PRAGMA journal_mode = WAL")
+        # sqlite3.connect() already applies a 5s busy timeout by default (its
+        # own `timeout` parameter, which defaults to 5.0s and is not the same
+        # setting as this PRAGMA, though it has the same effect at this value).
+        # This line changes no observed behaviour today; it exists so the
+        # timeout is a decision this module owns and states explicitly, not an
+        # incidental default inherited from the sqlite3 module that a future
+        # change (e.g. passing an explicit `timeout=` to connect(), or a driver
+        # swap) could silently alter.
+        conn.execute("PRAGMA busy_timeout = 5000")
         return conn
 
     @contextmanager
