@@ -108,11 +108,16 @@ def main() -> int:
         log.append(line)
 
     try:
-        graph, _store, audio_input, audio_output, tts, affect_detector = build_wp103_components(
-            settings)
+        components = build_wp103_components(settings)
     except Exception as exc:
         emit(f"[startup] FAILED: {exc}")
         return 1
+    graph = components.graph
+    _store = components.store
+    audio_input = components.audio_input
+    audio_output = components.audio_output
+    tts = components.tts
+    affect_detector = components.affect_detector
 
     user_id = args.user_id
     session_id = str(uuid.uuid4())
