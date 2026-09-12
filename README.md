@@ -569,14 +569,14 @@ The wake-word stage is intentionally simulated in this host runner because wake-
 For normal application execution, use the composition root instead of constructing concrete adapters inside graph nodes:
 
 ```python
-from composition.bootstrap import build_wp103_components
+from composition.bootstrap import build_host_components
 from config.settings import get_settings
 
 settings = get_settings()
 
-graph, store, audio_input, audio_output, tts, affect_detector = (
-    build_wp103_components(settings)
-)
+components = build_host_components(settings)
+components.graph.invoke({...}) 
+components.tts.synthesize(text)
 ```
 
 The important dependency direction is:
@@ -696,15 +696,3 @@ Keep acceptance evidence small and reproducible. For WP-103, useful evidence inc
 * the resulting decision trace row(s).
 
 See `techdocs/SPEC.md`, `techdocs/ARCH.md`, and `techdocs/roadmap.md` for the normative architecture and acceptance requirements.
-
-````
-
-The actual fix is the block under **§8**, where the old five-value unpack is replaced with the current six-value return:
-
-```python
-graph, store, audio_input, audio_output, tts, affect_detector = (
-    build_wp103_components(settings)
-)
-````
-
-That matches the current composition-root return signature.

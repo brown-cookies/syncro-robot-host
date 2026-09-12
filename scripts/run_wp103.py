@@ -11,6 +11,7 @@ Two modes:
 """
 
 from __future__ import annotations
+from config.settings import get_settings
 
 import argparse
 import os
@@ -19,7 +20,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from time import monotonic
 
-from composition.bootstrap import build_wp103_components
+from composition.bootstrap import build_host_components
 from config.settings import Settings, get_settings
 from storage.decision_trace import TRACE_FIELDS
 from storage.sqlite_store import SQLiteStore
@@ -108,7 +109,7 @@ def main() -> int:
         log.append(line)
 
     try:
-        components = build_wp103_components(settings)
+        components = build_host_components(settings)
     except Exception as exc:
         emit(f"[startup] FAILED: {exc}")
         return 1

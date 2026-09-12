@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 class HostComponents:
     """The WP-103 runtime's assembled dependencies.
 
-    Replaces the positional 5-tuple ``build_wp103_components`` used to return
+    Replaces the positional 5-tuple ``build_host_components`` used to return
     (finding S2): every new component the sprint adds (runner, request queue,
     session registry, authentication) used to change that tuple's arity and
     break every caller and every test that unpacked it by position. Adding a
@@ -50,7 +50,7 @@ class HostComponents:
     runner: Any = None
 
 
-def build_wp102_pipeline(settings: Settings | None = None) -> HostPipeline:
+def build_host_pipeline(settings: Settings | None = None) -> HostPipeline:
     """Assemble the host pipeline from the configured runtime components."""
     settings = settings or get_settings()
     return HostPipeline(
@@ -62,7 +62,7 @@ def build_wp102_pipeline(settings: Settings | None = None) -> HostPipeline:
     )
 
 
-def build_wp103_components(
+def build_host_components(
     settings: Settings | None = None, *, affect_detector=None
 ) -> HostComponents:
     """Assemble the host components and graph dependencies used by the runtime."""
