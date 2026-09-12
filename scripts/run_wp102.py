@@ -12,7 +12,7 @@ from adapters.stt import STTAdapterError
 from adapters.tts import TTSAdapterError
 from config.settings import get_settings
 from pipeline.host_pipeline import PipelineStageError
-from composition.bootstrap import build_wp102_pipeline
+from composition.bootstrap import build_host_pipeline
 
 
 def main() -> int:
@@ -28,7 +28,7 @@ def main() -> int:
     print()
 
     try:
-        pipeline = build_wp102_pipeline(settings)
+        pipeline = build_host_pipeline(settings)
     except STTAdapterError as exc:
         print(
             f"[ERR-2] STT adapter failed to initialize: {exc}", file=sys.stderr)

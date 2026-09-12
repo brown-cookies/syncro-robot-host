@@ -570,11 +570,13 @@ The wake-word stage is intentionally simulated in this host runner because wake-
 For normal application execution, use the composition root instead of constructing concrete adapters inside graph nodes:
 
 ```python
-from composition.bootstrap import build_wp103_components
+from composition.bootstrap import build_host_components
 from config.settings import get_settings
 
 settings = get_settings()
-graph, store, audio_input, audio_output, tts = build_wp103_components(settings)
+components = build_host_components(settings)
+components.graph.invoke({...})  # run one dialogue turn
+components.tts.synthesize(text)  # then speak the response
 ```
 
 The important dependency direction is:

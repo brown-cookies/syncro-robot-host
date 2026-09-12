@@ -21,7 +21,7 @@ def test_bootstrap_injects_one_settings_instance_everywhere(monkeypatch, test_se
     monkeypatch.setattr(bootstrap, "PiperTTSAdapter", Fake)
     monkeypatch.setattr(bootstrap, "SpeakerAudioOutput", Fake)
 
-    pipeline = bootstrap.build_wp102_pipeline(test_settings)
+    pipeline = bootstrap.build_host_pipeline(test_settings)
     assert isinstance(pipeline, HostPipeline)
     assert seen == [test_settings] * 5
 
@@ -56,12 +56,12 @@ def test_bootstrap_uses_development_affect_detector_by_default(monkeypatch, test
     setattr(fake_graph_module, "build_dialogue_graph", lambda **kwargs: kwargs["affect_detector"])
     monkeypatch.setitem(sys.modules, "pipeline.graph", fake_graph_module)
 
-    result = bootstrap.build_wp103_components(test_settings)
+    result = bootstrap.build_host_components(test_settings)
     assert result.graph.__class__.__name__ == "DevelopmentAffectDetector"
 
 
 def test_bootstrap_returns_host_components_not_a_positional_tuple(monkeypatch, test_settings):
-    """S2 regression: build_wp103_components must return HostComponents by name,
+    """S2 regression: build_host_components must return HostComponents by name,
     not a positional tuple (finding S2). New components (the runner, next) must be
     addable as a field without breaking any existing caller that reads by name.
     """
@@ -72,7 +72,7 @@ def test_bootstrap_returns_host_components_not_a_positional_tuple(monkeypatch, t
     setattr(fake_graph_module, "build_dialogue_graph", lambda **kwargs: kwargs["affect_detector"])
     monkeypatch.setitem(sys.modules, "pipeline.graph", fake_graph_module)
 
-    result = bootstrap.build_wp103_components(test_settings)
+    result = bootstrap.build_host_components(test_settings)
 
     assert isinstance(result, HostComponents)
     assert not isinstance(result, tuple)
@@ -95,5 +95,5 @@ def test_bootstrap_classifier_failure_falls_back_to_development(monkeypatch, tes
         affect_detector_backend="classifier",
         affect_classifier_path="/missing/affect.joblib",
     )
-    result = bootstrap.build_wp103_components(test_settings)
+    result = bootstrap.build_host_components(test_settings)
     assert result.graph.__class__.__name__ == "DevelopmentAffectDetector"

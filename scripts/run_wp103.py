@@ -5,14 +5,14 @@ from __future__ import annotations
 import uuid
 from time import monotonic
 
-from composition.bootstrap import build_wp103_components
+from composition.bootstrap import build_host_components
 from config.settings import get_settings
 
 def main() -> int:
     """Run the command-line entry point for this module."""
     settings = get_settings()
     try:
-        components = build_wp103_components(settings)
+        components = build_host_components(settings)
     except Exception as exc:
         print(f"[startup] FAILED: {exc}")
         return 1
