@@ -2,7 +2,18 @@
 
 from __future__ import annotations
 
-from typing import Any, TypedDict
+import operator
+from typing import Annotated, Any, TypedDict
+
+
+def merge_stage_timings(left: dict[str, float], right: dict[str, float]) -> dict[str, float]:
+    """Combine per-stage timing dicts written by parallel graph branches.
+
+    LangGraph calls this reducer with the state's current value as ``left`` and each
+    node's returned partial update as ``right`` within the same superstep, so this must
+    be commutative and must not mutate either argument.
+    """
+    return {**left, **right}
 
 
 class DialogueState(TypedDict, total=False):
@@ -30,3 +41,11 @@ class DialogueState(TypedDict, total=False):
     response_payload: dict[str, Any]
     trace_id: str
     started_monotonic: float
+
+    # Reducer-backed keys: safe for more than one node to write in the same
+    # superstep (e.g. the START -> node1_stt / START -> affect fan-out). Every
+    # other key above remains last-write-wins and single-writer by convention
+    # (see techdocs/ARCH.md ownership notes) - do not add a second writer to a
+    # plain key without giving it a reducer here first (see finding F5).
+    stage_timings_s: Annotated[dict[str, float], merge_stage_timings]
+    degradations: Annotated[list[str], operator.add]

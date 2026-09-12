@@ -74,6 +74,32 @@ def test_graph_runs_all_four_nodes_and_writes_trace(tmp_path):
     assert traces[0]["network_event"] is None
 
 
+def test_graph_records_stage_timings_for_both_parallel_branches(tmp_path):
+    """F5 regression: the START -> node1_stt / START -> affect fan-out must not
+    crash, and both branches' durations must survive in the same superstep.
+
+    This fails on a plain (non-reducer) stage_timings_s key with LangGraph's
+    InvalidUpdateError, since node1_stt and affect both write it from START in the
+    same step. It is the regression guard called out in the Phase 1 exit criteria.
+    """
+    store = SQLiteStore(str(tmp_path / "test.db"))
+    store.ensure_user("u-timings")
+    graph = build_dialogue_graph(
+        stt=FakeSTT(), intent_classifier=FakeIntent(), llm=FakeLLM(), store=store,
+        affect_detector=FakeAffect(), confidence_threshold=0.60, context_top_k=5,
+        deadline_proximity_hours=2, grace_window_minutes=15, default_lead_time=15,
+    )
+    result = graph.invoke({
+        "session_id": "s-timings", "user_id": "u-timings",
+        "audio": np.zeros(160, dtype=np.float32), "sample_rate": 16000,
+    })
+    stage_timings = result["stage_timings_s"]
+    assert "stt" in stage_timings
+    assert "affect" in stage_timings
+    assert stage_timings["stt"] >= 0.0
+    assert stage_timings["affect"] >= 0.0
+
+
 def test_graph_records_affect_degradation_reason_for_fallback(tmp_path):
     """Verify that a fallback Low affect result is distinguishable in the trace."""
     store = SQLiteStore(str(tmp_path / "test.db"))
