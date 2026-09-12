@@ -226,7 +226,9 @@ syncro-host/
     │   ├── pipeline/
     │   └── composition/
     ├── integration/
-    │   └── test_wp102_integration.py
+    │   ├── test_host_pipeline_integration.py
+    │   ├── test_dialogue_graph_integration.py
+    │   └── test_affect_classifier_integration.py
     ├── test_wp102_architecture.py
     ├── conftest.py
     └── __init__.py

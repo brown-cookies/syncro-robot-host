@@ -137,5 +137,5 @@ CREATE TABLE IF NOT EXISTS deletion_receipts (
 
 
 def initialize_schema(conn: sqlite3.Connection) -> None:
-    """Create all required tables and indexes idempotently."""
+    """Create the required database schema and indexes idempotently."""
     conn.executescript(SCHEMA_SQL)

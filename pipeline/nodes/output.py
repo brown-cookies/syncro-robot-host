@@ -20,7 +20,9 @@ from pipeline.state import DialogueState
 
 
 def make_output_node(store):
+    """Create the output graph node with its injected speech synthesizer."""
     def output_node(state: DialogueState) -> DialogueState:
+        """Prepare the final response output from the completed dialogue state."""
         session_id = state.get("session_id")
         user_id = state.get("user_id")
         final_response = state.get("final_response")
@@ -88,6 +90,12 @@ def make_output_node(store):
             )
         affect_level = cast(AffectLevel, affect_level_raw)
 
+        degradation_reason_raw = state.get("degradation_reason")
+        if degradation_reason_raw is not None and degradation_reason_raw != "affect_detector_failure":
+            raise ValueError(
+                f"Invalid affect degradation reason: {degradation_reason_raw!r}"
+            )
+
         reminder_outcome_raw = state.get("reminder_outcome", "n/a")
         if reminder_outcome_raw not in {
             "accepted", "snoozed", "delivery_miss", "pending", "n/a"
@@ -134,7 +142,7 @@ def make_output_node(store):
             action_taken=action_taken,
             lead_time_min=lead_time_min,
             reminder_outcome=reminder_outcome,
-            degradation_reason=None,
+            degradation_reason=degradation_reason_raw,
             network_event=None,
             latency_ms=max(
                 0.0,

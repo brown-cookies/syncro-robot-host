@@ -12,6 +12,7 @@ from adapters.tts.piper_adapter import PiperTTSAdapter, TTSAdapterError
 
 
 def wav_bytes() -> bytes:
+    """Build deterministic WAV bytes for the adapter test."""
     raw = np.array([0, 1000, -1000, 2000], dtype=np.int16).tobytes()
     buffer = io.BytesIO()
     with wave.open(buffer, "wb") as wav:
@@ -23,16 +24,19 @@ def wav_bytes() -> bytes:
 
 
 def install_fake_piper(monkeypatch, *, load_error=None, synth_error=None):
+    """Perform the install fake piper operation required by the project."""
     data = wav_bytes()
 
     class FakeVoice:
         @classmethod
         def load(cls, path):
+            """Load the configured test artifact or runtime resource."""
             if load_error:
                 raise load_error
             return cls()
 
         def synthesize_wav(self, text, wav_file):
+            """Build deterministic synthesized WAV output for the integration test."""
             if synth_error:
                 raise synth_error
             wav_file.setnchannels(1)
@@ -44,6 +48,7 @@ def install_fake_piper(monkeypatch, *, load_error=None, synth_error=None):
 
 
 def test_tts_synthesizes_pcm(monkeypatch, test_settings):
+    """Verify that tts synthesizes pcm."""
     install_fake_piper(monkeypatch)
     audio, rate = PiperTTSAdapter(settings=test_settings).synthesize("hello")
     assert rate == 16_000
@@ -53,18 +58,21 @@ def test_tts_synthesizes_pcm(monkeypatch, test_settings):
 
 
 def test_tts_rejects_empty_text(monkeypatch, test_settings):
+    """Verify that tts rejects empty text."""
     install_fake_piper(monkeypatch)
     with pytest.raises(TTSAdapterError, match="empty text"):
         PiperTTSAdapter(settings=test_settings).synthesize(" ")
 
 
 def test_tts_wraps_synthesis_failure(monkeypatch, test_settings):
+    """Verify that tts wraps synthesis failure."""
     install_fake_piper(monkeypatch, synth_error=RuntimeError("voice crashed"))
     with pytest.raises(TTSAdapterError, match="Piper synthesis failed"):
         PiperTTSAdapter(settings=test_settings).synthesize("hello")
 
 
 def test_tts_wraps_initialization_failure(monkeypatch, test_settings):
+    """Verify that tts wraps initialization failure."""
     install_fake_piper(monkeypatch, load_error=RuntimeError("missing voice"))
     with pytest.raises(TTSAdapterError, match="failed to load"):
         PiperTTSAdapter(settings=test_settings)

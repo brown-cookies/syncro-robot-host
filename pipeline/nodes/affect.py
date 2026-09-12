@@ -1,25 +1,26 @@
-"""WP-103 affect branch boundary; WP-104 supplies the real detector."""
+"""WP-104 affect branch with a survivable detector fallback."""
 
 from __future__ import annotations
+
+import logging
 
 from pipeline.state import DialogueState
 
 ALLOWED_AFFECT_LEVELS = frozenset({"Low", "Moderate", "High"})
+logger = logging.getLogger(__name__)
 
 
 class AffectDetectionError(RuntimeError):
-    """Raised when the affect adapter cannot produce a valid level."""
+    """Raised when the affect input contract is invalid."""
 
 
-def make_affect_node(detector):
-    """Create the parallel affect node.
-
-    The detector receives the same raw audio that enters Node 1. The concrete
-    openSMILE/classifier implementation belongs to WP-104; this node owns only
-    the host graph boundary and contract validation.
-    """
+def make_affect_node(detector, *, fallback_level: str = "Low"):
+    """Create the parallel affect graph node with a degraded-mode fallback."""
+    if fallback_level not in ALLOWED_AFFECT_LEVELS:
+        raise ValueError(f"Invalid affect fallback level: {fallback_level!r}")
 
     def affect_node(state: DialogueState) -> DialogueState:
+        """Detect affect and downgrade to a safe level when detector execution fails."""
         audio = state.get("audio")
         sample_rate = state.get("sample_rate")
         if audio is None or sample_rate is None:
@@ -27,11 +28,24 @@ def make_affect_node(detector):
                 "Affect detection requires audio and sample_rate in DialogueState."
             )
 
-        affect_level = detector.detect(audio, sample_rate=sample_rate)
-        if affect_level not in ALLOWED_AFFECT_LEVELS:
-            raise AffectDetectionError(
-                f"Affect detector returned invalid level: {affect_level!r}"
+        degradation_reason = None
+        try:
+            affect_level = detector.detect(audio, sample_rate=sample_rate)
+            if affect_level not in ALLOWED_AFFECT_LEVELS:
+                raise AffectDetectionError(
+                    f"Affect detector returned invalid level: {affect_level!r}"
+                )
+        except Exception as exc:
+            degradation_reason = "affect_detector_failure"
+            logger.warning(
+                "WP-104 affect detection degraded to %s after detector failure: %s",
+                fallback_level,
+                exc,
             )
-        return {"affect_level": affect_level}
+            affect_level = fallback_level
+        return {
+            "affect_level": affect_level,
+            "degradation_reason": degradation_reason,
+        }
 
     return affect_node

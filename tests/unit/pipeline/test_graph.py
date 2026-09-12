@@ -10,26 +10,38 @@ from storage.sqlite_store import SQLiteStore
 
 class FakeSTT:
     def transcribe(self, audio, sample_rate):
+        """Transcribe the supplied audio using the configured speech-to-text backend."""
         return "what should I focus on today?"
 
 
 class FakeIntent:
     def classify(self, transcript):
+        """Classify the supplied input using the configured classifier."""
         return "ask_status", 0.91, {}
 
 
 class FakeAffect:
     def detect(self, audio, sample_rate):
+        """Detect the current affect level from the supplied audio."""
         return "High"
+
+
+class FailingAffect:
+    def detect(self, audio, sample_rate):
+        """Simulate affect detector failure for trace coverage."""
+        raise RuntimeError("classifier unavailable")
 
 
 class FakeLLM:
     def generate(self, prompt):
+        """Generate an LLM response from the supplied conversation state and context."""
         return '{"response_text":"You have one priority task.","proposed_action":"respond"}'
 
 
 def test_graph_runs_all_four_nodes_and_writes_trace(tmp_path):
+    """Verify that graph runs all four nodes and writes trace."""
     store = SQLiteStore(str(tmp_path / "test.db"))
+    store.ensure_user("u1")
     graph = build_dialogue_graph(
         stt=FakeSTT(), intent_classifier=FakeIntent(), llm=FakeLLM(), store=store, affect_detector=FakeAffect(),
         confidence_threshold=0.60, context_top_k=5, deadline_proximity_hours=2,
@@ -60,3 +72,22 @@ def test_graph_runs_all_four_nodes_and_writes_trace(tmp_path):
     assert traces[0]["reminder_outcome"] == "n/a"
     assert traces[0]["degradation_reason"] is None
     assert traces[0]["network_event"] is None
+
+
+def test_graph_records_affect_degradation_reason_for_fallback(tmp_path):
+    """Verify that a fallback Low affect result is distinguishable in the trace."""
+    store = SQLiteStore(str(tmp_path / "test.db"))
+    graph = build_dialogue_graph(
+        stt=FakeSTT(), intent_classifier=FakeIntent(), llm=FakeLLM(), store=store,
+        affect_detector=FailingAffect(), confidence_threshold=0.60, context_top_k=5,
+        deadline_proximity_hours=2, grace_window_minutes=15, default_lead_time=15,
+    )
+    result = graph.invoke({
+        "session_id": "s-fallback", "user_id": "u-fallback",
+        "audio": np.zeros(160, dtype=np.float32), "sample_rate": 16000,
+    })
+    assert result["affect_level"] == "Low"
+    assert result["degradation_reason"] == "affect_detector_failure"
+    trace = store.list_decision_traces("u-fallback")[0]
+    assert trace["affect_level"] == "Low"
+    assert trace["degradation_reason"] == "affect_detector_failure"

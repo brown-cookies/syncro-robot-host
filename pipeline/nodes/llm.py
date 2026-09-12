@@ -9,7 +9,9 @@ from pipeline.state import DialogueState
 
 
 def make_llm_node(llm):
+    """Create the LLM graph node with its injected generation dependency."""
     def llm_node(state: DialogueState) -> DialogueState:
+        """Generate a draft response and store it in dialogue state."""
         if state.get("proposed_action") == "clarify":
             final_response = state.get("final_response")
             if final_response is None:
@@ -72,7 +74,7 @@ def _select_context_for_request(
     transcript: str,
     context: dict[str, object],
 ) -> dict[str, object]:
-    """Select the context relevant to the user's explicit request scope."""
+    """Perform the select context for request operation required by the project."""
     normalized = transcript.casefold()
     overdue_terms = ("overdue", "past due", "past-due", "late task", "late tasks")
     if any(term in normalized for term in overdue_terms):
@@ -428,6 +430,7 @@ def _leaves_claim_standing(prefix: str) -> bool:
 
 
 def _parse_json(raw: str) -> dict[str, object]:
+    """Parse and validate the structured model payload used by the LLM node."""
     text = raw.strip()
     if text.startswith("```"):
         text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text, flags=re.IGNORECASE)

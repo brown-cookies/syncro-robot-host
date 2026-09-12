@@ -9,6 +9,7 @@ from composition.bootstrap import build_wp103_components
 from config.settings import get_settings
 
 def main() -> int:
+    """Run the command-line entry point for this module."""
     settings = get_settings()
     try:
         graph, _store, audio_input, audio_output, tts = build_wp103_components(settings)

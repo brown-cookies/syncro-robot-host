@@ -15,9 +15,11 @@ class SpeakerAudioOutput:
     """Concrete host speaker implementation using sounddevice."""
 
     def __init__(self, settings: Settings) -> None:
+        """Initialize the SpeakerAudioOutput and establish its runtime state."""
         self._settings = settings
 
     def play(self, audio: np.ndarray, sample_rate: int) -> None:
+        """Play supplied audio through the configured output device."""
         try:
             import sounddevice as sd
         except ImportError as exc:  # pragma: no cover - dependency boundary

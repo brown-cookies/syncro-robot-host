@@ -19,6 +19,7 @@ class IntentClassifierError(RuntimeError):
 
 class OllamaIntentClassifier:
     def __init__(self, settings: Settings | None = None) -> None:
+        """Initialize the OllamaIntentClassifier and establish its runtime state."""
         settings = settings or get_settings()
         self._base_url = settings.ollama_url.rstrip("/")
         self._model = settings.llm_model
@@ -27,6 +28,7 @@ class OllamaIntentClassifier:
         self._threshold = settings.intent_confidence_threshold
 
     def classify(self, transcript: str) -> tuple[str, float, dict[str, object]]:
+        """Classify the supplied input using the configured classifier."""
         prompt = f"""You are a strict SYNCRO intent classifier.
 Classify the user's utterance into exactly one of these intents:
 {', '.join(sorted(ALLOWED_INTENTS))}
@@ -81,6 +83,7 @@ User utterance:
 
     @staticmethod
     def _parse_json(raw: object) -> dict[str, object]:
+        """Parse and validate the structured model payload used by the LLM node."""
         if isinstance(raw, dict):
             return raw
         if not isinstance(raw, str):

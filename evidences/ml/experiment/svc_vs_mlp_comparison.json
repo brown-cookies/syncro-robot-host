@@ -1,0 +1,67 @@
+{
+  "comparison": {
+    "macro_f1_delta_mlp_minus_svc": -0.007004595806677338,
+    "mlp_go_no_go": "NO-GO",
+    "svc_go_no_go": "NO-GO",
+    "winner": "SVC"
+  },
+  "mlp": {
+    "confusion_matrix": [
+      [
+        175,
+        56,
+        57
+      ],
+      [
+        50,
+        174,
+        160
+      ],
+      [
+        35,
+        123,
+        610
+      ]
+    ],
+    "macro_f1": 0.6252536484681824,
+    "per_class_f1": {
+      "High": 0.7648902821316614,
+      "Low": 0.6386861313868614,
+      "Moderate": 0.47218453188602444
+    }
+  },
+  "protocol": {
+    "corpus": "RAVDESS",
+    "cv_scheme": "GroupKFold",
+    "deployment_threshold": 0.7,
+    "feature_count": 88,
+    "grouping_key": "speaker_id",
+    "metric": "macro_f1",
+    "n_splits": 6
+  },
+  "svc": {
+    "confusion_matrix": [
+      [
+        202,
+        63,
+        23
+      ],
+      [
+        79,
+        185,
+        120
+      ],
+      [
+        50,
+        148,
+        570
+      ]
+    ],
+    "macro_f1": 0.6322582442748598,
+    "per_class_f1": {
+      "High": 0.7697501688048616,
+      "Low": 0.6526655896607432,
+      "Moderate": 0.47435897435897434
+    }
+  }
+}

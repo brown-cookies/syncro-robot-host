@@ -6,6 +6,8 @@ the host-only pipeline.
 
 from __future__ import annotations
 
+import logging
+
 from adapters.llm import OllamaLLMAdapter
 from adapters.llm.intent_classifier import OllamaIntentClassifier
 from adapters.stt import WhisperSTTAdapter
@@ -17,7 +19,10 @@ from pipeline.host_pipeline import HostPipeline
 from storage.sqlite_store import SQLiteStore
 
 
+logger = logging.getLogger(__name__)
+
 def build_wp102_pipeline(settings: Settings | None = None) -> HostPipeline:
+    """Assemble the host pipeline from the configured runtime components."""
     settings = settings or get_settings()
     return HostPipeline(
         audio_input=MicrophoneAudioInput(settings),
@@ -29,11 +34,7 @@ def build_wp102_pipeline(settings: Settings | None = None) -> HostPipeline:
 
 
 def build_wp103_components(settings: Settings | None = None, *, affect_detector=None):
-    """Assemble the WP-103 graph from concrete host adapters and SQLite.
-
-    This composition root keeps dependency construction outside the LangGraph
-    nodes, so the graph remains testable with technology-neutral fakes.
-    """
+    """Assemble the host components and graph dependencies used by the runtime."""
     settings = settings or get_settings()
     store = SQLiteStore(settings.db_path)
     stt = WhisperSTTAdapter(settings)
@@ -46,9 +47,25 @@ def build_wp103_components(settings: Settings | None = None, *, affect_detector=
     from pipeline.graph import build_dialogue_graph
 
     if affect_detector is None:
-        from adapters.affect import DevelopmentAffectDetector
+        from adapters.affect import ClassifierAffectDetector, DevelopmentAffectDetector
 
-        affect_detector = DevelopmentAffectDetector()
+        backend = settings.affect_detector_backend.strip().lower()
+        if backend == "development":
+            affect_detector = DevelopmentAffectDetector()
+        elif backend == "classifier":
+            try:
+                affect_detector = ClassifierAffectDetector(settings.affect_classifier_path)
+            except (FileNotFoundError, RuntimeError) as exc:
+                logger.warning(
+                    "WP-104 classifier unavailable at %s; using development affect detector: %s",
+                    settings.affect_classifier_path,
+                    exc,
+                )
+                affect_detector = DevelopmentAffectDetector()
+        else:
+            raise ValueError(
+                "AFFECT_DETECTOR_BACKEND must be 'development' or 'classifier'"
+            )
 
     graph = build_dialogue_graph(
         stt=stt,

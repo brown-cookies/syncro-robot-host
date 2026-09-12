@@ -7,6 +7,7 @@ from config.settings import Settings
 
 @pytest.fixture
 def test_settings() -> Settings:
+    """Verify that settings."""
     return Settings(
         audio_sample_rate_hz=16_000,
         audio_channels=1,
@@ -25,4 +26,5 @@ def test_settings() -> Settings:
 
 @pytest.fixture
 def sample_audio() -> np.ndarray:
+    """Perform the sample audio operation required by the project."""
     return np.array([0.1, -0.2, 0.3, -0.4], dtype=np.float32)

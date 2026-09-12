@@ -1,0 +1,57 @@
+{
+  "candidate": {
+    "C": 2.75,
+    "gamma": 0.009,
+    "k": 50,
+    "macro_f1_ravdess_cv": null
+  },
+  "holdout": {
+    "confusion_matrix": [
+      [
+        400,
+        0,
+        0
+      ],
+      [
+        838,
+        5,
+        357
+      ],
+      [
+        791,
+        39,
+        370
+      ]
+    ],
+    "macro_f1": 0.24046961160239735,
+    "per_class_f1": {
+      "High": 0.384016606123508,
+      "Low": 0.32935364347468093,
+      "Moderate": 0.008038585209003215
+    },
+    "records": 2800
+  },
+  "protocol": {
+    "classifier": "OneVsRestClassifier(SVC(kernel='rbf', C=2.75, gamma=0.009, class_weight='balanced'))",
+    "feature_selection": "SelectKBest(f_classif, k=50), fitted on all RAVDESS training data",
+    "holdout_corpus": "TESS",
+    "metric": "macro_f1",
+    "train_corpus": "RAVDESS",
+    "training_fit": "all RAVDESS records"
+  },
+  "provenance": {
+    "numpy": "2.5.2",
+    "python": "3.14.5",
+    "random_state": 42,
+    "ravdess": {
+      "feature_sha256": "becadfdc9fcfb97d2b80658fed47b245d93cbb3dfedd26b4dbe616e97afb61c9",
+      "manifest_sha256": "81144e80e213653b59d4870d893bf65be2a124e2d08496dd30872df5825c013a"
+    },
+    "required_scikit_learn": "1.9.0",
+    "scikit_learn": "1.9.0",
+    "tess": {
+      "feature_sha256": "6d5a17f9a081f60e148c057977aa648270d7170b855820a6d69f5e3b3ad88314",
+      "manifest_sha256": "2a7943f2ce5266ed0ae63140d7c1dde0af850e995ec2211d736b31fd4b5fe260"
+    }
+  }
+}

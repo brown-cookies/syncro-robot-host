@@ -2,6 +2,7 @@ from pipeline.nodes.policy import apply_policy, make_policy_node
 
 
 def test_production_policy_has_exact_five_rules():
+    """Verify that production policy has exact five rules."""
     assert apply_policy("Low", "not_imminent") == "R1"
     assert apply_policy("Low", "imminent") == "R1"
     assert apply_policy("Moderate", "not_imminent") == "R2"
@@ -11,6 +12,7 @@ def test_production_policy_has_exact_five_rules():
 
 
 def test_non_policy_interactions_are_n_a():
+    """Verify that non policy interactions are n a."""
     node = make_policy_node(15, 15)
     result = node({
         "intent": "ask_status",
@@ -24,6 +26,7 @@ def test_non_policy_interactions_are_n_a():
 
 
 def test_r2_defers_without_inflating_lead_time():
+    """Verify that r2 defers without inflating lead time."""
     node = make_policy_node(15, 15)
     result = node({
         "intent": "snooze_reminder",
@@ -39,6 +42,7 @@ def test_r2_defers_without_inflating_lead_time():
 
 
 def test_r3_softens_delivery():
+    """Verify that r3 softens delivery."""
     node = make_policy_node(15, 15)
     result = node({
         "intent": "snooze_reminder",
@@ -53,6 +57,7 @@ def test_r3_softens_delivery():
 
 
 def test_r4_adds_break_prompt_and_defer():
+    """Verify that r4 adds break prompt and defer."""
     node = make_policy_node(15, 15)
     result = node({
         "intent": "dismiss_reminder",
@@ -67,13 +72,17 @@ def test_r4_adds_break_prompt_and_defer():
 
 
 def test_r5_delivers_triggering_reminder():
+    """Verify that r5 delivers triggering reminder."""
     class Store:
         def __init__(self):
+            """Initialize the Store and establish its runtime state."""
             self.calls = []
         def suppress_pending_reminder_traces(self, user_id):
+            """Suppress other pending reminder traces when policy requires it."""
             self.calls.append(user_id)
             return 2
         def get_lead_time(self, user_id, default):
+            """Read the configured lead-time value used by policy evaluation."""
             return default
 
     store = Store()
