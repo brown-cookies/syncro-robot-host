@@ -12,10 +12,15 @@ def main() -> int:
     """Run the command-line entry point for this module."""
     settings = get_settings()
     try:
-        graph, _store, audio_input, audio_output, tts = build_wp103_components(settings)
+        components = build_wp103_components(settings)
     except Exception as exc:
         print(f"[startup] FAILED: {exc}")
         return 1
+    graph = components.graph
+    _store = components.store
+    audio_input = components.audio_input
+    audio_output = components.audio_output
+    tts = components.tts
 
     session_id = str(uuid.uuid4())
     user_id = "wp103-demo-user"
