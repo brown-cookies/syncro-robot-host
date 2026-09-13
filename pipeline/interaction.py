@@ -1,0 +1,198 @@
+"""InteractionRunner: the single owner of one complete interaction's lifecycle
+(finding F3).
+
+Before this module, `scripts/run_wp103.py` was the only code performing the
+full capture -> graph -> TTS -> playback -> trace sequence, using print/
+try-except rather than a reusable, testable unit. WP-105's WebSocket handler
+needs the identical sequence with a different audio source, a different sink,
+and a different failure channel; without one shared owner the handler would
+become a second, drifting copy of that sequence (arch review F3).
+
+Scope for this phase (F3 only): the happy-path sequence -- graph -> TTS ->
+resample -> trace finalization -> InteractionResult -- proven against fakes.
+Two things are deliberately deferred to later phases, not implemented here:
+
+  - Wiring the *real* dialogue graph's output node to return a `pending_trace`
+    key instead of writing the trace itself (Phase 6, finding F1). Until that
+    lands, calling this runner with the real compiled graph would double-write
+    the trace: once inside the graph's own output node (unchanged so far) and
+    once here. That is exactly why this module is validated against fakes for
+    now, per this phase's own exit criteria.
+  - Wrapping node/adapter failures into `InteractionError` with a wire-code
+    mapping (Phase 7, finding F4). `InteractionError` is defined below now so
+    Phase 7 can adopt it without another shape change to this module, but
+    nothing here raises it yet -- failures propagate as whatever the graph or
+    TTS adapter raised, same as `scripts/run_wp103.py` sees today.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from time import monotonic
+from typing import Any, Callable, cast
+
+import numpy as np
+
+from pipeline.contracts import DecisionTraceRecord
+from pipeline.graph import invoke_dialogue
+
+
+@dataclass(frozen=True, slots=True)
+class SessionContext:
+    """Everything the runner needs about one interaction besides the audio.
+
+    `wake_word_detected_at` and `clock_offset_ms` are forward-looking: no
+    caller in this codebase supplies non-None values for either yet (WP-107's
+    wake-word integration and WP-105's clock-sync handshake are both still
+    ahead). Every real caller today builds a SessionContext with both left at
+    their default of `None`, so `InteractionRunner.run` always resolves
+    `latency_basis` to `"host_observed_only"` in practice; the
+    `"wake_word_to_tts"` branch exists and is unit-tested, but its exact
+    translation from the edge's clock into this runner's `clock()` domain is
+    WP-105/WP-107's responsibility to pin down, not this phase's.
+    """
+
+    session_id: str
+    user_id: str
+    started_monotonic: float
+    wake_word_detected_at: int | None = None  # edge-clock epoch ms, SPEC 7.3
+    clock_offset_ms: float | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class InteractionResult:
+    """What one full interaction produced, independent of any transport."""
+
+    session_id: str
+    trace_id: str
+    response_payload: dict[str, Any]
+    tts_audio: np.ndarray  # 16 kHz int16 mono, after resampling (S5)
+    tts_sample_rate: int
+    stage_timings_s: dict[str, float]
+    latency_ms: float
+    latency_basis: str
+
+
+class InteractionError(RuntimeError):
+    """Raised at the interaction boundary so no raw adapter/node exception
+    crosses it uncategorized (finding F4).
+
+    Not yet raised by `InteractionRunner` itself -- the centralized
+    (stage, exception type) -> (wire code, degradation reason, trace-required)
+    mapping that decides `wire_code` is Phase 7's job. Defined now so that
+    phase is additive rather than another shape change to this module.
+    """
+
+    def __init__(self, stage: str, cause: BaseException, *, wire_code: str | None = None):
+        super().__init__(f"interaction failed at stage {stage!r}: {cause}")
+        self.stage = stage
+        self.cause = cause
+        self.wire_code = wire_code
+
+
+class InteractionRunner:
+    """Owns one interaction end to end: graph -> TTS -> resample -> trace.
+
+    `graph` is a compiled dialogue graph (`build_dialogue_graph`'s return
+    value, or a fake exposing the same `.invoke(dict) -> dict` shape used by
+    `pipeline.graph.invoke_dialogue`). `resampler` matches
+    `audio.resample.to_pcm16_16k`'s signature,
+    `(audio: np.ndarray, rate: int) -> np.ndarray`. `clock` is injectable so
+    tests can control elapsed-time readings deterministically without real
+    sleeps; it defaults to `time.monotonic`, matching every other timing value
+    already produced by `pipeline.graph`.
+    """
+
+    def __init__(
+        self,
+        *,
+        graph: Any,
+        store: Any,
+        tts: Any,
+        resampler: Callable[[np.ndarray, int], np.ndarray],
+        clock: Callable[[], float] = monotonic,
+    ) -> None:
+        self._graph = graph
+        self._store = store
+        self._tts = tts
+        self._resampler = resampler
+        self._clock = clock
+
+    def run(self, *, session: SessionContext, audio: np.ndarray, sample_rate: int) -> InteractionResult:
+        """Run one full interaction and return its result.
+
+        Trace ordering matters here and is covered by
+        `tests/unit/pipeline/test_interaction.py`: the trace is written after
+        TTS completes, not after the graph returns, so `latency_ms` reflects
+        SPEC 12's `tts_onset_time - wake_word_detected_at`, not the graph's own
+        (too-early) completion time (finding F1).
+        """
+        graph_result = invoke_dialogue(
+            self._graph,
+            session_id=session.session_id,
+            user_id=session.user_id,
+            audio=audio,
+            sample_rate=sample_rate,
+        )
+        # `pending_trace` is not yet a member of DialogueState's TypedDict:
+        # the real graph's output node doesn't produce it until Phase 6
+        # changes it from assemble+save to assemble+return (finding F1). This
+        # runner is built against that target shape now and validated against
+        # fakes that already supply it (see module docstring), so the state
+        # dict is read dynamically here rather than through DialogueState's
+        # static keys, which don't exist yet for this one.
+        state: dict[str, Any] = cast(dict[str, Any], graph_result.state)
+
+        response_payload = state.get("response_payload")
+        if response_payload is None:
+            raise KeyError("dialogue graph state is missing 'response_payload'")
+        pending_trace_raw = state.get("pending_trace")
+        if pending_trace_raw is None:
+            raise KeyError(
+                "dialogue graph state is missing 'pending_trace' (finding F1 / Phase 6); "
+                "InteractionRunner cannot finalize a trace without it"
+            )
+
+        tts_started = self._clock()
+        tts_audio_raw, tts_native_rate = self._tts.synthesize(response_payload["tts_text"])
+        tts_onset = self._clock()  # synthesis is whole-utterance/blocking (S5); completion is onset
+
+        tts_audio = self._resampler(tts_audio_raw, tts_native_rate)
+
+        latency_ms, latency_basis = self._compute_latency(session, tts_onset)
+
+        pending_trace = dict(pending_trace_raw)
+        pending_trace["latency_ms"] = latency_ms
+        pending_trace["latency_basis"] = latency_basis
+        # Validate the completed record the same way the graph's output node
+        # already does today, before it becomes this module's job in Phase 6.
+        trace = DecisionTraceRecord(**pending_trace)
+        self._store.ensure_user(trace.user_id)
+        self._store.save_decision_trace(trace.model_dump(mode="json"))
+
+        stage_timings_s = {
+            **state.get("stage_timings_s", {}),
+            **graph_result.stage_durations_s,
+            "tts": tts_onset - tts_started,
+        }
+
+        return InteractionResult(
+            session_id=session.session_id,
+            trace_id=str(trace.trace_id),
+            response_payload=response_payload,
+            tts_audio=tts_audio,
+            tts_sample_rate=16_000,
+            stage_timings_s=stage_timings_s,
+            latency_ms=latency_ms,
+            latency_basis=latency_basis,
+        )
+
+    def _compute_latency(self, session: SessionContext, tts_onset: float) -> tuple[float, str]:
+        """SPEC 12: latency_ms = tts_onset_time - wake_word_detected_at, both on
+        the host clock; degrades to "host_observed_only" without clock sync
+        (SPEC 7.4/12), which is every real caller today (see SessionContext).
+        """
+        if session.wake_word_detected_at is not None and session.clock_offset_ms is not None:
+            wake_word_on_clock = session.wake_word_detected_at + session.clock_offset_ms
+            return max(0.0, tts_onset - wake_word_on_clock), "wake_word_to_tts"
+        return max(0.0, (tts_onset - session.started_monotonic) * 1000.0), "host_observed_only"
