@@ -1,0 +1,55 @@
+WP-103 live dialogue graph
+[config] affect_detector_backend='classifier' affect_classifier_path='./models/affect/affect_svc_v1.joblib' (exists=True) resolved_detector=ClassifierAffectDetector
+[config] ollama_model='llama3.1:8b-instruct-q4_K_M' stt_model_size='small' compute_type='int8'
+[config] db_path='./syncro.db' user_id='wp103-demo-user'
+[wake_word] Host wake-word model is edge-owned per SPEC; this runner simulates the received event.
+[audio_capture] Recording 5s from the USB microphone -- speak now...
+[wake_word] Simulating edge-confirmed wake word 'syncro' for local development
+[start_audio] session_id=801d611e-773d-48ff-85b0-9fe012d2672d user_id=wp103-demo-user wake_word_detected_at=1789311938597
+[audio_capture] OK (5.257s, sample_rate=16000)
+[graph] Running Node 1 -> Node 2 -> Node 3 -> Node 4 -> output
+[node_1] transcript: Could you organize my paper for later submission?
+[node_1] intent: request_summary confidence=0.000
+[node_2] context: {'tasks': [], 'recent_routine': None, 'overdue_tasks': []}
+[node_2] context IDs: []
+[node_3] response: I'm not confident I understood that. Could you please say it another way?
+[node_3] proposed action: clarify
+[node_4] affect: High
+[node_4] deadline proximity: n/a
+[node_4] policy_rule: n/a
+[node_4] action: deliver
+[output] response payload: {'type': 'response', 'session_id': '801d611e-773d-48ff-85b0-9fe012d2672d', 'tts_text': "I'm not confident I understood that. Could you please say it another way?", 'state_tag': 'speaking', 'policy_rule': 'n/a', 'lead_time_min': 15.0}
+[output] trace_id: 9bc80dd7-ec62-420f-a32c-9944520dff07
+[output] final response: I'm not confident I understood that. Could you please say it another way?
+[tts] Synthesizing response with Piper...
+[tts] synthesis complete (0.140s, sample_rate=22050)
+[audio_output] Playing synthesized audio on host speakers...
+[audio_output] OK (3.950s)
+
+WP-103 run complete
+Transcript: Could you organize my paper for later submission?
+Intent: request_summary confidence=0.000
+Policy rule: n/a
+Action: deliver
+Response: I'm not confident I understood that. Could you please say it another way?
+Trace ID: 9bc80dd7-ec62-420f-a32c-9944520dff07
+Context IDs: []
+
+--- DEL-03 decision trace (live interaction) ---
+  trace_id: 9bc80dd7-ec62-420f-a32c-9944520dff07
+  session_id: 801d611e-773d-48ff-85b0-9fe012d2672d
+  user_id: wp103-demo-user
+  timestamp: 2026-09-13T15:05:47.839016Z
+  intent: request_summary
+  intent_confidence: 0.0
+  retrieved_context_ids: []
+  affect_level: High
+  deadline_proximity: n/a
+  policy_rule: n/a
+  action_taken: deliver
+  lead_time_min: 15.0
+  reminder_outcome: n/a
+  degradation_reason: None
+  network_event: None
+  latency_ms: 9241.245100012748
+  latency_basis: host_observed_only
