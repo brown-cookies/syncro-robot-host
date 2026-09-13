@@ -21,6 +21,7 @@ from storage.sqlite_store import SQLiteStore
 
 logger = logging.getLogger(__name__)
 
+
 def build_wp102_pipeline(settings: Settings | None = None) -> HostPipeline:
     """Assemble the host pipeline from the configured runtime components."""
     settings = settings or get_settings()
@@ -54,7 +55,8 @@ def build_wp103_components(settings: Settings | None = None, *, affect_detector=
             affect_detector = DevelopmentAffectDetector()
         elif backend == "classifier":
             try:
-                affect_detector = ClassifierAffectDetector(settings.affect_classifier_path)
+                affect_detector = ClassifierAffectDetector(
+                    settings.affect_classifier_path)
             except (FileNotFoundError, RuntimeError) as exc:
                 logger.warning(
                     "WP-104 classifier unavailable at %s; using development affect detector: %s",
@@ -79,4 +81,4 @@ def build_wp103_components(settings: Settings | None = None, *, affect_detector=
         grace_window_minutes=settings.grace_window_minutes,
         default_lead_time=settings.lead_time_default,
     )
-    return graph, store, audio_input, audio_output, tts
+    return graph, store, audio_input, audio_output, tts, affect_detector
