@@ -173,19 +173,25 @@ DB_PATH=./syncro.db
 INTENT_CONFIDENCE_THRESHOLD=0.60
 AFFECT_DETECTOR_BACKEND=development
 AFFECT_CLASSIFIER_PATH=./models/affect/affect_svc_v1.joblib
-OLLAMA_TIMEOUT_S=60
+INTENT_TIMEOUT_S=5
+REASONING_TIMEOUT_S=6
+NON_LLM_TIMEOUT_MARGIN_S=10
+INTENT_NUM_PREDICT=40
+OLLAMA_KEEP_ALIVE=10m
 SESSION_TIMEOUT_SECONDS=30
 ```
 
 `.env` is local configuration and must not be committed.
 
-**Known-tight default:** `OLLAMA_TIMEOUT_S` (60s) already exceeds
-`SESSION_TIMEOUT_SECONDS` (30s), and both the intent classifier and the
-reasoning LLM call currently share this one setting for two sequential calls
-per turn. This is a live hazard, not yet corrected — see
-`techdocs/ARCH.md` §12 and the fixing plan's D5/Phase 9. Until that lands,
-consider lowering `OLLAMA_TIMEOUT_S` locally if you hit session timeouts
-mid-run.
+**Fixed (D5/Phase 9):** the intent classifier and the reasoning LLM call are
+two sequential calls per turn. They used to share one `OLLAMA_TIMEOUT_S`,
+which only guaranteed each call individually stayed under
+`SESSION_TIMEOUT_SECONDS` -- not their sum. They now have independent
+timeouts, `INTENT_TIMEOUT_S` and `REASONING_TIMEOUT_S`, and
+`Settings.__post_init__` rejects any configuration where
+`INTENT_TIMEOUT_S + REASONING_TIMEOUT_S + NON_LLM_TIMEOUT_MARGIN_S` is not
+under `SESSION_TIMEOUT_SECONDS`. The full model-split question (D4) is still
+deferred past this sprint.
 
 ## 3. Install and prepare Ollama
 
