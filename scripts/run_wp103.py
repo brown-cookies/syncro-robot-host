@@ -3,16 +3,38 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime, timezone
+from pathlib import Path
 from time import monotonic
 
 from composition.bootstrap import build_wp103_components
 from config.settings import get_settings
+from storage.decision_trace import TRACE_FIELDS
+
+EVIDENCE_DIR = Path(__file__).resolve().parent.parent / "evidences"
+
+
+def _fetch_decision_trace(store, user_id: str, trace_id: str | None) -> dict | None:
+    """Look up the stored decision-trace row for this run's trace_id."""
+    if not trace_id:
+        return None
+    for record in store.list_decision_traces(user_id):
+        if record.get("trace_id") == trace_id:
+            return record
+    return None
+
+
+def _render_trace_lines(trace_record: dict) -> list[str]:
+    """Format a decision-trace row as DEL-03 evidence lines, field by field."""
+    return [f"  {field}: {trace_record.get(field)}" for field in TRACE_FIELDS]
+
 
 def main() -> int:
     """Run the command-line entry point for this module."""
     settings = get_settings()
     try:
-        graph, _store, audio_input, audio_output, tts = build_wp103_components(settings)
+        graph, _store, audio_input, audio_output, tts = build_wp103_components(
+            settings)
     except Exception as exc:
         print(f"[startup] FAILED: {exc}")
         return 1
@@ -35,14 +57,16 @@ def main() -> int:
     )
 
     print("[wake_word] Simulating edge-confirmed wake word 'syncro' for local development")
-    print(f"[start_audio] session_id={session_id} user_id={user_id} wake_word_detected_at={wake_word_detected_at}")
+    print(
+        f"[start_audio] session_id={session_id} user_id={user_id} wake_word_detected_at={wake_word_detected_at}")
     capture_started = monotonic()
     try:
         captured, sample_rate = audio_input.capture()
     except Exception as exc:
         print(f"[audio_capture] FAILED: {exc}")
         return 1
-    print(f"[audio_capture] OK ({monotonic() - capture_started:.3f}s, sample_rate={sample_rate})")
+    print(
+        f"[audio_capture] OK ({monotonic() - capture_started:.3f}s, sample_rate={sample_rate})")
 
     state: dict = {
         "session_id": session_id,
@@ -72,17 +96,21 @@ def main() -> int:
                     print(f"[node_1] slots: {state['slots']}")
             elif node_name == "node2_context":
                 print(f"[node_2] context: {state.get('context', {})}")
-                print(f"[node_2] context IDs: {state.get('retrieved_context_ids', [])}")
+                print(
+                    f"[node_2] context IDs: {state.get('retrieved_context_ids', [])}")
             elif node_name == "node3_llm":
                 print(f"[node_3] response: {state.get('draft_response', '')}")
-                print(f"[node_3] proposed action: {state.get('proposed_action')}")
+                print(
+                    f"[node_3] proposed action: {state.get('proposed_action')}")
             elif node_name == "node4_policy":
                 print(f"[node_4] affect: {state.get('affect_level')}")
-                print(f"[node_4] deadline proximity: {state.get('deadline_proximity')}")
+                print(
+                    f"[node_4] deadline proximity: {state.get('deadline_proximity')}")
                 print(f"[node_4] policy_rule: {state.get('policy_rule')}")
                 print(f"[node_4] action: {state.get('action_taken')}")
             elif node_name == "output":
-                print(f"[output] response payload: {state.get('response_payload')}")
+                print(
+                    f"[output] response payload: {state.get('response_payload')}")
                 print(f"[output] trace_id: {state.get('trace_id')}")
 
     except Exception as exc:
@@ -100,7 +128,8 @@ def main() -> int:
     tts_started = monotonic()
     try:
         spoken, tts_rate = tts.synthesize(final_response)
-        print(f"[tts] synthesis complete ({monotonic() - tts_started:.3f}s, sample_rate={tts_rate})")
+        print(
+            f"[tts] synthesis complete ({monotonic() - tts_started:.3f}s, sample_rate={tts_rate})")
     except Exception as exc:
         print(f"[tts] FAILED: {exc}")
         return 1
@@ -114,14 +143,47 @@ def main() -> int:
         print(f"[audio_output] FAILED: {exc}")
         return 1
 
-    print("\nWP-103 run complete")
-    print("Transcript:", state.get("transcript"))
-    print("Intent:", state.get("intent"), f"confidence={state.get('intent_confidence', 0.0):.3f}")
-    print("Policy rule:", state.get("policy_rule"))
-    print("Action:", state.get("action_taken"))
-    print("Response:", state.get("final_response"))
-    print("Trace ID:", state.get("trace_id"))
-    print("Context IDs:", state.get("retrieved_context_ids", []))
+    summary_lines = [
+        "\nWP-103 run complete",
+        f"Transcript: {state.get('transcript')}",
+        f"Intent: {state.get('intent')} confidence={state.get('intent_confidence', 0.0):.3f}",
+        f"Policy rule: {state.get('policy_rule')}",
+        f"Action: {state.get('action_taken')}",
+        f"Response: {state.get('final_response')}",
+        f"Trace ID: {state.get('trace_id')}",
+        f"Context IDs: {state.get('retrieved_context_ids', [])}",
+    ]
+    for line in summary_lines:
+        print(line)
+
+    # DEL-03 evidence: pull the persisted trace back out of storage so the
+    # "trace output for a live interaction" artifact isn't a manual step.
+    trace_id = state.get("trace_id")
+    print("\n--- DEL-03 decision trace (live interaction) ---")
+    trace_record = _fetch_decision_trace(_store, user_id, trace_id)
+    if trace_record is None:
+        print(
+            f"[trace] FAILED: no stored decision_trace row found for trace_id={trace_id}")
+        return 1
+
+    trace_lines = _render_trace_lines(trace_record)
+    for line in trace_lines:
+        print(line)
+
+    try:
+        EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        evidence_path = EVIDENCE_DIR / f"live_run_wp103_{stamp}.txt"
+        evidence_path.write_text(
+            "\n".join(
+                summary_lines + ["", "--- DEL-03 decision trace (live interaction) ---"] + trace_lines) + "\n",
+            encoding="utf-8",
+        )
+        print(
+            f"\n[evidence] DEL-01/DEL-03 evidence written to {evidence_path}")
+    except OSError as exc:
+        print(f"[evidence] WARNING: could not write evidence file: {exc}")
+
     return 0
 
 
