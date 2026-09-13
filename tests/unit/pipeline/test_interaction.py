@@ -15,7 +15,7 @@ import numpy as np
 import pytest
 
 from audio.resample import to_pcm16_16k
-from pipeline.interaction import InteractionRunner, SessionContext
+from pipeline.interaction import InteractionError, InteractionRunner, SessionContext
 
 
 def make_pending_trace(**overrides):
@@ -359,8 +359,11 @@ def test_runner_raises_a_clear_error_when_pending_trace_is_missing():
         graph=NoTraceGraph(), store=FakeStore(), tts=FakeTTS(), resampler=to_pcm16_16k, clock=FakeClock()
     )
 
-    with pytest.raises(KeyError, match="pending_trace"):
+    with pytest.raises(InteractionError) as exc_info:
         runner.run(session=make_session(), audio=np.zeros(160, dtype=np.float32), sample_rate=16_000)
+
+    assert exc_info.value.wire_code == "pipeline_failure"
+    assert isinstance(exc_info.value.cause, KeyError)
 
 
 def test_runner_rejects_an_invalid_pending_trace():
@@ -373,3 +376,104 @@ def test_runner_rejects_an_invalid_pending_trace():
 
     with pytest.raises(Exception):  # pydantic.ValidationError
         runner.run(session=make_session(), audio=np.zeros(160, dtype=np.float32), sample_rate=16_000)
+
+
+# --- F4 interaction-boundary failures ------------------------------------
+
+
+def test_runner_wraps_stt_adapter_failure_with_malformed_audio_wire_code():
+    class FailingGraph:
+        def invoke(self, state):
+            from adapters.stt.whisper_adapter import STTAdapterError
+
+            raise STTAdapterError("bad audio")
+
+    runner = InteractionRunner(
+        graph=FailingGraph(),
+        store=FakeStore(),
+        tts=FakeTTS(),
+        resampler=to_pcm16_16k,
+        clock=FakeClock(),
+    )
+
+    with pytest.raises(InteractionError) as exc_info:
+        runner.run(session=make_session(), audio=np.zeros(160, dtype=np.float32), sample_rate=16_000)
+
+    error = exc_info.value
+    assert error.stage == "stt"
+    assert error.wire_code == "malformed_audio"
+    assert error.degradation_reason is None
+    assert error.trace_required is True
+    assert isinstance(error.cause, RuntimeError)
+
+
+def test_runner_wraps_llm_failure_with_pipeline_failure_wire_code():
+    class FailingGraph:
+        def invoke(self, state):
+            from adapters.llm.ollama_adapter import LLMAdapterError
+
+            raise LLMAdapterError("Ollama unavailable")
+
+    runner = InteractionRunner(
+        graph=FailingGraph(),
+        store=FakeStore(),
+        tts=FakeTTS(),
+        resampler=to_pcm16_16k,
+        clock=FakeClock(),
+    )
+
+    with pytest.raises(InteractionError) as exc_info:
+        runner.run(session=make_session(), audio=np.zeros(160, dtype=np.float32), sample_rate=16_000)
+
+    error = exc_info.value
+    assert error.stage == "llm"
+    assert error.wire_code == "pipeline_failure"
+    assert error.trace_required is True
+    assert isinstance(error.cause, RuntimeError)
+
+
+def test_runner_wraps_tts_failure_with_pipeline_failure_wire_code():
+    class FailingTTS(FakeTTS):
+        def synthesize(self, text):
+            from adapters.tts.piper_adapter import TTSAdapterError
+
+            raise TTSAdapterError("voice unavailable")
+
+    runner = InteractionRunner(
+        graph=FakeGraph(),
+        store=FakeStore(),
+        tts=FailingTTS(),
+        resampler=to_pcm16_16k,
+        clock=FakeClock(),
+    )
+
+    with pytest.raises(InteractionError) as exc_info:
+        runner.run(session=make_session(), audio=np.zeros(160, dtype=np.float32), sample_rate=16_000)
+
+    error = exc_info.value
+    assert error.stage == "tts"
+    assert error.wire_code == "pipeline_failure"
+    assert error.trace_required is True
+    assert isinstance(error.cause, RuntimeError)
+
+
+def test_runner_wraps_unexpected_node_value_error_without_raw_exception_leak():
+    class FailingGraph:
+        def invoke(self, state):
+            raise ValueError("unexpected node failure")
+
+    runner = InteractionRunner(
+        graph=FailingGraph(),
+        store=FakeStore(),
+        tts=FakeTTS(),
+        resampler=to_pcm16_16k,
+        clock=FakeClock(),
+    )
+
+    with pytest.raises(InteractionError) as exc_info:
+        runner.run(session=make_session(), audio=np.zeros(160, dtype=np.float32), sample_rate=16_000)
+
+    error = exc_info.value
+    assert error.stage == "pipeline"
+    assert error.wire_code == "pipeline_failure"
+    assert isinstance(error.cause, ValueError)

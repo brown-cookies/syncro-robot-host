@@ -725,7 +725,7 @@ collision case in Section 7.4.
 {
   "type": "error",
   "session_id": "string — the session the error applies to",
-  "error_code": "session_collision | malformed_audio | session_timeout",
+  "error_code": "session_collision | malformed_audio | session_timeout | pipeline_failure",
   "message": "string, human-readable, optional"
 }
 ```
@@ -733,7 +733,9 @@ collision case in Section 7.4.
 Receipt of `error` ends the named session on both sides without a
 `response`; the edge does not attempt playback and returns to Standby
 (`robot-runtime-spec.md` Section 6). `session_timeout` is sent by the host
-per Section 7.4's session-expiry rule, below.
+per Section 7.4's session-expiry rule, below. `pipeline_failure` is the
+host-side application error for a bounded interaction-stage failure that does
+not have a more specific transport code.
 
 ### 7.4 Session Lifecycle Rules
 

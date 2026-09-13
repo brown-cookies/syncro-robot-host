@@ -13,10 +13,10 @@ assembles a `pending_trace`, while this runner alone adds final latency fields,
 validates the completed `DecisionTraceRecord`, ensures the user exists, and
 persists the trace after TTS timing is observable.
 
-Wrapping node/adapter failures into `InteractionError` with a wire-code mapping
-is still deferred to Phase 7 (F4). The exception type is defined below so that
-Phase 7 can adopt it without another shape change, but failures still propagate
-as the underlying graph/TTS exceptions in this phase.
+Phase 7 (F4) makes that boundary executable: adapter/node failures are mapped
+to a stable application-level wire code before they leave the runner. Degraded
+trace persistence remains Phase 8; this phase only establishes failure
+classification and boundary behavior.
 """
 
 from __future__ import annotations
@@ -27,6 +27,10 @@ from typing import Any, Callable, cast
 
 import numpy as np
 
+from adapters.llm.intent_classifier import IntentClassifierError
+from adapters.llm.ollama_adapter import LLMAdapterError
+from adapters.stt.whisper_adapter import STTAdapterError
+from adapters.tts.piper_adapter import TTSAdapterError
 from pipeline.contracts import DecisionTraceRecord
 from pipeline.graph import invoke_dialogue
 
@@ -67,21 +71,51 @@ class InteractionResult:
     latency_basis: str
 
 
-class InteractionError(RuntimeError):
-    """Raised at the interaction boundary so no raw adapter/node exception
-    crosses it uncategorized (finding F4).
+@dataclass(frozen=True, slots=True)
+class FailureDisposition:
+    """Stable classification for one interaction-boundary failure."""
 
-    Not yet raised by `InteractionRunner` itself -- the centralized
-    (stage, exception type) -> (wire code, degradation reason, trace-required)
-    mapping that decides `wire_code` is Phase 7's job. Defined now so that
-    phase is additive rather than another shape change to this module.
+    stage: str
+    wire_code: str
+    degradation_reason: str | None
+    trace_required: bool
+
+
+class InteractionError(RuntimeError):
+    """Raised when a failure crosses the interaction boundary.
+
+    The original exception remains available as ``cause`` for diagnostics,
+    while the remaining fields form the stable application-level contract.
     """
 
-    def __init__(self, stage: str, cause: BaseException, *, wire_code: str | None = None):
+    def __init__(
+        self,
+        stage: str,
+        cause: BaseException,
+        *,
+        wire_code: str,
+        degradation_reason: str | None,
+        trace_required: bool,
+    ) -> None:
         super().__init__(f"interaction failed at stage {stage!r}: {cause}")
         self.stage = stage
         self.cause = cause
         self.wire_code = wire_code
+        self.degradation_reason = degradation_reason
+        self.trace_required = trace_required
+
+
+# Central F4 mapping: transport code consumes the stable wire code rather than
+# importing adapter-specific exception classes. Specific adapter errors precede
+# the generic node/runtime fallbacks.
+_FAILURE_MAP: tuple[tuple[type[Exception], str, str, str | None, bool], ...] = (
+    (STTAdapterError, "stt", "malformed_audio", None, True),
+    (IntentClassifierError, "intent", "pipeline_failure", None, True),
+    (LLMAdapterError, "llm", "pipeline_failure", None, True),
+    (TTSAdapterError, "tts", "pipeline_failure", None, True),
+    (ValueError, "pipeline", "pipeline_failure", None, True),
+    (RuntimeError, "pipeline", "pipeline_failure", None, True),
+)
 
 
 class InteractionRunner:
@@ -117,70 +151,94 @@ class InteractionRunner:
     def run(self, *, session: SessionContext, audio: np.ndarray, sample_rate: int) -> InteractionResult:
         """Run one full interaction and return its result.
 
-        Trace ordering matters here and is covered by
-        `tests/unit/pipeline/test_interaction.py`: the trace is written after
-        TTS completes, not after the graph returns, so `latency_ms` reflects
-        SPEC 12's `tts_onset_time - wake_word_detected_at`, not the graph's own
-        (too-early) completion time (finding F1).
+        All graph, adapter, and runner-stage failures are translated into
+        ``InteractionError`` before crossing this boundary. Trace persistence
+        still occurs only after TTS timing is known (F1).
         """
-        graph_result = invoke_dialogue(
-            self._graph,
-            session_id=session.session_id,
-            user_id=session.user_id,
-            audio=audio,
-            sample_rate=sample_rate,
-        )
-        # The graph output node now returns the assembled trace without timing
-        # fields. The runner completes that record after TTS timing is known.
-        state: dict[str, Any] = cast(dict[str, Any], graph_result.state)
+        try:
+            graph_result = invoke_dialogue(
+                self._graph,
+                session_id=session.session_id,
+                user_id=session.user_id,
+                audio=audio,
+                sample_rate=sample_rate,
+            )
+            state: dict[str, Any] = cast(dict[str, Any], graph_result.state)
 
-        response_payload = state.get("response_payload")
-        if response_payload is None:
-            raise KeyError("dialogue graph state is missing 'response_payload'")
-        pending_trace_raw = state.get("pending_trace")
-        if pending_trace_raw is None:
-            raise KeyError(
-                "dialogue graph state is missing 'pending_trace' (finding F1 / Phase 6); "
-                "InteractionRunner cannot finalize a trace without it"
+            response_payload = state.get("response_payload")
+            if response_payload is None:
+                raise KeyError("dialogue graph state is missing 'response_payload'")
+            pending_trace_raw = state.get("pending_trace")
+            if pending_trace_raw is None:
+                raise KeyError(
+                    "dialogue graph state is missing 'pending_trace' (finding F1 / Phase 6); "
+                    "InteractionRunner cannot finalize a trace without it"
+                )
+
+            tts_started = self._clock()
+            tts_audio_raw, tts_native_rate = self._tts.synthesize(response_payload["tts_text"])
+            tts_completed = self._clock()
+            tts_completed_ms = self._clock_ms()
+
+            tts_audio = self._resampler(tts_audio_raw, tts_native_rate)
+
+            latency_ms, latency_basis = self._compute_latency(
+                session,
+                tts_completed_monotonic=tts_completed,
+                tts_completed_epoch_ms=tts_completed_ms,
             )
 
-        tts_started = self._clock()
-        tts_audio_raw, tts_native_rate = self._tts.synthesize(response_payload["tts_text"])
-        tts_completed = self._clock()
-        tts_completed_ms = self._clock_ms()
+            pending_trace = dict(pending_trace_raw)
+            pending_trace["latency_ms"] = latency_ms
+            pending_trace["latency_basis"] = latency_basis
+            trace = DecisionTraceRecord(**pending_trace)
+            self._store.ensure_user(trace.user_id)
+            self._store.save_decision_trace(trace.model_dump(mode="json"))
 
-        tts_audio = self._resampler(tts_audio_raw, tts_native_rate)
+            stage_timings_s = {
+                **state.get("stage_timings_s", {}),
+                **graph_result.stage_durations_s,
+                "tts": tts_completed - tts_started,
+            }
 
-        latency_ms, latency_basis = self._compute_latency(
-            session,
-            tts_completed_monotonic=tts_completed,
-            tts_completed_epoch_ms=tts_completed_ms,
-        )
+            return InteractionResult(
+                session_id=session.session_id,
+                trace_id=str(trace.trace_id),
+                response_payload=response_payload,
+                tts_audio=tts_audio,
+                tts_sample_rate=16_000,
+                stage_timings_s=stage_timings_s,
+                latency_ms=latency_ms,
+                latency_basis=latency_basis,
+            )
+        except InteractionError:
+            raise
+        except Exception as exc:  # noqa: BLE001 - interaction boundary
+            disposition = self._classify_failure(exc)
+            raise InteractionError(
+                disposition.stage,
+                exc,
+                wire_code=disposition.wire_code,
+                degradation_reason=disposition.degradation_reason,
+                trace_required=disposition.trace_required,
+            ) from exc
 
-        pending_trace = dict(pending_trace_raw)
-        pending_trace["latency_ms"] = latency_ms
-        pending_trace["latency_basis"] = latency_basis
-        # Validate the completed record the same way the graph's output node
-        # already does today, before it becomes this module's job in Phase 6.
-        trace = DecisionTraceRecord(**pending_trace)
-        self._store.ensure_user(trace.user_id)
-        self._store.save_decision_trace(trace.model_dump(mode="json"))
-
-        stage_timings_s = {
-            **state.get("stage_timings_s", {}),
-            **graph_result.stage_durations_s,
-            "tts": tts_completed - tts_started,
-        }
-
-        return InteractionResult(
-            session_id=session.session_id,
-            trace_id=str(trace.trace_id),
-            response_payload=response_payload,
-            tts_audio=tts_audio,
-            tts_sample_rate=16_000,
-            stage_timings_s=stage_timings_s,
-            latency_ms=latency_ms,
-            latency_basis=latency_basis,
+    @staticmethod
+    def _classify_failure(exc: BaseException) -> FailureDisposition:
+        """Map a raw failure to the stable F4 application boundary contract."""
+        for exception_type, stage, wire_code, degradation_reason, trace_required in _FAILURE_MAP:
+            if isinstance(exc, exception_type):
+                return FailureDisposition(
+                    stage=stage,
+                    wire_code=wire_code,
+                    degradation_reason=degradation_reason,
+                    trace_required=trace_required,
+                )
+        return FailureDisposition(
+            stage="interaction",
+            wire_code="pipeline_failure",
+            degradation_reason=None,
+            trace_required=True,
         )
 
     def _compute_latency(
