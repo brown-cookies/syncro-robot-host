@@ -22,8 +22,10 @@ classification and boundary behavior.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from time import monotonic, time
 from typing import Any, Callable, cast
+from uuid import uuid4
 
 import numpy as np
 
@@ -32,6 +34,7 @@ from adapters.llm.ollama_adapter import LLMAdapterError
 from adapters.stt.whisper_adapter import STTAdapterError
 from adapters.tts.piper_adapter import TTSAdapterError
 from pipeline.contracts import DecisionTraceRecord
+
 from pipeline.graph import invoke_dialogue
 
 
@@ -109,12 +112,12 @@ class InteractionError(RuntimeError):
 # importing adapter-specific exception classes. Specific adapter errors precede
 # the generic node/runtime fallbacks.
 _FAILURE_MAP: tuple[tuple[type[Exception], str, str, str | None, bool], ...] = (
-    (STTAdapterError, "stt", "malformed_audio", None, True),
-    (IntentClassifierError, "intent", "pipeline_failure", None, True),
-    (LLMAdapterError, "llm", "pipeline_failure", None, True),
-    (TTSAdapterError, "tts", "pipeline_failure", None, True),
-    (ValueError, "pipeline", "pipeline_failure", None, True),
-    (RuntimeError, "pipeline", "pipeline_failure", None, True),
+    (STTAdapterError, "stt", "malformed_audio", "pipeline_failure", True),
+    (IntentClassifierError, "intent", "pipeline_failure", "pipeline_failure", True),
+    (LLMAdapterError, "llm", "pipeline_failure", "pipeline_failure", True),
+    (TTSAdapterError, "tts", "pipeline_failure", "pipeline_failure", True),
+    (ValueError, "pipeline", "pipeline_failure", "pipeline_failure", True),
+    (RuntimeError, "pipeline", "pipeline_failure", "pipeline_failure", True),
 )
 
 
@@ -215,6 +218,8 @@ class InteractionRunner:
             raise
         except Exception as exc:  # noqa: BLE001 - interaction boundary
             disposition = self._classify_failure(exc)
+            if disposition.trace_required:
+                self._persist_degraded_trace(session=session, disposition=disposition)
             raise InteractionError(
                 disposition.stage,
                 exc,
@@ -222,6 +227,27 @@ class InteractionRunner:
                 degradation_reason=disposition.degradation_reason,
                 trace_required=disposition.trace_required,
             ) from exc
+
+    def _persist_degraded_trace(
+        self, *, session: SessionContext, disposition: FailureDisposition
+    ) -> None:
+        """Persist the minimal trace for an interaction that never completed normally."""
+        reason = disposition.degradation_reason
+        if reason not in {"pipeline_failure", "session_timeout", "queue_overflow"}:
+            return
+        self._store.ensure_user(session.user_id)
+        self._store.save_degraded_trace(
+            {
+                "trace_id": uuid4(),
+                "session_id": session.session_id,
+                "user_id": session.user_id,
+                "timestamp": datetime.now(timezone.utc),
+                "degradation_reason": reason,
+                "network_event": None,
+                "latency_ms": 0.0,
+                "latency_basis": "host_observed_only",
+            }
+        )
 
     @staticmethod
     def _classify_failure(exc: BaseException) -> FailureDisposition:
@@ -237,7 +263,7 @@ class InteractionRunner:
         return FailureDisposition(
             stage="interaction",
             wire_code="pipeline_failure",
-            degradation_reason=None,
+            degradation_reason="pipeline_failure",
             trace_required=True,
         )
 

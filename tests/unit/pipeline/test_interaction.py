@@ -89,10 +89,14 @@ class FakeStore:
     def __init__(self, *, call_order=None):
         self.ensure_user_calls: list[str] = []
         self.saved_traces: list[dict] = []
+        self.saved_degraded_traces: list[dict] = []
         self._call_order = call_order
 
     def ensure_user(self, user_id):
         self.ensure_user_calls.append(user_id)
+
+    def save_degraded_trace(self, trace_dict):
+        self.saved_degraded_traces.append(trace_dict)
 
     def save_decision_trace(self, trace_dict):
         self.saved_traces.append(trace_dict)
@@ -402,7 +406,7 @@ def test_runner_wraps_stt_adapter_failure_with_malformed_audio_wire_code():
     error = exc_info.value
     assert error.stage == "stt"
     assert error.wire_code == "malformed_audio"
-    assert error.degradation_reason is None
+    assert error.degradation_reason == "pipeline_failure"
     assert error.trace_required is True
     assert isinstance(error.cause, RuntimeError)
 
@@ -428,6 +432,7 @@ def test_runner_wraps_llm_failure_with_pipeline_failure_wire_code():
     error = exc_info.value
     assert error.stage == "llm"
     assert error.wire_code == "pipeline_failure"
+    assert error.degradation_reason == "pipeline_failure"
     assert error.trace_required is True
     assert isinstance(error.cause, RuntimeError)
 
@@ -453,6 +458,7 @@ def test_runner_wraps_tts_failure_with_pipeline_failure_wire_code():
     error = exc_info.value
     assert error.stage == "tts"
     assert error.wire_code == "pipeline_failure"
+    assert error.degradation_reason == "pipeline_failure"
     assert error.trace_required is True
     assert isinstance(error.cause, RuntimeError)
 
@@ -477,3 +483,49 @@ def test_runner_wraps_unexpected_node_value_error_without_raw_exception_leak():
     assert error.stage == "pipeline"
     assert error.wire_code == "pipeline_failure"
     assert isinstance(error.cause, ValueError)
+
+
+def test_runner_persists_degraded_trace_for_pipeline_failure():
+    class FailingGraph:
+        def invoke(self, state):
+            raise RuntimeError("graph unavailable")
+
+    store = FakeStore()
+    runner = InteractionRunner(
+        graph=FailingGraph(),
+        store=store,
+        tts=FakeTTS(),
+        resampler=to_pcm16_16k,
+        clock=FakeClock(),
+    )
+
+    with pytest.raises(InteractionError):
+        runner.run(session=make_session(), audio=np.zeros(160, dtype=np.float32), sample_rate=16_000)
+
+    assert len(store.saved_degraded_traces) == 1
+    degraded = store.saved_degraded_traces[0]
+    assert degraded["session_id"] == "s1"
+    assert degraded["user_id"] == "u1"
+    assert degraded["degradation_reason"] == "pipeline_failure"
+    assert degraded["latency_ms"] == 0.0
+
+
+def test_runner_degraded_trace_has_no_normal_interaction_fields():
+    class FailingTTS(FakeTTS):
+        def synthesize(self, text):
+            from adapters.tts.piper_adapter import TTSAdapterError
+            raise TTSAdapterError("voice unavailable")
+
+    store = FakeStore()
+    runner = InteractionRunner(
+        graph=FakeGraph(), store=store, tts=FailingTTS(),
+        resampler=to_pcm16_16k, clock=FakeClock()
+    )
+
+    with pytest.raises(InteractionError):
+        runner.run(session=make_session(), audio=np.zeros(160, dtype=np.float32), sample_rate=16_000)
+
+    degraded = store.saved_degraded_traces[0]
+    assert "intent" not in degraded
+    assert "affect_level" not in degraded
+    assert "policy_rule" not in degraded

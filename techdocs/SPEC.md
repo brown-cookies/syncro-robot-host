@@ -970,6 +970,28 @@ Policy-Consistency Audit depends on the full row being present to compare
 `(affect_level, deadline_proximity)` against `policy_rule` for every row
 within its domain (see RID-019 closure above for what falls outside it).
 
+A degraded interaction is an explicitly different record shape stored in the same
+`decision_trace` table as `DegradedTraceRecord`. It is used when a normal dialogue
+turn never exists (for example `pipeline_failure`, `session_timeout`, or
+`queue_overflow`). `trace_id`, `user_id`, `timestamp`, `degradation_reason`,
+`network_event`, `latency_ms`, and `latency_basis` identify the degraded event;
+`session_id` may be null for standalone transport/condition events. The explicitly
+nullable interaction-only fields are `intent`, `intent_confidence`,
+`retrieved_context_ids`, `affect_level`, and `lead_time_min`. For the
+no-interaction reasons `pipeline_failure`, `session_timeout`, and `queue_overflow`,
+`intent` must be explicitly null; the host contract enforces this with a
+`model_validator` so a degraded record cannot carry an interaction intent while
+claiming that no normal dialogue turn existed. This is an explicit SPEC-level
+contract decision rather than an inference made by the storage layer. `policy_rule`,
+`deadline_proximity`, `action_taken`, and `reminder_outcome` are written as `n/a`. A degraded row is outside the
+Policy-Consistency Audit because its `policy_rule` is always `n/a`. The normal
+`DecisionTraceRecord` remains strict and is never made nullable to accommodate
+degraded interactions.
+
+For the fixing sprint, schema evolution follows the Phase 0 D3 rule: after this
+change, delete the existing `syncro.db` before starting the host. No migration
+version table is introduced in this sprint.
+
 ### 8.4 TTS Audio Downlink — Format, Chunking, Buffering and Backpressure (closes CC-003)
 
 The message types are defined in Section 7.3; this section defines their
@@ -1346,6 +1368,7 @@ failed.
 | Session in-flight past the inactivity timeout with no further frames | `session_timeout` (Section 7.4) | Send `error` (`error_code: session_timeout`), discard buffer, free `session_id` |
 | Intent confidence below threshold              | n/a (FR-4 path, not a failure) | Route to clarification response, still logged as a normal decision-trace row |
 | Idle signal absent/stale at deferred-item release time (Section 11.1 R2/R4; idle-release rule detailed in `robot-runtime-spec.md` Section 8.2, host-executed) | `activity_unavailable` | Deliver at the grace-window deadline as normal (Section 11.3) — this is not an audio-delivery failure; `degradation_reason` here records that the idle-based early-release optimization could not be attempted, not that TTS delivery itself failed |
+| Interaction pipeline fails before a normal decision trace can be completed | `pipeline_failure` | Surface `error_code: pipeline_failure` and write a degraded trace with no policy-domain result |
 
 ### 13.1 Queue Bound, Outage Tracking and Drain (fulfills D7; closes RID-015, CC-004)
 

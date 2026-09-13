@@ -237,3 +237,74 @@ def test_output_node_does_not_require_store_for_trace_assembly():
     assert result["pending_trace"]["trace_id"]
 
 
+
+
+def test_degraded_trace_round_trips_with_null_interaction_fields(tmp_path):
+    from uuid import uuid4
+
+    store = SQLiteStore(str(tmp_path / "degraded.db"))
+    store.ensure_user("u-degraded")
+    store.save_degraded_trace({
+        "trace_id": uuid4(),
+        "session_id": "s-degraded",
+        "user_id": "u-degraded",
+        "timestamp": datetime.now(timezone.utc),
+        "degradation_reason": "pipeline_failure",
+        "network_event": None,
+        "latency_ms": 0.0,
+        "latency_basis": "host_observed_only",
+    })
+
+    row = store.list_decision_traces("u-degraded")[0]
+    assert row["intent"] is None
+    assert row["intent_confidence"] is None
+    assert row["retrieved_context_ids"] is None
+    assert row["affect_level"] is None
+    assert row["policy_rule"] == "n/a"
+    assert row["degradation_reason"] == "pipeline_failure"
+
+
+def test_degraded_trace_can_be_standalone_without_session_id(tmp_path):
+    from uuid import uuid4
+
+    store = SQLiteStore(str(tmp_path / "standalone.db"))
+    store.ensure_user("u-standalone")
+    store.save_degraded_trace({
+        "trace_id": uuid4(),
+        "session_id": None,
+        "user_id": "u-standalone",
+        "timestamp": datetime.now(timezone.utc),
+        "degradation_reason": "queue_overflow",
+    })
+
+    row = store.list_decision_traces("u-standalone")[0]
+    assert row["session_id"] is None
+    assert row["degradation_reason"] == "queue_overflow"
+    assert row["policy_rule"] == "n/a"
+
+
+def test_decision_trace_repository_still_rejects_invalid_normal_rows(tmp_path):
+    from uuid import uuid4
+
+    store = SQLiteStore(str(tmp_path / "strict.db"))
+    store.ensure_user("u-strict")
+    with pytest.raises(ValueError):
+        store.save_decision_trace({
+            "trace_id": uuid4(),
+            "session_id": "s1",
+            "user_id": "u-strict",
+            "timestamp": datetime.now(timezone.utc),
+            "intent": None,
+            "intent_confidence": None,
+            "retrieved_context_ids": [],
+            "affect_level": None,
+            "deadline_proximity": "n/a",
+            "policy_rule": "n/a",
+            "action_taken": "deliver",
+            "lead_time_min": 15.0,
+            "reminder_outcome": "n/a",
+            "degradation_reason": None,
+            "network_event": None,
+            "latency_ms": 1.0,
+            "latency_basis": "host_observed_only",
+        })
