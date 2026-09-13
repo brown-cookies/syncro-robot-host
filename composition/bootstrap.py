@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from adapters.affect import ClassifierAffectDetector, DevelopmentAffectDetector
 from adapters.llm import OllamaLLMAdapter
@@ -17,9 +17,13 @@ from adapters.stt import WhisperSTTAdapter
 from adapters.tts import PiperTTSAdapter
 from audio.capture import MicrophoneAudioInput
 from audio.playback import SpeakerAudioOutput
+from audio.resample import to_pcm16_16k
 from config.settings import Settings, get_settings
 from pipeline.host_pipeline import HostPipeline
 from storage.sqlite_store import SQLiteStore
+
+if TYPE_CHECKING:
+    from pipeline.interaction import InteractionRunner
 
 
 logger = logging.getLogger(__name__)
@@ -43,11 +47,7 @@ class HostComponents:
     audio_output: Any
     tts: Any
     affect_detector: ClassifierAffectDetector | DevelopmentAffectDetector
-    # Forward-declared so this dataclass's shape doesn't change arity again
-    # mid-sprint. Populated once Phase 5 (F3, InteractionRunner) exists;
-    # untyped (Any) rather than imported because pipeline.interaction does not
-    # exist yet at this phase.
-    runner: Any = None
+    runner: InteractionRunner
 
 
 def build_host_pipeline(settings: Settings | None = None) -> HostPipeline:
@@ -109,11 +109,27 @@ def build_host_components(
         grace_window_minutes=settings.grace_window_minutes,
         default_lead_time=settings.lead_time_default,
     )
+
+    # F3: the runner is part of the composition root so every caller
+    # shares the same interaction lifecycle instead of rebuilding graph -> TTS
+    # -> trace orchestration independently. The runner is intentionally built
+    # against the current graph/store objects; Phase 6 will change the graph
+    # output contract from trace persistence to pending-trace return.
+    from pipeline.interaction import InteractionRunner
+
+    runner = InteractionRunner(
+        graph=graph,
+        store=store,
+        tts=tts,
+        resampler=to_pcm16_16k,
+    )
+
     return HostComponents(
         graph=graph,
         store=store,
         audio_input=audio_input,
         audio_output=audio_output,
         tts=tts,
-        affect_detector=affect_detector
+        affect_detector=affect_detector,
+        runner=runner,
     )

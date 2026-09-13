@@ -115,6 +115,19 @@ class FakeClock:
         return value
 
 
+class FakeEpochClock:
+    """Deterministic host epoch clock, expressed in milliseconds."""
+
+    def __init__(self, start_ms: float = 0.0, step_ms: float = 100.0):
+        self._next = start_ms
+        self._step = step_ms
+
+    def __call__(self) -> float:
+        value = self._next
+        self._next += self._step
+        return value
+
+
 def make_session(**overrides):
     fields = {
         "session_id": "s1",
@@ -262,16 +275,21 @@ def test_latency_defaults_to_host_observed_only_without_clock_sync():
 def test_latency_uses_wake_word_to_tts_when_clock_sync_available():
     graph = FakeGraph()
     runner = InteractionRunner(
-        graph=graph, store=FakeStore(), tts=FakeTTS(), resampler=to_pcm16_16k, clock=FakeClock(start=1_000.0)
+        graph=graph,
+        store=FakeStore(),
+        tts=FakeTTS(),
+        resampler=to_pcm16_16k,
+        clock=FakeClock(start=1_000.0),
+        clock_ms=FakeEpochClock(start_ms=2_000.0),
     )
-    session = make_session(wake_word_detected_at=900, clock_offset_ms=50)
+    session = make_session(wake_word_detected_at=1_850, clock_offset_ms=100)
 
     result = runner.run(session=session, audio=np.zeros(160, dtype=np.float32), sample_rate=16_000)
 
     assert result.latency_basis == "wake_word_to_tts"
-    # wake_word_on_clock = 900 + 50 = 950; tts_onset is whatever the fake clock
-    # had ticked to by TTS completion (>= 1000, since the clock starts there).
-    assert result.latency_ms >= (1_000.0 - 950)
+    # edge wake timestamp 1850 ms + 100 ms host offset = 1950 ms; the
+    # host epoch clock is sampled at 2000 ms after synthesis completes.
+    assert result.latency_ms == 50.0
 
 
 def test_latency_never_goes_negative():

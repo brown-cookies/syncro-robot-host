@@ -28,7 +28,7 @@ Two things are deliberately deferred to later phases, not implemented here:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from time import monotonic
+from time import monotonic, time
 from typing import Any, Callable, cast
 
 import numpy as np
@@ -111,12 +111,14 @@ class InteractionRunner:
         tts: Any,
         resampler: Callable[[np.ndarray, int], np.ndarray],
         clock: Callable[[], float] = monotonic,
+        clock_ms: Callable[[], float] | None = None,
     ) -> None:
         self._graph = graph
         self._store = store
         self._tts = tts
         self._resampler = resampler
         self._clock = clock
+        self._clock_ms = clock_ms or (lambda: time() * 1000.0)
 
     def run(self, *, session: SessionContext, audio: np.ndarray, sample_rate: int) -> InteractionResult:
         """Run one full interaction and return its result.
@@ -155,11 +157,16 @@ class InteractionRunner:
 
         tts_started = self._clock()
         tts_audio_raw, tts_native_rate = self._tts.synthesize(response_payload["tts_text"])
-        tts_onset = self._clock()  # synthesis is whole-utterance/blocking (S5); completion is onset
+        tts_completed = self._clock()
+        tts_completed_ms = self._clock_ms()
 
         tts_audio = self._resampler(tts_audio_raw, tts_native_rate)
 
-        latency_ms, latency_basis = self._compute_latency(session, tts_onset)
+        latency_ms, latency_basis = self._compute_latency(
+            session,
+            tts_completed_monotonic=tts_completed,
+            tts_completed_epoch_ms=tts_completed_ms,
+        )
 
         pending_trace = dict(pending_trace_raw)
         pending_trace["latency_ms"] = latency_ms
@@ -173,7 +180,7 @@ class InteractionRunner:
         stage_timings_s = {
             **state.get("stage_timings_s", {}),
             **graph_result.stage_durations_s,
-            "tts": tts_onset - tts_started,
+            "tts": tts_completed - tts_started,
         }
 
         return InteractionResult(
@@ -187,12 +194,23 @@ class InteractionRunner:
             latency_basis=latency_basis,
         )
 
-    def _compute_latency(self, session: SessionContext, tts_onset: float) -> tuple[float, str]:
-        """SPEC 12: latency_ms = tts_onset_time - wake_word_detected_at, both on
-        the host clock; degrades to "host_observed_only" without clock sync
-        (SPEC 7.4/12), which is every real caller today (see SessionContext).
+    def _compute_latency(
+        self,
+        session: SessionContext,
+        *,
+        tts_completed_monotonic: float,
+        tts_completed_epoch_ms: float,
+    ) -> tuple[float, str]:
+        """Compute SPEC 12 latency using a single clock domain per basis.
+
+        The synchronized wake-word path uses edge epoch milliseconds translated
+        into host epoch milliseconds by ``clock_offset_ms``. The fallback uses
+        the host monotonic clock from ``started_monotonic`` because no clock-sync
+        relationship exists in that case. The current TTS adapter is blocking,
+        so synthesis completion is the observable proxy for TTS onset until a
+        streaming TTS boundary exists.
         """
         if session.wake_word_detected_at is not None and session.clock_offset_ms is not None:
-            wake_word_on_clock = session.wake_word_detected_at + session.clock_offset_ms
-            return max(0.0, tts_onset - wake_word_on_clock), "wake_word_to_tts"
-        return max(0.0, (tts_onset - session.started_monotonic) * 1000.0), "host_observed_only"
+            wake_word_on_host_clock_ms = session.wake_word_detected_at + session.clock_offset_ms
+            return max(0.0, tts_completed_epoch_ms - wake_word_on_host_clock_ms), "wake_word_to_tts"
+        return max(0.0, (tts_completed_monotonic - session.started_monotonic) * 1000.0), "host_observed_only"

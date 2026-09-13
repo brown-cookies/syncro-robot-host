@@ -3,6 +3,7 @@ from __future__ import annotations
 from pipeline import HostPipeline
 from composition import bootstrap
 from composition.bootstrap import HostComponents
+from pipeline.interaction import InteractionRunner
 
 
 def test_bootstrap_injects_one_settings_instance_everywhere(monkeypatch, test_settings):
@@ -78,8 +79,10 @@ def test_bootstrap_returns_host_components_not_a_positional_tuple(monkeypatch, t
     assert not isinstance(result, tuple)
     for field in ("graph", "store", "audio_input", "audio_output", "tts", "runner"):
         assert hasattr(result, field), f"HostComponents is missing field {field!r}"
-    # Forward-declared for Phase 5 (F3, InteractionRunner); not populated yet.
-    assert result.runner is None
+    assert isinstance(result.runner, InteractionRunner)
+    assert result.runner._graph is result.graph
+    assert result.runner._store is result.store
+    assert result.runner._tts is result.tts
 
 
 def test_bootstrap_classifier_failure_falls_back_to_development(monkeypatch, test_settings):
