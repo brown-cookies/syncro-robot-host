@@ -39,6 +39,7 @@ class DialogueState(TypedDict, total=False):
     lead_time_min: float
     reminder_outcome: str
     response_payload: dict[str, Any]
+    pending_trace: dict[str, Any]
     trace_id: str
     started_monotonic: float
 

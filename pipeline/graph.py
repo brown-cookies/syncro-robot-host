@@ -86,7 +86,7 @@ def build_dialogue_graph(
             store=store,
         ),
     )
-    builder.add_node("output", make_output_node(store))
+    builder.add_node("output", make_output_node())
 
     # Same raw audio -> transcription branch + acoustic affect branch.
     builder.add_edge(START, "node1_stt")

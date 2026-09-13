@@ -8,21 +8,15 @@ needs the identical sequence with a different audio source, a different sink,
 and a different failure channel; without one shared owner the handler would
 become a second, drifting copy of that sequence (arch review F3).
 
-Scope for this phase (F3 only): the happy-path sequence -- graph -> TTS ->
-resample -> trace finalization -> InteractionResult -- proven against fakes.
-Two things are deliberately deferred to later phases, not implemented here:
+Phase 6 (F1) completes the trace ownership boundary: the graph output node
+assembles a `pending_trace`, while this runner alone adds final latency fields,
+validates the completed `DecisionTraceRecord`, ensures the user exists, and
+persists the trace after TTS timing is observable.
 
-  - Wiring the *real* dialogue graph's output node to return a `pending_trace`
-    key instead of writing the trace itself (Phase 6, finding F1). Until that
-    lands, calling this runner with the real compiled graph would double-write
-    the trace: once inside the graph's own output node (unchanged so far) and
-    once here. That is exactly why this module is validated against fakes for
-    now, per this phase's own exit criteria.
-  - Wrapping node/adapter failures into `InteractionError` with a wire-code
-    mapping (Phase 7, finding F4). `InteractionError` is defined below now so
-    Phase 7 can adopt it without another shape change to this module, but
-    nothing here raises it yet -- failures propagate as whatever the graph or
-    TTS adapter raised, same as `scripts/run_wp103.py` sees today.
+Wrapping node/adapter failures into `InteractionError` with a wire-code mapping
+is still deferred to Phase 7 (F4). The exception type is defined below so that
+Phase 7 can adopt it without another shape change, but failures still propagate
+as the underlying graph/TTS exceptions in this phase.
 """
 
 from __future__ import annotations
@@ -136,13 +130,8 @@ class InteractionRunner:
             audio=audio,
             sample_rate=sample_rate,
         )
-        # `pending_trace` is not yet a member of DialogueState's TypedDict:
-        # the real graph's output node doesn't produce it until Phase 6
-        # changes it from assemble+save to assemble+return (finding F1). This
-        # runner is built against that target shape now and validated against
-        # fakes that already supply it (see module docstring), so the state
-        # dict is read dynamically here rather than through DialogueState's
-        # static keys, which don't exist yet for this one.
+        # The graph output node now returns the assembled trace without timing
+        # fields. The runner completes that record after TTS timing is known.
         state: dict[str, Any] = cast(dict[str, Any], graph_result.state)
 
         response_payload = state.get("response_payload")

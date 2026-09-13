@@ -1,11 +1,9 @@
 """F3 regression: before this module, only scripts/run_wp103.py performed the
 full capture -> graph -> TTS -> trace sequence, with no shared, testable unit.
 
-Deliberately tested against fakes only (not the real compiled dialogue graph):
-the real graph's output node still writes its own trace internally until
-Phase 6 changes it to return a `pending_trace` instead, so exercising this
-runner against the real graph today would double-write. See
-pipeline/interaction.py's module docstring.
+The runner tests use a fake compiled graph so transport-free lifecycle timing
+can be controlled deterministically. The real graph now returns `pending_trace`
+per Phase 6, and the runner is its single normal-path trace writer.
 """
 
 from __future__ import annotations
@@ -218,6 +216,48 @@ def test_trace_is_written_after_tts_not_before():
     runner.run(session=make_session(), audio=np.zeros(160, dtype=np.float32), sample_rate=16_000)
 
     assert call_order == ["graph", "tts", "trace_saved"]
+
+
+def test_trace_latency_is_finalized_from_tts_timing_before_persist():
+    call_order: list[str] = []
+
+    class AdvancingTTS(FakeTTS):
+        def __init__(self, clock: "SteppedClock"):
+            super().__init__(call_order=call_order)
+            self._clock = clock
+
+        def synthesize(self, text):
+            self.calls.append(text)
+            call_order.append("tts")
+            self._clock.advance(0.25)
+            return self.audio, self.native_rate
+
+    class SteppedClock(FakeClock):
+        def advance(self, seconds: float) -> None:
+            self._next += seconds
+
+    clock = SteppedClock(start=10.0, step=0.0)
+    graph = FakeGraph(call_order=call_order)
+    tts = AdvancingTTS(clock)
+    store = FakeStore(call_order=call_order)
+    runner = InteractionRunner(
+        graph=graph,
+        store=store,
+        tts=tts,
+        resampler=to_pcm16_16k,
+        clock=clock,
+    )
+
+    result = runner.run(
+        session=make_session(started_monotonic=10.0),
+        audio=np.zeros(160, dtype=np.float32),
+        sample_rate=16_000,
+    )
+
+    assert result.latency_ms == 250.0
+    assert store.saved_traces[0]["latency_ms"] == 250.0
+    assert store.saved_traces[0]["latency_basis"] == "host_observed_only"
+    assert call_order.index("tts") < call_order.index("trace_saved")
 
 
 def test_ensure_user_is_called_before_saving_the_trace():

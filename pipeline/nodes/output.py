@@ -1,9 +1,8 @@
-"""WP-103 output assembly and decision-trace capture."""
+"""WP-103 output assembly and pending decision-trace construction."""
 
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from time import monotonic
 from typing import cast
 from uuid import uuid4
 
@@ -11,7 +10,6 @@ from pipeline.contracts import (
     ActionTaken,
     AffectLevel,
     DeadlineProximity,
-    DecisionTraceRecord,
     PolicyRule,
     ReminderOutcome,
     ResponsePayload,
@@ -19,10 +17,10 @@ from pipeline.contracts import (
 from pipeline.state import DialogueState
 
 
-def make_output_node(store):
-    """Create the output graph node with its injected speech synthesizer."""
+def make_output_node():
+    """Create the output graph node that assembles, but does not persist, the trace."""
     def output_node(state: DialogueState) -> DialogueState:
-        """Prepare the final response output from the completed dialogue state."""
+        """Prepare the response payload and pending trace from completed dialogue state."""
         session_id = state.get("session_id")
         user_id = state.get("user_id")
         final_response = state.get("final_response")
@@ -110,10 +108,6 @@ def make_output_node(store):
             raise TypeError("lead_time_min must be numeric")
         lead_time_min = float(lead_time_raw)
 
-        started_monotonic = state.get("started_monotonic")
-        if not isinstance(started_monotonic, (int, float)):
-            started_monotonic = monotonic()
-
         payload = ResponsePayload(
             session_id=session_id,
             tts_text=final_response,
@@ -128,36 +122,29 @@ def make_output_node(store):
             lead_time_min=lead_time_min,
         )
 
-        trace = DecisionTraceRecord(
-            trace_id=trace_id,
-            session_id=session_id,
-            user_id=user_id,
-            timestamp=datetime.now(timezone.utc),
-            intent=intent,
-            intent_confidence=float(intent_confidence),
-            retrieved_context_ids=list(state.get("retrieved_context_ids", [])),
-            affect_level=affect_level,
-            deadline_proximity=deadline_proximity,
-            policy_rule=policy_rule,
-            action_taken=action_taken,
-            lead_time_min=lead_time_min,
-            reminder_outcome=reminder_outcome,
-            degradation_reason=degradation_reason_raw,
-            network_event=None,
-            latency_ms=max(
-                0.0,
-                (monotonic() - float(started_monotonic)) * 1000.0,
-            ),
-            latency_basis="host_observed_only",
-        )
-        # The trace insert has a foreign key to users(user_id); guarantee the
-        # parent row exists before writing the trace.
-        store.ensure_user(user_id)
-        store.save_decision_trace(trace.model_dump(mode="json"))
+        pending_trace = {
+            "trace_id": trace_id,
+            "session_id": session_id,
+            "user_id": user_id,
+            "timestamp": datetime.now(timezone.utc),
+            "intent": intent,
+            "intent_confidence": float(intent_confidence),
+            "retrieved_context_ids": list(state.get("retrieved_context_ids", [])),
+            "affect_level": affect_level,
+            "deadline_proximity": deadline_proximity,
+            "policy_rule": policy_rule,
+            "action_taken": action_taken,
+            "lead_time_min": lead_time_min,
+            "reminder_outcome": reminder_outcome,
+            "degradation_reason": degradation_reason_raw,
+            "network_event": None,
+        }
+
 
         return {
             "trace_id": str(trace_id),
             "response_payload": payload.model_dump(mode="json"),
+            "pending_trace": pending_trace,
         }
 
     return output_node
