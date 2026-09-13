@@ -1,0 +1,55 @@
+WP-103 live dialogue graph
+[config] affect_detector_backend='classifier' affect_classifier_path='./models/affect/affect_svc_v1.joblib' (exists=True) resolved_detector=ClassifierAffectDetector
+[config] ollama_model='llama3.1:8b-instruct-q4_K_M' stt_model_size='small' compute_type='int8'
+[config] db_path='./syncro.db' user_id='wp103-demo-user'
+[wake_word] Host wake-word model is edge-owned per SPEC; this runner simulates the received event.
+[audio_capture] Recording 5s from the USB microphone -- speak now...
+[wake_word] Simulating edge-confirmed wake word 'syncro' for local development
+[start_audio] session_id=5938efd7-9b3a-4976-b011-3e08164baf8b user_id=wp103-demo-user wake_word_detected_at=1789311090632
+[audio_capture] OK (5.253s, sample_rate=16000)
+[graph] Running Node 1 -> Node 2 -> Node 3 -> Node 4 -> output
+[node_1] transcript: Can you list me all of my tasks for today?
+[node_1] intent: request_summary confidence=1.000
+[node_2] context: {'tasks': [{'task_id': 'wp103-task-imminent-high', 'title': 'Prepare presentation slides', 'deadline': '2026-09-13T15:33:05.834848+00:00', 'priority': 'high', 'status': 'pending', 'notes': 'Sample WP-103 task: Prepare presentation slides', 'created_at': '2026-09-13T14:48:05.834848+00:00'}, {'task_id': 'wp103-task-imminent-normal', 'title': 'Review methodology notes', 'deadline': '2026-09-13T16:18:05.834848+00:00', 'priority': 'normal', 'status': 'pending', 'notes': 'Sample WP-103 task: Review methodology notes', 'created_at': '2026-09-13T14:48:05.834848+00:00'}, {'task_id': 'wp103-task-far-high', 'title': 'Organize reference papers', 'deadline': '2026-09-13T19:48:05.834848+00:00', 'priority': 'high', 'status': 'pending', 'notes': 'Sample WP-103 task: Organize reference papers', 'created_at': '2026-09-13T14:48:05.834848+00:00'}, {'task_id': 'wp103-task-far-normal', 'title': 'Read related literature', 'deadline': '2026-09-13T22:48:05.834848+00:00', 'priority': 'normal', 'status': 'pending', 'notes': 'Sample WP-103 task: Read related literature', 'created_at': '2026-09-13T14:48:05.834848+00:00'}, {'task_id': 'wp103-task-no-deadline', 'title': 'Clean project repository', 'deadline': None, 'priority': 'low', 'status': 'pending', 'notes': 'Sample WP-103 task: Clean project repository', 'created_at': '2026-09-13T14:48:05.834848+00:00'}], 'recent_routine': {'log_id': 'wp103-break-1', 'event_type': 'break', 'logged_at': '2026-09-13T14:43:05.834848+00:00'}, 'overdue_tasks': [{'task_id': 'wp103-task-overdue', 'title': 'Submit thesis outline', 'deadline': '2026-09-13T12:48:05.834848+00:00', 'priority': 'high', 'status': 'overdue', 'notes': 'Sample WP-103 task: Submit thesis outline', 'created_at': '2026-09-13T14:48:05.834848+00:00'}]}
+[node_2] context IDs: ['wp103-task-imminent-high', 'wp103-task-imminent-normal', 'wp103-task-far-high', 'wp103-task-far-normal', 'wp103-task-no-deadline', 'wp103-task-overdue', 'wp103-break-1']
+[node_3] response: You have the following tasks for today: Prepare presentation slides (high priority), Review methodology notes (normal priority), Organize reference papers (high priority), and Read related literature (normal priority).
+[node_3] proposed action: respond
+[node_4] affect: High
+[node_4] deadline proximity: n/a
+[node_4] policy_rule: n/a
+[node_4] action: deliver
+[output] response payload: {'type': 'response', 'session_id': '5938efd7-9b3a-4976-b011-3e08164baf8b', 'tts_text': 'You have the following tasks for today: Prepare presentation slides (high priority), Review methodology notes (normal priority), Organize reference papers (high priority), and Read related literature (normal priority).', 'state_tag': 'speaking', 'policy_rule': 'n/a', 'lead_time_min': 15.0}
+[output] trace_id: 54d35506-38ce-43ea-84a7-62b5507f3670
+[output] final response: You have the following tasks for today: Prepare presentation slides (high priority), Review methodology notes (normal priority), Organize reference papers (high priority), and Read related literature (normal priority).
+[tts] Synthesizing response with Piper...
+[tts] synthesis complete (0.450s, sample_rate=22050)
+[audio_output] Playing synthesized audio on host speakers...
+[audio_output] OK (13.039s)
+
+WP-103 run complete
+Transcript: Can you list me all of my tasks for today?
+Intent: request_summary confidence=1.000
+Policy rule: n/a
+Action: deliver
+Response: You have the following tasks for today: Prepare presentation slides (high priority), Review methodology notes (normal priority), Organize reference papers (high priority), and Read related literature (normal priority).
+Trace ID: 54d35506-38ce-43ea-84a7-62b5507f3670
+Context IDs: ['wp103-task-imminent-high', 'wp103-task-imminent-normal', 'wp103-task-far-high', 'wp103-task-far-normal', 'wp103-task-no-deadline', 'wp103-task-overdue', 'wp103-break-1']
+
+--- DEL-03 decision trace (live interaction) ---
+  trace_id: 54d35506-38ce-43ea-84a7-62b5507f3670
+  session_id: 5938efd7-9b3a-4976-b011-3e08164baf8b
+  user_id: wp103-demo-user
+  timestamp: 2026-09-13T14:51:45.420501Z
+  intent: request_summary
+  intent_confidence: 1.0
+  retrieved_context_ids: ['wp103-task-imminent-high', 'wp103-task-imminent-normal', 'wp103-task-far-high', 'wp103-task-far-normal', 'wp103-task-no-deadline', 'wp103-task-overdue', 'wp103-break-1']
+  affect_level: High
+  deadline_proximity: n/a
+  policy_rule: n/a
+  action_taken: deliver
+  lead_time_min: 15.0
+  reminder_outcome: n/a
+  degradation_reason: None
+  network_event: None
+  latency_ms: 14788.056499994127
+  latency_basis: host_observed_only
