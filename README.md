@@ -1,6 +1,15 @@
 # SYNCRO Host
 
-Host-side runtime for the SYNCRO robot stack. This repository contains the **WP-102 host pipeline**, the **WP-103 dialogue-graph scaffold**, and the **WP-104 acoustic-affect ML pipeline/runtime boundary**.
+Host-side runtime for the SYNCRO robot stack. This repository contains the **WP-102 host pipeline**, the **WP-103 dialogue-graph scaffold**, the **WP-104 acoustic-affect ML pipeline/runtime boundary**, and (in progress) the **Architecture Fixing sprint** that followed the WP-103/104 arch review.
+
+The fixing sprint is not finished. Phases 1-5 of its plan (graph-state
+reducers, the `HostComponents` composition-root dataclass, SQLite WAL,
+host-side audio resampling, and `InteractionRunner`) are committed and
+tested; Phases 6-19 (trace-finalization move, failure-boundary mapping,
+degraded-trace contract, timeout correction, transport, and documentation
+sync) are not. See `techdocs/ARCH.md` for the current architecture,
+including §12's list of known gaps, and `techdocs/ARCHITECTUREREVIEW12926.md`
+for the review and phase plan itself.
 
 ## What is implemented
 
@@ -80,7 +89,11 @@ audio/               Host microphone, playback, and audio contracts
 composition/         Composition root / dependency wiring
 config/              Typed environment-backed settings
 pipeline/            LangGraph state, graph, nodes, and orchestration
+  interaction.py      InteractionRunner (F3, architecture-fixing sprint) — not yet wired in, see techdocs/ARCH.md §12
 storage/             SQLite schema, context retrieval, and decision traces
+ml/affect/           WP-104 feature extraction, training, tuning, and evaluation
+datasets/            Committed WP-104 manifests and feature tables
+evidences/           Live-run stage-timing logs and WP-104 ML acceptance evidence
 scripts/             Manual operational runners and WP-103 seeding
 techdocs/            SPEC / ARCH / roadmap and supporting documents
 tests/               Unit, contract, architecture, and integration tests
@@ -160,9 +173,19 @@ DB_PATH=./syncro.db
 INTENT_CONFIDENCE_THRESHOLD=0.60
 AFFECT_DETECTOR_BACKEND=development
 AFFECT_CLASSIFIER_PATH=./models/affect/affect_svc_v1.joblib
+OLLAMA_TIMEOUT_S=60
+SESSION_TIMEOUT_SECONDS=30
 ```
 
 `.env` is local configuration and must not be committed.
+
+**Known-tight default:** `OLLAMA_TIMEOUT_S` (60s) already exceeds
+`SESSION_TIMEOUT_SECONDS` (30s), and both the intent classifier and the
+reasoning LLM call currently share this one setting for two sequential calls
+per turn. This is a live hazard, not yet corrected — see
+`techdocs/ARCH.md` §12 and the fixing plan's D5/Phase 9. Until that lands,
+consider lowering `OLLAMA_TIMEOUT_S` locally if you hit session timeouts
+mid-run.
 
 ## 3. Install and prepare Ollama
 
@@ -578,6 +601,17 @@ components = build_host_components(settings)
 components.graph.invoke({...}) 
 components.tts.synthesize(text)
 ```
+
+**This snippet is the pre-architecture-fixing-sprint pattern and will change.**
+`pipeline/interaction.py`'s `InteractionRunner` now exists specifically to
+own the graph → TTS → resample → trace sequence shown above as one unit —
+manually calling `graph.invoke()` and then `tts.synthesize()` separately is
+exactly the "second, drifting copy of the sequence" pattern `InteractionRunner`
+was built to eliminate (see its module docstring). It is not wired into
+`build_host_components()` yet (`HostComponents.runner` is still `None` — see
+`techdocs/ARCH.md` §12), so this snippet remains accurate for what exists
+today, but do not copy it into new code once that wiring lands; use
+`components.runner.run(...)` instead once it is populated.
 
 The important dependency direction is:
 
