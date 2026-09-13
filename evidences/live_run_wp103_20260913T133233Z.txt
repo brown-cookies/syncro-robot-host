@@ -1,0 +1,28 @@
+
+WP-103 run complete
+Transcript: Hey, Synchro, dismiss that reminder please, okay? Alright.
+Intent: dismiss_reminder confidence=1.000
+Policy rule: R5
+Action: deliver
+Response: Let’s focus on the most important item first. I have not dismissed that reminder yet, but I can dismiss it if you would like.
+Trace ID: 9cdac614-cc92-4bc9-9f02-e66859289503
+Context IDs: ['wp103-task-imminent-high', 'wp103-task-imminent-normal', 'wp103-task-far-high', 'wp103-task-far-normal', 'wp103-task-no-deadline', 'wp103-task-overdue', 'wp103-break-1']
+
+--- DEL-03 decision trace (live interaction) ---
+  trace_id: 9cdac614-cc92-4bc9-9f02-e66859289503
+  session_id: 48906693-a9aa-48a1-98ec-e9518cf47660
+  user_id: wp103-demo-user
+  timestamp: 2026-09-13T13:32:26.015685Z
+  intent: dismiss_reminder
+  intent_confidence: 1.0
+  retrieved_context_ids: ['wp103-task-imminent-high', 'wp103-task-imminent-normal', 'wp103-task-far-high', 'wp103-task-far-normal', 'wp103-task-no-deadline', 'wp103-task-overdue', 'wp103-break-1']
+  affect_level: High
+  deadline_proximity: imminent
+  policy_rule: R5
+  action_taken: deliver
+  lead_time_min: 15.0
+  reminder_outcome: pending
+  degradation_reason: None
+  network_event: None
+  latency_ms: 21650.97170000081
+  latency_basis: host_observed_only

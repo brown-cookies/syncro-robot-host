@@ -1,0 +1,28 @@
+
+WP-103 run complete
+Transcript: Hey, what the fuck, what is my closest deadlay for today?
+Intent: ask_status confidence=0.700
+Policy rule: n/a
+Action: deliver
+Response: Your closest deadline for today is 17:07:43.693790+00:00 for the task 'Prepare presentation slides'.
+Trace ID: ddb440ca-8234-46a7-941e-874af87e2cac
+Context IDs: ['wp103-task-no-deadline', 'wp103-task-overdue', 'wp103-task-imminent-high', 'wp103-task-imminent-normal', 'wp103-task-far-high', 'wp103-task-far-normal', 'wp103-break-1']
+
+--- DEL-03 decision trace (live interaction) ---
+  trace_id: ddb440ca-8234-46a7-941e-874af87e2cac
+  session_id: c6a98e70-c1f6-4648-b252-a95dbaf3fa62
+  user_id: wp103-demo-user
+  timestamp: 2026-09-13T13:25:46.609432Z
+  intent: ask_status
+  intent_confidence: 0.7
+  retrieved_context_ids: ['wp103-task-no-deadline', 'wp103-task-overdue', 'wp103-task-imminent-high', 'wp103-task-imminent-normal', 'wp103-task-far-high', 'wp103-task-far-normal', 'wp103-break-1']
+  affect_level: High
+  deadline_proximity: n/a
+  policy_rule: n/a
+  action_taken: deliver
+  lead_time_min: 15.0
+  reminder_outcome: n/a
+  degradation_reason: None
+  network_event: None
+  latency_ms: 14890.290600000299
+  latency_basis: host_observed_only
