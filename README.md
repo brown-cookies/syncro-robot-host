@@ -92,11 +92,11 @@ models/              Local model files; keep binary artifacts out of Git
 
 Recommended environment for the current repository:
 
-- Python 3.11+
-- A working microphone and speaker/audio output for the live host run
-- Ollama running locally for the LLM stage
-- A Piper voice model installed locally
-- Internet access on the first faster-whisper model load so the selected Whisper model can be downloaded/cached
+* Python 3.11+
+* A working microphone and speaker/audio output for the live host run
+* Ollama running locally for the LLM stage
+* A Piper voice model installed locally
+* Internet access on the first faster-whisper model load so the selected Whisper model can be downloaded/cached
 
 The exact Python package versions are pinned in `requirements.txt`.
 
@@ -424,12 +424,12 @@ python -m ml.affect.tune \
 
 The command produces all currently tracked fine-tuning evidence from committed code:
 
-| Artifact | Producer | Purpose |
-|---|---|---|
-| `svc_finetune_current.json` | `ml.affect.tune` | Fixed-fold OVR + SelectKBest search |
-| `svc_ovr_nested_tuning.json` | `ml.affect.tune` | Nested speaker-disjoint model selection |
-| `tess_holdout.json` | `ml.affect.tune` | RAVDESS → TESS cross-corpus holdout |
-| `fine_tuning_summary.md` | `ml.affect.tune` | Human-readable summary generated from the fresh results |
+| Artifact                     | Producer         | Purpose                                                 |
+| ---------------------------- | ---------------- | ------------------------------------------------------- |
+| `svc_finetune_current.json`  | `ml.affect.tune` | Fixed-fold OVR + SelectKBest search                     |
+| `svc_ovr_nested_tuning.json` | `ml.affect.tune` | Nested speaker-disjoint model selection                 |
+| `tess_holdout.json`          | `ml.affect.tune` | RAVDESS → TESS cross-corpus holdout                     |
+| `fine_tuning_summary.md`     | `ml.affect.tune` | Human-readable summary generated from the fresh results |
 
 Recorded research results are approximately:
 
@@ -542,7 +542,6 @@ python -m scripts.run_wp103
 
 The runner creates/uses the `wp103-demo-user`, simulates the edge-owned wake-word event, captures microphone audio, executes the graph, speaks the final response, and prints the decision-trace ID.
 
-
 ## 7. Run WP-103
 
 Start Ollama first, make sure your Piper model path is valid, and connect the microphone/speaker you want to use.
@@ -574,7 +573,10 @@ from composition.bootstrap import build_wp103_components
 from config.settings import get_settings
 
 settings = get_settings()
-graph, store, audio_input, audio_output, tts = build_wp103_components(settings)
+
+graph, store, audio_input, audio_output, tts, affect_detector = (
+    build_wp103_components(settings)
+)
 ```
 
 The important dependency direction is:
@@ -594,11 +596,11 @@ external systems
 
 ### Why this boundary exists
 
-- **Pipeline nodes** contain workflow logic, not vendor setup.
-- **Adapters** translate external technologies into small application contracts.
-- **Composition** decides which concrete implementations are used.
-- **Tests** can inject fakes without a microphone, Ollama, Piper, or downloaded models.
-- **Storage** owns persistence rather than leaking SQLite operations into graph nodes.
+* **Pipeline nodes** contain workflow logic, not vendor setup.
+* **Adapters** translate external technologies into small application contracts.
+* **Composition** decides which concrete implementations are used.
+* **Tests** can inject fakes without a microphone, Ollama, Piper, or downloaded models.
+* **Storage** owns persistence rather than leaking SQLite operations into graph nodes.
 
 This is the expected way to extend the host: add or replace an adapter at the boundary and wire it through the composition root rather than importing the concrete technology directly into the graph.
 
@@ -608,9 +610,9 @@ No mutation executor is connected to the graph. Node 3 drafts a reply and nothin
 
 The guard is a lexical rule, not a parser, so it is deliberately imperfect in two known ways. Both are documented here rather than fixed, because closing either would break a more common case:
 
-- **Cross-clause negation is not tracked.** A reply that denies and then claims in the same sentence passes through unguarded, for example `"You told me not to, but this was added anyway."` Catching it would require distinguishing a negator that governs the verb from one that does not, which the current clause-scope model cannot do without also re-breaking `"I have not, however, dismissed that reminder."`
+* **Cross-clause negation is not tracked.** A reply that denies and then claims in the same sentence passes through unguarded, for example `"You told me not to, but this was added anyway."` Catching it would require distinguishing a negator that governs the verb from one that does not, which the current clause-scope model cannot do without also re-breaking `"I have not, however, dismissed that reminder."`
 
-- **Comma-coordinated denials are over-caught.** A denial whose subject is a comma-separated list, for example `"None of the milk, eggs, or bread was added."`, is replaced by the generic reply `"I have not added that yet, but I can add it to your list if you would like."` This is over-caution rather than a false statement - both sentences tell the user nothing was added - but it loses which items were meant. It does not affect object-position lists, parentheticals, or comma-free lists.
+* **Comma-coordinated denials are over-caught.** A denial whose subject is a comma-separated list, for example `"None of the milk, eggs, or bread was added."`, is replaced by the generic reply `"I have not added that yet, but I can add it to your list if you would like."` This is over-caution rather than a false statement - both sentences tell the user nothing was added - but it loses which items were meant. It does not affect object-position lists, parentheticals, or comma-free lists.
 
 Two smaller gaps are known and accepted for the same reason: a completed verb followed by a bare noun with no colon (`"Added task buy milk."`), and mutation verbs outside the per-intent word lists (`"Bumped the call to 6pm."`).
 
@@ -636,12 +638,12 @@ The graph tests may inject a fake affect detector where the test is intended to 
 
 WP-103 uses these external model boundaries:
 
-| Component | WP-103 behavior | Production owner |
-|---|---|---|
-| STT | `faster-whisper` | Existing host pipeline |
-| LLM | Ollama + configured local model | Existing host pipeline |
-| TTS | Piper + configured local voice | Existing host pipeline |
-| Affect | `ClassifierAffectDetector` → `Low` / `Moderate` / `High` | **WP-104** |
+| Component | WP-103 behavior                                          | Production owner       |
+| --------- | -------------------------------------------------------- | ---------------------- |
+| STT       | `faster-whisper`                                         | Existing host pipeline |
+| LLM       | Ollama + configured local model                          | Existing host pipeline |
+| TTS       | Piper + configured local voice                           | Existing host pipeline |
+| Affect    | `ClassifierAffectDetector` → `Low` / `Moderate` / `High` | **WP-104**             |
 
 WP-104 owns the affect model file, openSMILE feature extraction, scikit-learn classifier, training/evaluation data, and acceptance evidence described in `techdocs/MLSPEC.md`.
 
@@ -688,9 +690,21 @@ Generated databases, local model files, caches, recordings, and other runtime ar
 
 Keep acceptance evidence small and reproducible. For WP-103, useful evidence includes:
 
-- passing WP-103 graph/integration test output;
-- a successful fresh-database live run;
-- stage-level timings from `run_wp103.py`;
-- the resulting decision trace row(s).
+* passing WP-103 graph/integration test output;
+* a successful fresh-database live run;
+* stage-level timings from `run_wp103.py`;
+* the resulting decision trace row(s).
 
 See `techdocs/SPEC.md`, `techdocs/ARCH.md`, and `techdocs/roadmap.md` for the normative architecture and acceptance requirements.
+
+````
+
+The actual fix is the block under **§8**, where the old five-value unpack is replaced with the current six-value return:
+
+```python
+graph, store, audio_input, audio_output, tts, affect_detector = (
+    build_wp103_components(settings)
+)
+````
+
+That matches the current composition-root return signature.
