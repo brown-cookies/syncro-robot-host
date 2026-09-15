@@ -1,5 +1,19 @@
 """WP-103 live host dialogue graph runner with stage-level observability.
 
+Phase 10 migration (SYNCRO architecture-fixing plan): all interaction
+orchestration -- graph invocation, TTS synthesis, audio resampling, latency
+computation, trace persistence, and failure classification -- now lives in
+`pipeline.interaction.InteractionRunner` (findings F3/F1/F4, Phases 5-7).
+This script no longer performs any of that itself; it is reduced to:
+build HostComponents -> capture audio -> build SessionContext ->
+`runner.run(...)` -> play the result -> report/evidence. Per-node
+diagnostics (transcript, per-node affect/policy prints) that used to be
+printed live while streaming the graph are intentionally gone: the
+InteractionRunner boundary doesn't expose intermediate graph state to
+callers (that's the point of F3 -- WP-105's transport shouldn't need
+node-level internals either), but nearly all of that detail still reaches
+the DEL-03 evidence block below via the persisted decision-trace row.
+
 Two modes:
   * default: run one live interaction end to end (DEL-01) and emit the
     matching decision-trace evidence (DEL-03).
@@ -11,19 +25,17 @@ Two modes:
 """
 
 from __future__ import annotations
-from config.settings import get_settings
 
 import argparse
-import os
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from time import monotonic
+from time import monotonic, time
 
 from composition.bootstrap import build_host_components
 from config.settings import Settings, get_settings
+from pipeline.interaction import InteractionError, SessionContext
 from storage.decision_trace import TRACE_FIELDS
-from storage.sqlite_store import SQLiteStore
 
 EVIDENCE_DIR = Path(__file__).resolve().parent.parent / "evidences"
 DEMO_USER_ID = "wp103-demo-user"
@@ -56,10 +68,13 @@ def _write_evidence(lines: list[str], stem: str) -> Path:
 def dump_trace(trace_id: str, user_id: str = DEMO_USER_ID, settings: Settings | None = None) -> int:
     """Print and persist the DEL-03 evidence block for an existing trace_id.
 
-    Standalone: does not touch audio, STT, the LLM, or TTS. Only reads
-    whatever decision_trace row is already in the configured database.
+    Standalone: does not touch audio, STT, the LLM, or TTS, and does not go
+    through InteractionRunner -- it only reads whatever decision_trace row
+    is already in the configured database. Unchanged by Phase 10.
     """
     settings = settings or get_settings()
+    from storage.sqlite_store import SQLiteStore
+
     store = SQLiteStore(settings.db_path)
     log: list[str] = []
 
@@ -108,36 +123,35 @@ def main() -> int:
         print(line)
         log.append(line)
 
+    emit(
+        f"[startup] Warming {settings.llm_model!r} into Ollama "
+        "(cold load can take a while on first run)..."
+    )
     try:
         components = build_host_components(settings)
     except Exception as exc:
         emit(f"[startup] FAILED: {exc}")
         return 1
-    graph = components.graph
-    _store = components.store
-    audio_input = components.audio_input
-    audio_output = components.audio_output
-    tts = components.tts
-    affect_detector = components.affect_detector
 
     user_id = args.user_id
     session_id = str(uuid.uuid4())
-    _store.ensure_user(
+    components.store.ensure_user(
         user_id,
         declared_working_window_start="08:00",
         declared_working_window_end="22:00",
     )
-    wake_word_detected_at = int(__import__("time").time() * 1000)
+    wake_word_detected_at = int(time() * 1000)
     started_monotonic = monotonic()
 
     emit("WP-103 live dialogue graph")
     # Self-document the config that actually governs this run, so evidence
     # doesn't need an out-of-band note about which backend/model was live.
+    import os
     classifier_path_exists = os.path.exists(settings.affect_classifier_path)
     emit(
         f"[config] affect_detector_backend={settings.affect_detector_backend!r} "
         f"affect_classifier_path={settings.affect_classifier_path!r} "
-        f"(exists={classifier_path_exists}) resolved_detector={type(affect_detector).__name__}"
+        f"(exists={classifier_path_exists}) resolved_detector={type(components.affect_detector).__name__}"
     )
     emit(
         f"[config] ollama_model={settings.llm_model!r} "
@@ -155,7 +169,7 @@ def main() -> int:
         f"[start_audio] session_id={session_id} user_id={user_id} wake_word_detected_at={wake_word_detected_at}")
     capture_started = monotonic()
     try:
-        captured, sample_rate = audio_input.capture()
+        captured, sample_rate = components.audio_input.capture()
     except Exception as exc:
         emit(f"[audio_capture] FAILED: {exc}")
         _write_evidence(log, stem="live_run_wp103_FAILED")
@@ -163,79 +177,38 @@ def main() -> int:
     emit(
         f"[audio_capture] OK ({monotonic() - capture_started:.3f}s, sample_rate={sample_rate})")
 
-    state: dict = {
-        "session_id": session_id,
-        "user_id": user_id,
-        "audio": captured,
-        "sample_rate": sample_rate,
-        "wake_word_detected_at": wake_word_detected_at,
-        "started_monotonic": started_monotonic,
-    }
+    session = SessionContext(
+        session_id=session_id,
+        user_id=user_id,
+        started_monotonic=started_monotonic,
+        wake_word_detected_at=wake_word_detected_at,
+    )
 
-    emit("[graph] Running Node 1 -> Node 2 -> Node 3 -> Node 4 -> output")
-
+    emit("[interaction] Running InteractionRunner (graph -> TTS -> resample -> trace)...")
     try:
-        for update in graph.stream(state, stream_mode="updates"):
-            node_name, node_update = next(iter(update.items()))
-            state.update(node_update)
-
-            if node_name == "node1_stt":
-                emit(f"[node_1] transcript: {state.get('transcript', '')}")
-            elif node_name == "node1_intent":
-                emit(
-                    "[node_1] intent: "
-                    f"{state.get('intent')} "
-                    f"confidence={state.get('intent_confidence', 0.0):.3f}"
-                )
-                if state.get("slots"):
-                    emit(f"[node_1] slots: {state['slots']}")
-            elif node_name == "node2_context":
-                emit(f"[node_2] context: {state.get('context', {})}")
-                emit(
-                    f"[node_2] context IDs: {state.get('retrieved_context_ids', [])}")
-            elif node_name == "node3_llm":
-                emit(f"[node_3] response: {state.get('draft_response', '')}")
-                emit(
-                    f"[node_3] proposed action: {state.get('proposed_action')}")
-            elif node_name == "node4_policy":
-                emit(f"[node_4] affect: {state.get('affect_level')}")
-                emit(
-                    f"[node_4] deadline proximity: {state.get('deadline_proximity')}")
-                emit(f"[node_4] policy_rule: {state.get('policy_rule')}")
-                emit(f"[node_4] action: {state.get('action_taken')}")
-            elif node_name == "output":
-                emit(
-                    f"[output] response payload: {state.get('response_payload')}")
-                emit(f"[output] trace_id: {state.get('trace_id')}")
-
-    except Exception as exc:
-        emit(f"[graph] WP-103 run FAILED: {exc}")
-        _write_evidence(log, stem="live_run_wp103_FAILED")
-        return 1
-
-    final_response = state.get("final_response")
-    if not isinstance(final_response, str) or not final_response:
-        emit("[output] FAILED: no final_response produced")
-        _write_evidence(log, stem="live_run_wp103_FAILED")
-        return 1
-
-    emit(f"[output] final response: {final_response}")
-
-    emit("[tts] Synthesizing response with Piper...")
-    tts_started = monotonic()
-    try:
-        spoken, tts_rate = tts.synthesize(final_response)
+        result = components.runner.run(
+            session=session, audio=captured, sample_rate=sample_rate,
+        )
+    except InteractionError as exc:
         emit(
-            f"[tts] synthesis complete ({monotonic() - tts_started:.3f}s, sample_rate={tts_rate})")
-    except Exception as exc:
-        emit(f"[tts] FAILED: {exc}")
+            f"[interaction] FAILED at stage={exc.stage!r} wire_code={exc.wire_code!r}: {exc.cause}")
         _write_evidence(log, stem="live_run_wp103_FAILED")
         return 1
+
+    emit(f"[interaction] response: {result.response_payload.get('tts_text', '')}")
+    emit(f"[interaction] policy_rule: {result.response_payload.get('policy_rule')}")
+    emit(f"[interaction] state_tag: {result.response_payload.get('state_tag')}")
+    emit(f"[interaction] trace_id: {result.trace_id}")
+    emit(f"[interaction] stage timings (s): {result.stage_timings_s}")
+    emit(
+        f"[interaction] latency_ms={result.latency_ms:.1f} basis={result.latency_basis!r}")
 
     emit("[audio_output] Playing synthesized audio on host speakers...")
     output_started = monotonic()
     try:
-        audio_output.play(spoken, sample_rate=tts_rate)
+        components.audio_output.play(
+            result.tts_audio, sample_rate=result.tts_sample_rate,
+        )
         emit(f"[audio_output] OK ({monotonic() - output_started:.3f}s)")
     except Exception as exc:
         emit(f"[audio_output] FAILED: {exc}")
@@ -244,24 +217,17 @@ def main() -> int:
 
     emit("")
     emit("WP-103 run complete")
-    emit(f"Transcript: {state.get('transcript')}")
-    emit(
-        f"Intent: {state.get('intent')} confidence={state.get('intent_confidence', 0.0):.3f}")
-    emit(f"Policy rule: {state.get('policy_rule')}")
-    emit(f"Action: {state.get('action_taken')}")
-    emit(f"Response: {state.get('final_response')}")
-    emit(f"Trace ID: {state.get('trace_id')}")
-    emit(f"Context IDs: {state.get('retrieved_context_ids', [])}")
+    emit(f"Response: {result.response_payload.get('tts_text', '')}")
+    emit(f"Trace ID: {result.trace_id}")
 
     # DEL-03 evidence: pull the persisted trace back out of storage so the
     # "trace output for a live interaction" artifact isn't a manual step.
-    trace_id = state.get("trace_id")
     emit("")
     emit("--- DEL-03 decision trace (live interaction) ---")
-    trace_record = _fetch_decision_trace(_store, user_id, trace_id)
+    trace_record = _fetch_decision_trace(components.store, user_id, result.trace_id)
     if trace_record is None:
         emit(
-            f"[trace] FAILED: no stored decision_trace row found for trace_id={trace_id}")
+            f"[trace] FAILED: no stored decision_trace row found for trace_id={result.trace_id}")
         _write_evidence(log, stem="live_run_wp103_FAILED")
         return 1
 

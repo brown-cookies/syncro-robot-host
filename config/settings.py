@@ -67,6 +67,13 @@ class Settings:
     intent_num_predict: int = 40
     ollama_keep_alive: str = "10m"
 
+    # One-time cold-load budget for the composition-root warm-up call, kept
+    # deliberately separate from intent_timeout_s/reasoning_timeout_s: those
+    # two are meant to bound per-turn *inference* latency under D5's
+    # invariant, not the multi-second-to-tens-of-seconds cost of Ollama
+    # loading model weights off disk on the very first call of a process.
+    llm_warmup_timeout_s: float = 120.0
+
     # STT
     stt_model_size: str = "small"
     stt_compute_type: str = "int8"
@@ -151,6 +158,9 @@ class Settings:
             ),
             ollama_keep_alive=os.getenv(
                 "OLLAMA_KEEP_ALIVE", defaults.ollama_keep_alive
+            ),
+            llm_warmup_timeout_s=_float_env(
+                "LLM_WARMUP_TIMEOUT_S", defaults.llm_warmup_timeout_s
             ),
 
             # STT
