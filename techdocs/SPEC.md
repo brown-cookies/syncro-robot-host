@@ -725,7 +725,7 @@ collision case in Section 7.4.
 {
   "type": "error",
   "session_id": "string — the session the error applies to",
-  "error_code": "session_collision | malformed_audio | session_timeout | pipeline_failure",
+  "error_code": "session_collision | malformed_audio | session_timeout | pipeline_failure | queue_overflow",
   "message": "string, human-readable, optional"
 }
 ```
@@ -735,7 +735,15 @@ Receipt of `error` ends the named session on both sides without a
 (`robot-runtime-spec.md` Section 6). `session_timeout` is sent by the host
 per Section 7.4's session-expiry rule, below. `pipeline_failure` is the
 host-side application error for a bounded interaction-stage failure that does
-not have a more specific transport code.
+not have a more specific transport code. `queue_overflow` is sent when a
+completed utterance (post `end_audio`) cannot be accepted onto the host's
+bounded interaction-processing queue because it is already at capacity
+(Section 11, WP-105's request queue) -- `session_id` is always known for
+this error, since it was established by `start_audio` before the queue
+submission was attempted. This is a distinct condition from Section 13.1's
+per-user reminder-delivery queue, which shares the same `degradation_reason`
+name but is an unrelated, later-pipeline concern with no `error` WS message
+of its own.
 
 ### 7.4 Session Lifecycle Rules
 
@@ -1369,6 +1377,7 @@ failed.
 | Intent confidence below threshold              | n/a (FR-4 path, not a failure) | Route to clarification response, still logged as a normal decision-trace row |
 | Idle signal absent/stale at deferred-item release time (Section 11.1 R2/R4; idle-release rule detailed in `robot-runtime-spec.md` Section 8.2, host-executed) | `activity_unavailable` | Deliver at the grace-window deadline as normal (Section 11.3) — this is not an audio-delivery failure; `degradation_reason` here records that the idle-based early-release optimization could not be attempted, not that TTS delivery itself failed |
 | Interaction pipeline fails before a normal decision trace can be completed | `pipeline_failure` | Surface `error_code: pipeline_failure` and write a degraded trace with no policy-domain result |
+| Completed utterance cannot be accepted onto the bounded interaction-processing queue (queue at capacity, Section 11) | `queue_overflow` | Surface `error_code: queue_overflow` and write a degraded trace with no policy-domain result. Distinct from Section 13.1's per-user reminder-delivery queue overflow, which shares this `degradation_reason` name but has no `error` WS message of its own |
 
 ### 13.1 Queue Bound, Outage Tracking and Drain (fulfills D7; closes RID-015, CC-004)
 
