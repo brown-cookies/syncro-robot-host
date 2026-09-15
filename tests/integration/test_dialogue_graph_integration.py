@@ -33,8 +33,14 @@ class FakeLLM:
         return '{"response_text":"I will keep the reminder focused.","proposed_action":"deliver"}'
 
 
-def test_dialogue_graph_runs_full_processing_path_and_trace(tmp_path):
-    """Verify that dialogue graph runs full processing path and trace."""
+def test_dialogue_graph_runs_full_processing_path_and_assembles_trace(tmp_path):
+    """Verify that dialogue graph runs the full processing path and assembles a trace.
+
+    Trace persistence is owned by InteractionRunner, after TTS onset (finding
+    F1 / Phase 6) — invoking the graph directly, as this integration test
+    does, must not leave a row in the store. Assert against the assembled
+    `pending_trace` instead.
+    """
     store = SQLiteStore(str(tmp_path / "wp103.db"))
     store.ensure_user("u1")
     graph = build_dialogue_graph(
@@ -59,8 +65,10 @@ def test_dialogue_graph_runs_full_processing_path_and_trace(tmp_path):
     assert result["intent"] == "dismiss_reminder"
     assert result["policy_rule"] in {"R4", "R5"}
     assert result["final_response"]
-    traces = store.list_decision_traces("u1")
-    assert len(traces) == 1
-    assert traces[0]["trace_id"] == result["trace_id"]
-    assert traces[0]["policy_rule"] == result["policy_rule"]
-    assert traces[0]["intent_confidence"] == 0.94
+    pending_trace = result["pending_trace"]
+    # pending_trace keeps trace_id as a UUID (for DecisionTraceRecord(**pending_trace)
+    # construction in InteractionRunner); state["trace_id"] is the stringified form.
+    assert str(pending_trace["trace_id"]) == result["trace_id"]
+    assert pending_trace["policy_rule"] == result["policy_rule"]
+    assert pending_trace["intent_confidence"] == 0.94
+    assert store.list_decision_traces("u1") == []

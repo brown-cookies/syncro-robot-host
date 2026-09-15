@@ -38,8 +38,16 @@ class FakeLLM:
         return '{"response_text":"You have one priority task.","proposed_action":"respond"}'
 
 
-def test_graph_runs_all_four_nodes_and_writes_trace(tmp_path):
-    """Verify that graph runs all four nodes and writes trace."""
+def test_graph_runs_all_four_nodes_and_assembles_pending_trace(tmp_path):
+    """Verify that graph runs all four nodes and assembles (but does not persist) the trace.
+
+    Finding F1 / Phase 6 moved trace persistence out of the graph and into
+    InteractionRunner, which writes only after TTS onset (see
+    tests/unit/pipeline/test_interaction.py for that persistence-timing
+    coverage). The graph's output node now only assembles `pending_trace`
+    into the returned state; asserting against the store here would be
+    testing the pre-Phase-6 architecture.
+    """
     store = SQLiteStore(str(tmp_path / "test.db"))
     store.ensure_user("u1")
     graph = build_dialogue_graph(
@@ -64,14 +72,23 @@ def test_graph_runs_all_four_nodes_and_writes_trace(tmp_path):
     assert payload["policy_rule"] == "n/a"
     assert payload["state_tag"] == "speaking"
 
-    traces = store.list_decision_traces("u1")
-    assert len(traces) == 1
-    assert traces[0]["policy_rule"] == "n/a"
-    assert traces[0]["deadline_proximity"] == "n/a"
-    assert traces[0]["latency_basis"] == "host_observed_only"
-    assert traces[0]["reminder_outcome"] == "n/a"
-    assert traces[0]["degradation_reason"] is None
-    assert traces[0]["network_event"] is None
+    pending_trace = result["pending_trace"]
+    # pending_trace keeps trace_id as a UUID (for DecisionTraceRecord(**pending_trace)
+    # construction in InteractionRunner); state["trace_id"] is the stringified form.
+    assert str(pending_trace["trace_id"]) == result["trace_id"]
+    assert pending_trace["policy_rule"] == "n/a"
+    assert pending_trace["deadline_proximity"] == "n/a"
+    assert pending_trace["reminder_outcome"] == "n/a"
+    assert pending_trace["degradation_reason"] is None
+    assert pending_trace["network_event"] is None
+    # latency_ms / latency_basis are added later by InteractionRunner, after
+    # TTS onset — they don't exist on the graph's pending_trace yet.
+    assert "latency_ms" not in pending_trace
+    assert "latency_basis" not in pending_trace
+
+    # The graph itself must never persist a trace — only InteractionRunner
+    # does, and only after TTS (finding F1 / Phase 6).
+    assert store.list_decision_traces("u1") == []
 
 
 def test_graph_records_stage_timings_for_both_parallel_branches(tmp_path):
@@ -101,7 +118,13 @@ def test_graph_records_stage_timings_for_both_parallel_branches(tmp_path):
 
 
 def test_graph_records_affect_degradation_reason_for_fallback(tmp_path):
-    """Verify that a fallback Low affect result is distinguishable in the trace."""
+    """Verify that a fallback Low affect result is distinguishable in the pending trace.
+
+    See the note on test_graph_runs_all_four_nodes_and_assembles_pending_trace:
+    the graph assembles pending_trace but InteractionRunner is the only writer
+    (finding F1 / Phase 6), so this asserts against result["pending_trace"]
+    rather than the store.
+    """
     store = SQLiteStore(str(tmp_path / "test.db"))
     graph = build_dialogue_graph(
         stt=FakeSTT(), intent_classifier=FakeIntent(), llm=FakeLLM(), store=store,
@@ -114,6 +137,7 @@ def test_graph_records_affect_degradation_reason_for_fallback(tmp_path):
     })
     assert result["affect_level"] == "Low"
     assert result["degradation_reason"] == "affect_detector_failure"
-    trace = store.list_decision_traces("u-fallback")[0]
-    assert trace["affect_level"] == "Low"
-    assert trace["degradation_reason"] == "affect_detector_failure"
+    pending_trace = result["pending_trace"]
+    assert pending_trace["affect_level"] == "Low"
+    assert pending_trace["degradation_reason"] == "affect_detector_failure"
+    assert store.list_decision_traces("u-fallback") == []
