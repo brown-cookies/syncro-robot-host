@@ -5,7 +5,7 @@ from uuid import uuid4
 
 import pytest
 
-from pipeline.contracts import DecisionTraceRecord, ResponsePayload
+from pipeline.contracts import DegradedTraceRecord, DecisionTraceRecord, ResponsePayload
 
 
 def base_trace(**overrides):
@@ -91,3 +91,49 @@ def test_policy_trace_accepts_each_spec_rule():
                 reminder_outcome="pending",
             )
         )
+
+
+def test_degraded_trace_allows_missing_normal_interaction_fields():
+    record = DegradedTraceRecord(
+        trace_id=uuid4(),
+        session_id="session-1",
+        user_id="user-1",
+        timestamp=datetime.now(timezone.utc),
+        degradation_reason="pipeline_failure",
+    )
+    dumped = record.model_dump(mode="json")
+    assert dumped["intent"] is None
+    assert dumped["intent_confidence"] is None
+    assert dumped["affect_level"] is None
+    assert dumped["policy_rule"] == "n/a"
+    assert dumped["deadline_proximity"] == "n/a"
+    assert dumped["action_taken"] == "n/a"
+    assert dumped["reminder_outcome"] == "n/a"
+
+
+def test_no_interaction_degradation_rejects_non_null_intent():
+    with pytest.raises(ValueError, match="cannot carry an intent"):
+        DegradedTraceRecord(
+            trace_id=uuid4(),
+            session_id="session-1",
+            user_id="user-1",
+            timestamp=datetime.now(timezone.utc),
+            intent="ask_status",
+            degradation_reason="pipeline_failure",
+        )
+
+
+def test_degraded_trace_allows_standalone_event_without_session_id():
+    record = DegradedTraceRecord(
+        trace_id=uuid4(),
+        session_id=None,
+        user_id="user-1",
+        timestamp=datetime.now(timezone.utc),
+        degradation_reason="queue_overflow",
+    )
+    assert record.session_id is None
+
+
+def test_normal_decision_trace_still_rejects_missing_interaction_fields():
+    with pytest.raises(ValueError):
+        DecisionTraceRecord(**base_trace(intent=None))

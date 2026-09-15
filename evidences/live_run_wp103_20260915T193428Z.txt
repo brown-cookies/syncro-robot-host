@@ -1,0 +1,42 @@
+[startup] Warming 'llama3.1:8b-instruct-q4_K_M' into Ollama (cold load can take a while on first run)...
+WP-103 live dialogue graph
+[config] affect_detector_backend='classifier' affect_classifier_path='./models/affect/affect_svc_v1.joblib' (exists=True) resolved_detector=ClassifierAffectDetector
+[config] ollama_model='llama3.1:8b-instruct-q4_K_M' stt_model_size='small' compute_type='int8'
+[config] db_path='./syncro.db' user_id='wp103-demo-user'
+[wake_word] Host wake-word model is edge-owned per SPEC; this runner simulates the received event.
+[audio_capture] Recording 5s from the USB microphone -- speak now...
+[wake_word] Simulating edge-confirmed wake word 'syncro' for local development
+[start_audio] session_id=2716b692-c0d4-4676-88ed-8b27bbec6eec user_id=wp103-demo-user wake_word_detected_at=1789500849513
+[audio_capture] OK (5.254s, sample_rate=16000)
+[interaction] Running InteractionRunner (graph -> TTS -> resample -> trace)...
+[interaction] response: Hello! I'm functioning properly. However, I need more information about your request.
+[interaction] policy_rule: n/a
+[interaction] state_tag: speaking
+[interaction] trace_id: 0066a0ab-f97d-4624-bad8-893fa45c5532
+[interaction] stage timings (s): {'affect': 0.7632320999982767, 'stt': 1.3292711000103736, 'dialogue_graph': 8.229498600005172, 'tts': 0.2435760000080336}
+[interaction] latency_ms=13727.8 basis='host_observed_only'
+[audio_output] Playing synthesized audio on host speakers...
+[audio_output] OK (5.327s)
+
+WP-103 run complete
+Response: Hello! I'm functioning properly. However, I need more information about your request.
+Trace ID: 0066a0ab-f97d-4624-bad8-893fa45c5532
+
+--- DEL-03 decision trace (live interaction) ---
+  trace_id: 0066a0ab-f97d-4624-bad8-893fa45c5532
+  session_id: 2716b692-c0d4-4676-88ed-8b27bbec6eec
+  user_id: wp103-demo-user
+  timestamp: 2026-09-15T19:34:22.996544Z
+  intent: ask_status
+  intent_confidence: 1.0
+  retrieved_context_ids: []
+  affect_level: High
+  deadline_proximity: n/a
+  policy_rule: n/a
+  action_taken: deliver
+  lead_time_min: 15.0
+  reminder_outcome: n/a
+  degradation_reason: None
+  network_event: None
+  latency_ms: 13727.837800004636
+  latency_basis: host_observed_only

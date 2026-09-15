@@ -24,7 +24,11 @@ class OllamaIntentClassifier:
         self._base_url = settings.ollama_url.rstrip("/")
         self._model = settings.llm_model
         self._num_ctx = settings.ollama_num_ctx
-        self._timeout_s = settings.ollama_timeout_s
+        # D5/Phase 9: independent from the reasoning LLM's timeout — see
+        # config/settings.py Settings.__post_init__ for the sum invariant.
+        self._timeout_s = settings.intent_timeout_s
+        self._keep_alive = settings.ollama_keep_alive
+        self._num_predict = settings.intent_num_predict
         self._threshold = settings.intent_confidence_threshold
 
     def classify(self, transcript: str) -> tuple[str, float, dict[str, object]]:
@@ -50,7 +54,8 @@ User utterance:
             "prompt": prompt,
             "stream": False,
             "format": "json",
-            "options": {"num_ctx": self._num_ctx},
+            "keep_alive": self._keep_alive,
+            "options": {"num_ctx": self._num_ctx, "num_predict": self._num_predict},
         }
         try:
             response = requests.post(

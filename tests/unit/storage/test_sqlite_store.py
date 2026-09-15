@@ -193,94 +193,118 @@ def test_ensure_user_is_idempotent(tmp_path):
     assert row == ("demo", "08:00", "22:00")
 
 
-def _output_state(user_id, session_id="s1"):
-    return {
-        "session_id": session_id,
-        "user_id": user_id,
-        "final_response": "You have one priority task.",
-        "intent": "ask_status",
-        "intent_confidence": 0.9,
-        "affect_level": "Low",
-    }
-
-
-def test_output_node_writes_trace_on_fresh_database_with_no_seeding(tmp_path):
+def test_output_node_returns_pending_trace_without_persisting_it(tmp_path):
     from pipeline.nodes.output import make_output_node
 
-    store = SQLiteStore(str(tmp_path / "fresh.db"))
-    output_node = make_output_node(store)
+    store = SQLiteStore(str(tmp_path / "pending.db"))
+    output_node = make_output_node()
 
-    output_node(_output_state("new-user"))
+    result = output_node(
+        {
+            "session_id": "s1",
+            "user_id": "new-user",
+            "final_response": "You have one priority task.",
+            "intent": "ask_status",
+            "intent_confidence": 0.9,
+            "affect_level": "Low",
+        }
+    )
 
-    traces = store.list_decision_traces("new-user")
-    assert len(traces) == 1
+    assert result["response_payload"]["tts_text"] == "You have one priority task."
+    pending = result["pending_trace"]
+    assert pending["session_id"] == "s1"
+    assert pending["user_id"] == "new-user"
+    assert "latency_ms" not in pending
+    assert "latency_basis" not in pending
+    assert store.list_decision_traces("new-user") == []
 
 
-def test_output_node_leaves_existing_user_row_untouched(tmp_path):
+def test_output_node_does_not_require_store_for_trace_assembly():
     from pipeline.nodes.output import make_output_node
 
-    db_path = tmp_path / "existing-user.db"
-    store = SQLiteStore(str(db_path))
-    older_created_at = "2020-01-01T00:00:00+00:00"
-    with sqlite3.connect(str(db_path)) as conn:
-        conn.execute(
-            """INSERT INTO users(
-                user_id, created_at, declared_working_window_start, declared_working_window_end
-            ) VALUES (?, ?, ?, ?)""",
-            ("existing-user", older_created_at, "08:00", "22:00"),
-        )
+    output_node = make_output_node()
+    result = output_node(
+        {
+            "session_id": "s2",
+            "user_id": "u2",
+            "final_response": "Done.",
+            "intent": "ask_status",
+            "intent_confidence": 1.0,
+            "affect_level": "Moderate",
+        }
+    )
 
-    output_node = make_output_node(store)
-    output_node(_output_state("existing-user"))
-
-    with sqlite3.connect(str(db_path)) as conn:
-        rows = conn.execute(
-            "SELECT created_at, declared_working_window_start, declared_working_window_end "
-            "FROM users WHERE user_id = ?",
-            ("existing-user",),
-        ).fetchall()
-    assert rows == [(older_created_at, "08:00", "22:00")]
+    assert result["pending_trace"]["trace_id"]
 
 
-def test_output_node_repeat_interactions_yield_one_user_row_and_n_traces(tmp_path):
-    from pipeline.nodes.output import make_output_node
-
-    db_path = tmp_path / "repeat.db"
-    store = SQLiteStore(str(db_path))
-    output_node = make_output_node(store)
-
-    n = 4
-    for i in range(n):
-        output_node(_output_state("repeat-user", session_id=f"s{i}"))
-
-    with sqlite3.connect(str(db_path)) as conn:
-        user_rows = conn.execute(
-            "SELECT COUNT(*) FROM users WHERE user_id = ?", ("repeat-user",)
-        ).fetchone()[0]
-    assert user_rows == 1
-    assert len(store.list_decision_traces("repeat-user")) == n
 
 
-def test_output_node_scopes_traces_per_user_across_two_users(tmp_path):
-    from pipeline.nodes.output import make_output_node
+def test_degraded_trace_round_trips_with_null_interaction_fields(tmp_path):
+    from uuid import uuid4
 
-    db_path = tmp_path / "two-users.db"
-    store = SQLiteStore(str(db_path))
-    output_node = make_output_node(store)
+    store = SQLiteStore(str(tmp_path / "degraded.db"))
+    store.ensure_user("u-degraded")
+    store.save_degraded_trace({
+        "trace_id": uuid4(),
+        "session_id": "s-degraded",
+        "user_id": "u-degraded",
+        "timestamp": datetime.now(timezone.utc),
+        "degradation_reason": "pipeline_failure",
+        "network_event": None,
+        "latency_ms": 0.0,
+        "latency_basis": "host_observed_only",
+    })
 
-    output_node(_output_state("user-a"))
-    output_node(_output_state("user-b"))
+    row = store.list_decision_traces("u-degraded")[0]
+    assert row["intent"] is None
+    assert row["intent_confidence"] is None
+    assert row["retrieved_context_ids"] is None
+    assert row["affect_level"] is None
+    assert row["policy_rule"] == "n/a"
+    assert row["degradation_reason"] == "pipeline_failure"
 
-    with sqlite3.connect(str(db_path)) as conn:
-        for user_id in ("user-a", "user-b"):
-            count = conn.execute(
-                "SELECT COUNT(*) FROM users WHERE user_id = ?", (user_id,)
-            ).fetchone()[0]
-            assert count == 1
 
-    traces_a = store.list_decision_traces("user-a")
-    traces_b = store.list_decision_traces("user-b")
-    assert len(traces_a) == 1
-    assert len(traces_b) == 1
-    assert traces_a[0]["session_id"] == "s1"
-    assert traces_b[0]["session_id"] == "s1"
+def test_degraded_trace_can_be_standalone_without_session_id(tmp_path):
+    from uuid import uuid4
+
+    store = SQLiteStore(str(tmp_path / "standalone.db"))
+    store.ensure_user("u-standalone")
+    store.save_degraded_trace({
+        "trace_id": uuid4(),
+        "session_id": None,
+        "user_id": "u-standalone",
+        "timestamp": datetime.now(timezone.utc),
+        "degradation_reason": "queue_overflow",
+    })
+
+    row = store.list_decision_traces("u-standalone")[0]
+    assert row["session_id"] is None
+    assert row["degradation_reason"] == "queue_overflow"
+    assert row["policy_rule"] == "n/a"
+
+
+def test_decision_trace_repository_still_rejects_invalid_normal_rows(tmp_path):
+    from uuid import uuid4
+
+    store = SQLiteStore(str(tmp_path / "strict.db"))
+    store.ensure_user("u-strict")
+    with pytest.raises(ValueError):
+        store.save_decision_trace({
+            "trace_id": uuid4(),
+            "session_id": "s1",
+            "user_id": "u-strict",
+            "timestamp": datetime.now(timezone.utc),
+            "intent": None,
+            "intent_confidence": None,
+            "retrieved_context_ids": [],
+            "affect_level": None,
+            "deadline_proximity": "n/a",
+            "policy_rule": "n/a",
+            "action_taken": "deliver",
+            "lead_time_min": 15.0,
+            "reminder_outcome": "n/a",
+            "degradation_reason": None,
+            "network_event": None,
+            "latency_ms": 1.0,
+            "latency_basis": "host_observed_only",
+        })

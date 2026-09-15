@@ -18,7 +18,11 @@ class OllamaLLMAdapter:
         self._base_url = settings.ollama_url.rstrip("/")
         self._model = settings.llm_model
         self._num_ctx = settings.ollama_num_ctx
-        self._timeout_s = settings.ollama_timeout_s
+        # D5/Phase 9: this is the "reasoning" half of the two sequential
+        # per-turn Ollama calls; it no longer shares a timeout with the
+        # intent classifier (see config/settings.py Settings.__post_init__).
+        self._timeout_s = settings.reasoning_timeout_s
+        self._keep_alive = settings.ollama_keep_alive
 
     def generate(self, prompt: str) -> str:
         """Generate an LLM response from the supplied conversation state and context."""
@@ -26,6 +30,7 @@ class OllamaLLMAdapter:
             "model": self._model,
             "prompt": prompt,
             "stream": False,
+            "keep_alive": self._keep_alive,
             "options": {"num_ctx": self._num_ctx},
         }
         try:

@@ -22,8 +22,14 @@ class FixedAffectModel:
         return np.asarray(["Moderate"], dtype=object)
 
 
-def test_classifier_detector_reaches_decision_trace(monkeypatch, tmp_path):
-    """Exercise the real classifier adapter through the full graph and trace boundary."""
+def test_classifier_detector_reaches_pending_trace(monkeypatch, tmp_path):
+    """Exercise the real classifier adapter through the full graph and trace boundary.
+
+    Trace persistence is owned by InteractionRunner, after TTS onset (finding
+    F1 / Phase 6) — invoking the graph directly, as this integration test
+    does, must not leave a row in the store. Assert against the assembled
+    `pending_trace` instead.
+    """
     artifact = tmp_path / "affect_svc_v1.joblib"
     save_model_artifact(FixedAffectModel(), artifact)
 
@@ -77,6 +83,6 @@ def test_classifier_detector_reaches_decision_trace(monkeypatch, tmp_path):
     )
 
     assert result["affect_level"] == "Moderate"
-    traces = store.list_decision_traces(user_id)
-    assert len(traces) == 1
-    assert traces[0]["affect_level"] == "Moderate"
+    pending_trace = result["pending_trace"]
+    assert pending_trace["affect_level"] == "Moderate"
+    assert store.list_decision_traces(user_id) == []

@@ -62,6 +62,10 @@ class SQLiteStore:
         """Persist a decision trace while preserving the storage contract."""
         self.decision_trace.save(record)
 
+    def save_degraded_trace(self, record: dict[str, Any]) -> None:
+        """Persist a validated degraded interaction trace."""
+        self.decision_trace.save_degraded(record)
+
     def suppress_pending_reminder_traces(self, user_id: str) -> int:
         """Suppress other pending reminder traces when policy requires it."""
         return self.decision_trace.suppress_pending_reminder_traces(user_id)

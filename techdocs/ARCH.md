@@ -1,639 +1,738 @@
-# ARCH.md — SYNCRO Host Runtime Scaffolding
+# SYNCRO Host
 
-This document is the implementation architecture for the current SYNCRO host
-development work package, **WP-102**.
+Host-side runtime for the SYNCRO robot stack. This repository contains the **WP-102 host pipeline**, the **WP-103 dialogue-graph scaffold**, the **WP-104 acoustic-affect ML pipeline/runtime boundary**, and (in progress) the **Architecture Fixing sprint** that followed the WP-103/104 arch review.
 
-WP-102 is defined in `roadmap.md` as:
+The fixing sprint is not finished. Phases 1-5 of its plan (graph-state
+reducers, the `HostComponents` composition-root dataclass, SQLite WAL,
+host-side audio resampling, and `InteractionRunner`) are committed and
+tested; Phases 6-19 (trace-finalization move, failure-boundary mapping,
+degraded-trace contract, timeout correction, transport, and documentation
+sync) are not. See `techdocs/ARCH.md` for the current architecture,
+including §12's list of known gaps, and `techdocs/ARCHITECTUREREVIEW12926.md`
+for the review and phase plan itself.
 
-> Host runtime scaffolding: FastAPI + Ollama + `faster-whisper` + Piper, wired
-> end to end and driven by a USB microphone. No robot involved.
+## What is implemented
 
-Its exit condition is:
+### WP-102
 
-> Audio in, synthesized audio out, on the host alone.
-
-This document therefore describes **only the current WP-102 scaffolding** and
-the repository structure required to build it. It does not invent the design
-for later work packages. Dialogue Nodes 1–4, the affect branch, the transport
-work package, Porcupine, and later integration work remain outside the scope of
-this document unless already present as a current repository artifact.
-
-The specification remains the source of truth for requirements and shared data
-contracts. This document describes the implementation structure used to satisfy
-the current work package.
-
----
-
-## Table of Contents
-
-1. Purpose, Relationship to the Specification, Targeted Environment
-2. Locked Decisions (LD-1..LD-n)
-3. Project Structure
-4. WP-102 Runtime Architecture
-5. Current Module / Dependency Interface Reference
-   - 5.1 `api/app.py`
-   - 5.2 `api/http/health.py`
-   - 5.3 `api/ws/stream.py`
-   - 5.4 `config/settings.py`
-   - 5.5 `config/endpoints.py`
-   - 5.6 `adapters/`
-   - 5.7 `audio/`
-   - 5.8 `pipeline/`
-6. State and Resource Ownership
-7. WP-102 Control Flow
-8. Error Handling Boundary
-9. WP-102 Performance and Measurement
-10. Invariants (INV-1..INV-n)
-11. WP-102 Verification / Traceability
-12. Notes on Warranted Code Changes
-
----
-
-## 1. Purpose, Relationship to the Specification, Targeted Environment
-
-### 1.1 Purpose
-
-`SPEC.md` / `host-spec` defines WHAT the host must do. `ARCH.md` defines HOW
-the current implementation is organized for WP-102.
-
-For WP-102, the implementation target is the host alone:
+The host-only path is:
 
 ```text
 USB microphone
+    ↓
+audio capture
+    ↓
+faster-whisper (STT)
+    ↓
+Ollama (LLM)
+    ↓
+Piper (TTS)
+    ↓
+host speakers
+```
+
+### WP-103 scaffold
+
+WP-103 adds the dialogue graph and its policy/storage boundaries:
+
+```text
+                         ┌───────────────┐
+                         │  START AUDIO  │
+                         └───────┬───────┘
+                                 │
+                 ┌───────────────┴───────────────┐
+                 ↓                               ↓
+        ┌─────────────────┐             ┌─────────────────┐
+        │  Node 1: STT    │             │ Node 4: Affect  │
+        │ faster-whisper  │             │ WP-103 scaffold │
+        └────────┬────────┘             │ returns "Low"   │
+                 ↓                      └────────┬────────┘
+        ┌─────────────────┐                       │
+        │ Node 2: Intent  │                       │
+        │ / Context       │                       │
+        └────────┬────────┘                       │
+                 ↓                                │
+        ┌─────────────────┐                       │
+        │ Node 3: Ollama  │                       │
+        │ draft response  │                       │
+        └────────┬────────┘                       │
+                 └──────────────┬─────────────────┘
+                                ↓
+                      ┌──────────────────┐
+                      │ Policy / Join    │
+                      │ deterministic    │
+                      └────────┬─────────┘
+                               ↓
+                        Decision trace
+```
+
+`composition/bootstrap.py` is the **composition root**. It creates concrete adapters and storage dependencies and injects them into the graph. The graph itself should remain technology-neutral so tests can replace hardware, STT, LLM, TTS, and affect components with fakes.
+
+The affect runtime exposes a stable contract-boundary detector. WP-104 supplies the production classifier:
+
+```python
+ClassifierAffectDetector(model_path).detect(audio, sample_rate)  # -> "Low" | "Moderate" | "High"
+```
+
+The WP-104 affect model, feature extraction, training, evaluation, and macro-F1 evidence are documented under `techdocs/MLSPEC.md` and implemented under `ml/affect/`, with runtime loading through `adapters/affect/`. A clean clone defaults to the deterministic development affect detector; the persisted classifier is selected when explicitly configured and successfully loaded.
+
+## Project layout
+
+```text
+api/                 FastAPI application and HTTP/WebSocket surfaces
+adapters/            External technology adapters
+  affect/             WP-104 affect runtime adapter
+  llm/               Ollama adapter
+  stt/               faster-whisper adapter
+  tts/               Piper adapter
+audio/               Host microphone, playback, and audio contracts
+composition/         Composition root / dependency wiring
+config/              Typed environment-backed settings
+pipeline/            LangGraph state, graph, nodes, and orchestration
+  interaction.py      InteractionRunner (F3, architecture-fixing sprint) — not yet wired in, see techdocs/ARCH.md §12
+storage/             SQLite schema, context retrieval, and decision traces
+ml/affect/           WP-104 feature extraction, training, tuning, and evaluation
+datasets/            Committed WP-104 manifests and feature tables
+evidences/           Live-run stage-timing logs and WP-104 ML acceptance evidence
+scripts/             Manual operational runners and WP-103 seeding
+techdocs/            SPEC / ARCH / roadmap and supporting documents
+tests/               Unit, contract, architecture, and integration tests
+models/              Local model files; keep binary artifacts out of Git
+  affect/             WP-104 artifact instructions and generated classifier metadata
+```
+
+## Requirements
+
+Recommended environment for the current repository:
+
+* Python 3.11+
+* A working microphone and speaker/audio output for the live host run
+* Ollama running locally for the LLM stage
+* A Piper voice model installed locally
+* Internet access on the first faster-whisper model load so the selected Whisper model can be downloaded/cached
+
+The exact Python package versions are pinned in `requirements.txt`.
+
+WP-104 training also relies on the committed feature tables in `datasets/features/` and their committed `.alignment.json` sidecars. These sidecars bind each feature table to the exact manifest fingerprint used during extraction.
+
+## 1. Create the Python environment
+
+PowerShell:
+
+```powershell
+py -3 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+Linux/macOS:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+Check the installation:
+
+```bash
+python --version
+python -m pytest -q
+```
+
+The tests should be run before a live demo. Environment-dependent LangGraph integration tests may be skipped when their runtime dependency is unavailable.
+
+## 2. Configure local settings
+
+Copy the environment template:
+
+PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Linux/macOS:
+
+```bash
+cp .env.example .env
+```
+
+Important settings:
+
+```dotenv
+OLLAMA_URL=http://localhost:11434
+LLM_MODEL=llama3.1:8b-instruct-q4_K_M
+STT_MODEL_SIZE=small
+STT_COMPUTE_TYPE=int8
+STT_DEVICE=cpu
+PIPER_MODEL_PATH=./models/en_US-lessac-medium
+DB_PATH=./syncro.db
+INTENT_CONFIDENCE_THRESHOLD=0.60
+AFFECT_DETECTOR_BACKEND=development
+AFFECT_CLASSIFIER_PATH=./models/affect/affect_svc_v1.joblib
+INTENT_TIMEOUT_S=5
+REASONING_TIMEOUT_S=6
+NON_LLM_TIMEOUT_MARGIN_S=10
+INTENT_NUM_PREDICT=40
+OLLAMA_KEEP_ALIVE=10m
+SESSION_TIMEOUT_SECONDS=30
+```
+
+`.env` is local configuration and must not be committed.
+
+**Fixed (D5/Phase 9):** the intent classifier and the reasoning LLM call are
+two sequential calls per turn. They used to share one `OLLAMA_TIMEOUT_S`,
+which only guaranteed each call individually stayed under
+`SESSION_TIMEOUT_SECONDS` -- not their sum. They now have independent
+timeouts, `INTENT_TIMEOUT_S` and `REASONING_TIMEOUT_S`, and
+`Settings.__post_init__` rejects any configuration where
+`INTENT_TIMEOUT_S + REASONING_TIMEOUT_S + NON_LLM_TIMEOUT_MARGIN_S` is not
+under `SESSION_TIMEOUT_SECONDS`. The full model-split question (D4) is still
+deferred past this sprint.
+
+## 3. Install and prepare Ollama
+
+Install Ollama using the normal installer for your operating system, then start the Ollama service.
+
+Verify that the local API is reachable:
+
+```bash
+curl http://localhost:11434/api/tags
+```
+
+On Windows PowerShell you can use:
+
+```powershell
+Invoke-RestMethod http://localhost:11434/api/tags
+```
+
+Pull the model configured by this repository:
+
+```bash
+ollama pull llama3.1:8b-instruct-q4_K_M
+```
+
+Then confirm it is present:
+
+```bash
+ollama list
+```
+
+If you use another Ollama model, set `LLM_MODEL` in `.env` to the exact installed model name.
+
+## 4. Prepare the faster-whisper model
+
+The STT adapter uses `faster-whisper`. With the default configuration, the first run loads the `small` model with CPU `int8` compute:
+
+```dotenv
+STT_MODEL_SIZE=small
+STT_DEVICE=cpu
+STT_COMPUTE_TYPE=int8
+```
+
+The model is downloaded/cached by the `faster-whisper`/CTranslate2 stack when it is first constructed. No model file needs to be committed to this repository.
+
+For a different model size, change `STT_MODEL_SIZE` in `.env`, for example:
+
+```dotenv
+STT_MODEL_SIZE=base
+```
+
+For GPU execution, use a CUDA-compatible environment and set the corresponding `STT_DEVICE` and `STT_COMPUTE_TYPE` values supported by the installed `faster-whisper`/CTranslate2 build. Keep the WP-103 tests model-free by using their injected fakes.
+
+## 5. Install the Piper voice model
+
+WP-102/WP-103 expect the Piper voice directory configured by:
+
+```dotenv
+PIPER_MODEL_PATH=./models/en_US-lessac-medium
+```
+
+Create that directory and place the matching Piper voice model files in it. The directory must contain the `.onnx` voice model and its companion `.json` configuration used by Piper.
+
+After installation, verify that the path in `.env` points to the directory containing the voice files. The application loads the voice during startup, so a missing or invalid model fails fast with a clear adapter error.
+
+Do not commit large model files to Git. Keep them under the ignored local `models/` directory.
+
+## 6. Prepare the WP-103 SQLite database
+
+The runner now creates the demo user itself, so a completely fresh database is supported.
+
+For repeatable policy/context testing, you can also seed the deterministic WP-103 dataset:
+
+```bash
+python -m scripts.seed_wp103
+```
+
+This creates the demo user and sample tasks/routine events. By default the seeder resets the WP-103 demo rows first.
+
+To preserve the existing WP-103 demo rows:
+
+```bash
+python -m scripts.seed_wp103 --no-reset
+```
+
+The live runner does **not** call the resetting seeder automatically.
+
+## 6a. Prepare WP-104 affect runtime
+
+A clean checkout does not require a trained binary to start. The default is:
+
+```dotenv
+AFFECT_DETECTOR_BACKEND=development
+```
+
+This returns the deterministic `Low` fallback. To use the trained classifier after generating the artifact locally, set:
+
+```dotenv
+AFFECT_DETECTOR_BACKEND=classifier
+AFFECT_CLASSIFIER_PATH=./models/affect/affect_svc_v1.joblib
+```
+
+If the classifier cannot be loaded, the graph falls back to `Low` for that turn instead of aborting the dialogue.
+
+## 6b. WP-104 command guide
+
+All commands in this section are run from the repository root after activating the Python virtual environment. The commands use the repository's committed scripts directly; there is no separate experiment notebook or undocumented generation step.
+
+### WP-104 workflow order
+
+Use this order when rebuilding the affect dataset and experiments from raw audio:
+
+```bash
+# 1. Build canonical RAVDESS/TESS manifests
+python -m scripts.build_affect_manifests \
+  --ravdess-root datasets/raw/ravdess \
+  --tess-root datasets/raw/tess \
+  --output-dir datasets/affect/manifests
+
+# 2. Verify the manifests and dataset structure
+python -m scripts.verify_affect_manifests \
+  --ravdess-manifest datasets/affect/manifests/ravdess.csv \
+  --tess-manifest datasets/affect/manifests/tess.csv \
+  --ravdess-root datasets/raw/ravdess \
+  --tess-root datasets/raw/tess
+
+# 3. Extract the committed 88-feature eGeMAPSv02 feature tables
+python -m ml.affect.extract_features \
+  --ravdess-root datasets/raw/ravdess \
+  --tess-root datasets/raw/tess \
+  --manifest-dir datasets/affect/manifests \
+  --output-dir datasets/features
+
+# 4. Compare the frozen SVC against the prespecified shallow MLP
+python -m ml.affect.compare \
+  --ravdess-features datasets/features/ravdess.csv \
+  --ravdess-manifest datasets/affect/manifests/ravdess.csv \
+  --n-splits 6 \
+  --output evidences/ml/experiment/svc_vs_mlp_comparison.json
+
+# 5. Train the frozen WP-104 SVC baseline and write acceptance evidence
+# (run after step 4 so the method note can report the real, measured MLP
+# comparison result instead of a placeholder "not run" status)
+python -m ml.affect.train \
+  --ravdess-features datasets/features/ravdess.csv \
+  --ravdess-manifest datasets/affect/manifests/ravdess.csv \
+  --tess-features datasets/features/tess.csv \
+  --tess-manifest datasets/affect/manifests/tess.csv \
+  --output models/affect/affect_svc_v1.joblib \
+  --evidence-dir evidences/ml/experiment \
+  --n-splits 6
+
+# 6. Reproduce the fine-tuning/search evidence
+python -m ml.affect.tune \
+  --ravdess-features datasets/features/ravdess.csv \
+  --ravdess-manifest datasets/affect/manifests/ravdess.csv \
+  --tess-features datasets/features/tess.csv \
+  --tess-manifest datasets/affect/manifests/tess.csv \
+  --output-dir evidences/ml/finetune \
+  --n-splits 6 \
+  --inner-splits 3
+
+# 7. Verify the shipped artifact loads, predicts, and record the check
+python -m ml.affect.verify_runtime \
+  --model models/affect/affect_svc_v1.joblib \
+  --metrics evidences/ml/experiment/metrics.json \
+  --output evidences/ml/experiment/runtime_verification.json
+```
+
+The repository also supports rebuilding only the already-committed experiment results. In that case, start at step 4 because `datasets/affect/manifests/` and `datasets/features/` are already present.
+
+### 6c. Manifest commands
+
+Build both canonical manifests from the two downloaded corpora:
+
+```bash
+python -m scripts.build_affect_manifests \
+  --ravdess-root datasets/raw/ravdess \
+  --tess-root datasets/raw/tess \
+  --output-dir datasets/affect/manifests
+```
+
+Verify them without rebuilding anything:
+
+```bash
+python -m scripts.verify_affect_manifests
+```
+
+To also verify that the manifest audio paths exist under the raw corpus directories:
+
+```bash
+python -m scripts.verify_affect_manifests \
+  --ravdess-root datasets/raw/ravdess \
+  --tess-root datasets/raw/tess
+```
+
+### 6d. Feature extraction
+
+Extract RAVDESS and TESS features using the canonical manifests:
+
+```bash
+python -m ml.affect.extract_features \
+  --ravdess-root datasets/raw/ravdess \
+  --tess-root datasets/raw/tess \
+  --manifest-dir datasets/affect/manifests \
+  --output-dir datasets/features \
+  --progress-every 25
+```
+
+This writes the feature tables plus their alignment sidecars. The sidecars bind each feature table to the manifest fingerprint used for extraction.
+
+### 6e. Frozen baseline training and acceptance evidence
+
+Train the fixed SVC baseline:
+
+```bash
+python -m ml.affect.train \
+  --ravdess-features datasets/features/ravdess.csv \
+  --ravdess-manifest datasets/affect/manifests/ravdess.csv \
+  --tess-features datasets/features/tess.csv \
+  --tess-manifest datasets/affect/manifests/tess.csv \
+  --output models/affect/affect_svc_v1.joblib \
+  --evidence-dir evidences/ml/experiment \
+  --n-splits 6
+```
+
+The frozen acceptance baseline is **0.632258 macro-F1** on RAVDESS, below the **0.70** gate, so the acceptance result is **NO-GO**. This model remains a prototype affect signal and is not a clinical stress detector.
+
+Run [6f](#6f-svc-versus-mlp-comparison) first if you want `evidences/ml/experiment/method_note.md` to report the real, measured MLP comparison result. `ml.affect.train` looks for `evidences/ml/experiment/svc_vs_mlp_comparison.json` (overridable with `--mlp-comparison`) and reports its actual `not run` status only when that file is absent; it is never hardcoded.
+
+### 6f. SVC versus MLP comparison
+
+Run the fixed SVC/MLP comparison using the same speaker-disjoint folds:
+
+```bash
+python -m ml.affect.compare \
+  --ravdess-features datasets/features/ravdess.csv \
+  --ravdess-manifest datasets/affect/manifests/ravdess.csv \
+  --n-splits 6 \
+  --output evidences/ml/experiment/svc_vs_mlp_comparison.json
+```
+
+This writes the comparison JSON, including both macro-F1 values, the delta, the selected winner, and confusion matrices. It does not modify the shipped classifier.
+
+### 6g. Reproducible fine-tuning
+
+Fine-tuning is a separate research experiment and must not silently replace the frozen acceptance baseline.
+
+Run the committed producer:
+
+```bash
+python -m ml.affect.tune \
+  --ravdess-features datasets/features/ravdess.csv \
+  --ravdess-manifest datasets/affect/manifests/ravdess.csv \
+  --tess-features datasets/features/tess.csv \
+  --tess-manifest datasets/affect/manifests/tess.csv \
+  --output-dir evidences/ml/finetune \
+  --n-splits 6 \
+  --inner-splits 3
+```
+
+The command produces all currently tracked fine-tuning evidence from committed code:
+
+| Artifact                     | Producer         | Purpose                                                 |
+| ---------------------------- | ---------------- | ------------------------------------------------------- |
+| `svc_finetune_current.json`  | `ml.affect.tune` | Fixed-fold OVR + SelectKBest search                     |
+| `svc_ovr_nested_tuning.json` | `ml.affect.tune` | Nested speaker-disjoint model selection                 |
+| `tess_holdout.json`          | `ml.affect.tune` | RAVDESS → TESS cross-corpus holdout                     |
+| `fine_tuning_summary.md`     | `ml.affect.tune` | Human-readable summary generated from the fresh results |
+
+Recorded research results are approximately:
+
+```text
+Frozen SVC acceptance baseline:       0.632258
+OVR + SelectKBest research candidate: 0.651618
+Nested OVR research estimate:         0.650564
+TESS cross-corpus holdout:             0.240470
+Deployment gate:                      0.700000
+Acceptance status:                    NO-GO
+```
+
+The **0.651618** and **0.650564** values are research candidates, not replacement baseline values. The baseline remains **0.632258**.
+
+The fine-tuning evidence records runtime provenance, including Python/NumPy/scikit-learn versions, the required scikit-learn pin, random state, and SHA-256/fingerprint information for the input feature tables and manifests. This makes the evidence traceable to exact inputs rather than treating committed JSON files as the source of truth.
+
+### 6h. Full WP-104 tests
+
+Run the whole test suite:
+
+```bash
+python -m pytest -q
+```
+
+Run only the WP-104 unit tests:
+
+```bash
+python -m pytest -q tests/unit/ml_affect
+```
+
+Run only the reproducibility tests:
+
+```bash
+python -m pytest -q tests/unit/ml_affect/test_tune.py
+```
+
+For a clean verification before merge, use:
+
+```bash
+python -m pytest -q tests/unit/ml_affect tests/integration/test_ml_affect_integration.py
+```
+
+### 6i. Runtime verification
+
+`evidences/ml/experiment/runtime_verification.json` confirms the shipped artifact loads, predicts a valid affect label, and folds in the accepted RAVDESS/TESS metrics. It has a committed producer, `ml.affect.verify_runtime`, so it can never silently drift to a hand-typed scikit-learn version:
+
+```bash
+python -m ml.affect.verify_runtime \
+  --model models/affect/affect_svc_v1.joblib \
+  --metrics evidences/ml/experiment/metrics.json \
+  --output evidences/ml/experiment/runtime_verification.json
+```
+
+The `verification_sklearn_version` field always reflects the scikit-learn version installed when this command is run; it should match the pinned `required_sklearn_version` (`1.9.0`) on a clean-pull reproduction.
+
+### 6j. Useful inspection commands
+
+See the command-line options for any executable module:
+
+```bash
+python -m ml.affect.train --help
+python -m ml.affect.compare --help
+python -m ml.affect.tune --help
+python -m ml.affect.verify_runtime --help
+python -m ml.affect.extract_features --help
+python -m scripts.build_affect_manifests --help
+python -m scripts.verify_affect_manifests --help
+python -m scripts.seed_wp103 --help
+```
+
+The other repository modules under `ml/affect/` (`dataset.py`, `features.py`, `label_mapping.py`, `model.py`, `evaluate.py`, and `artifacts.py`) are library modules used by these command-line entry points; they are not standalone CLI scripts.
+
+## 6k. WP-103 operational scripts
+
+The repository's `scripts/` directory contains the operational runners for WP-102 and WP-103 in addition to the WP-104 dataset helpers.
+
+### Run the WP-102 host-only pipeline
+
+```bash
+python -m scripts.run_wp102
+```
+
+This requires the configured Ollama, faster-whisper, Piper, microphone, and speaker/audio output.
+
+### Seed the deterministic WP-103 SQLite dataset
+
+Reset the demo rows first:
+
+```bash
+python -m scripts.seed_wp103
+```
+
+Preserve existing demo rows:
+
+```bash
+python -m scripts.seed_wp103 --no-reset
+```
+
+Use a specific SQLite database:
+
+```bash
+python -m scripts.seed_wp103 --db ./syncro.db
+```
+
+### Run the live WP-103 dialogue graph
+
+```bash
+python -m scripts.run_wp103
+```
+
+The runner creates/uses the `wp103-demo-user`, simulates the edge-owned wake-word event, captures microphone audio, executes the graph, speaks the final response, and prints the decision-trace ID.
+
+## 7. Run WP-103
+
+Start Ollama first, make sure your Piper model path is valid, and connect the microphone/speaker you want to use.
+
+Then run:
+
+```bash
+python -m scripts.run_wp103
+```
+
+The runner:
+
+1. builds the real WP-103 graph from the composition root;
+2. ensures `wp103-demo-user` exists in SQLite;
+3. simulates the edge-owned wake-word event (`syncro`);
+4. records a fixed-duration microphone sample;
+5. runs the graph;
+6. prints per-stage timing and the final response;
+7. writes the resulting decision trace to SQLite.
+
+The wake-word stage is intentionally simulated in this host runner because wake-word ownership is outside the WP-103 host graph boundary.
+
+## 8. How the architecture is used
+
+For normal application execution, use the composition root instead of constructing concrete adapters inside graph nodes:
+
+```python
+from composition.bootstrap import build_host_components
+from config.settings import get_settings
+
+settings = get_settings()
+
+components = build_host_components(settings)
+components.graph.invoke({...}) 
+components.tts.synthesize(text)
+```
+
+**This snippet is the pre-architecture-fixing-sprint pattern and will change.**
+`pipeline/interaction.py`'s `InteractionRunner` now exists specifically to
+own the graph → TTS → resample → trace sequence shown above as one unit —
+manually calling `graph.invoke()` and then `tts.synthesize()` separately is
+exactly the "second, drifting copy of the sequence" pattern `InteractionRunner`
+was built to eliminate (see its module docstring). It is not wired into
+`build_host_components()` yet (`HostComponents.runner` is still `None` — see
+`techdocs/ARCH.md` §12), so this snippet remains accurate for what exists
+today, but do not copy it into new code once that wiring lands; use
+`components.runner.run(...)` instead once it is populated.
+
+The important dependency direction is:
+
+```text
+scripts / API
       ↓
-host audio path
+composition/bootstrap.py
       ↓
-faster-whisper
+pipeline graph + injected contracts
       ↓
-Ollama
+adapters / audio / storage
       ↓
-Piper
-      ↓
-host audio output
+external systems
+(Ollama, Whisper, Piper, SQLite, microphone, speakers)
 ```
 
-The robot is not part of WP-102.
+### Why this boundary exists
 
-### 1.2 Work-package boundary
+* **Pipeline nodes** contain workflow logic, not vendor setup.
+* **Adapters** translate external technologies into small application contracts.
+* **Composition** decides which concrete implementations are used.
+* **Tests** can inject fakes without a microphone, Ollama, Piper, or downloaded models.
+* **Storage** owns persistence rather than leaking SQLite operations into graph nodes.
 
-The current development target is exactly WP-102. Its predecessor is WP-101
-and its successor is WP-103. The roadmap assigns WP-102 to the Host AI pipeline
-workstream and defines the exit criterion as audio entering the host and
-synthesized audio leaving the host, without the robot. fileciteturn8file1L80-L90
+This is the expected way to extend the host: add or replace an adapter at the boundary and wire it through the composition root rather than importing the concrete technology directly into the graph.
 
-No later work-package behavior is treated as implemented merely because a
-folder exists in the repository.
+### Known limitations of the unexecuted-mutation guard
 
-### 1.3 Targeted components
+No mutation executor is connected to the graph. Node 3 drafts a reply and nothing can actually add a task, dismiss a reminder, snooze one, or reschedule anything. `_reject_unexecuted_mutation_claim` in `pipeline/nodes/llm.py` therefore exists to stop a drafted reply asserting that a mutation already happened: if it did, the user would hear a spoken confirmation for something that never occurred, and would not retry.
 
-The roadmap explicitly names these WP-102 runtime components:
+The guard is a lexical rule, not a parser, so it is deliberately imperfect in two known ways. Both are documented here rather than fixed, because closing either would break a more common case:
 
-- FastAPI
-- Ollama
-- `faster-whisper`
-- Piper
-- USB microphone
+* **Cross-clause negation is not tracked.** A reply that denies and then claims in the same sentence passes through unguarded, for example `"You told me not to, but this was added anyway."` Catching it would require distinguishing a negator that governs the verb from one that does not, which the current clause-scope model cannot do without also re-breaking `"I have not, however, dismissed that reminder."`
 
-The host specification identifies the currently selected local AI/runtime
-stack, including Ollama with `llama3.1:8b-instruct-q4_K_M`, `faster-whisper`
-`small` with int8, and Piper `en_US-lessac-medium`. Where those values are
-still marked open in the specification, this document does not replace them
-with an invented value.
+* **Comma-coordinated denials are over-caught.** A denial whose subject is a comma-separated list, for example `"None of the milk, eggs, or bread was added."`, is replaced by the generic reply `"I have not added that yet, but I can add it to your list if you would like."` This is over-caution rather than a false statement - both sentences tell the user nothing was added - but it loses which items were meant. It does not affect object-position lists, parentheticals, or comma-free lists.
 
----
+Two smaller gaps are known and accepted for the same reason: a completed verb followed by a bare noun with no colon (`"Added task buy milk."`), and mutation verbs outside the per-intent word lists (`"Bumped the call to 6pm."`).
 
-## 2. Locked Decisions
+When changing this guard, test both directions. Claims that must be caught and ordinary wording that must pass through untouched are held together in `tests/unit/pipeline/test_llm.py`, and the two parametrised tests there pick up new rows automatically. Widening the rule to catch one more phrasing has twice introduced a false positive on a commoner one, so treat a reported example as a sample of a class rather than as the thing to patch.
 
-These are the decisions that apply to the current WP-102 implementation.
+## 9. Testing the WP-103 scaffold
 
-### LD-1. WP-102 is the current scope.
+Run all tests:
 
-This architecture document covers host runtime scaffolding only.
-
-### LD-2. The WP-102 acceptance target is host-only.
-
-The USB microphone, host processing, and host audio output are exercised
-without the robot.
-
-### LD-3. FastAPI is the host application/API framework.
-
-The current repository already contains the FastAPI application entry point
-under `api/app.py`.
-
-### LD-4. Ollama, `faster-whisper`, and Piper remain adapter boundaries.
-
-The current repository keeps these technologies under `adapters/` rather than
-coupling the API entry point directly to each vendor/runtime interface.
-
-### LD-5. The current repository structure is the source of truth for the
-scaffolding layout.
-
-This document records the structure already created by the implementation
-rather than replacing it with a proposed alternative.
-
-### LD-6. Empty directories are scaffolding, not implemented functionality.
-
-The existence of `audio/`, `pipeline/`, or an adapter subdirectory does not
-mean that the corresponding runtime behavior is complete.
-
-### LD-7. Generated Python cache files are not source components.
-
-`__pycache__/` and `*.pyc` are generated artifacts and are not part of the
-architectural source tree.
-
-### LD-8. `pipeline/` does not construct concrete runtime dependencies.
-
-The WP-102 pipeline depends only on technology-neutral processing and audio
-contracts. Concrete microphone, speaker, STT, LLM, and TTS implementations are
-constructed by `composition/bootstrap.py`.
-
-### LD-9. Configuration is immutable and injected at construction boundaries.
-
-`Settings` is a frozen configuration object. Components receive the
-settings snapshot they need at construction rather than relying on mutable global
-configuration.
-
----
-
-## 3. Project Structure
-
-The current WP-102 repository structure is:
-
-```text
-syncro-host/
-│
-├── adapters/
-│   ├── contracts.py              # technology-neutral STT/LLM/TTS protocols
-│   ├── llm/
-│   │   ├── ollama_adapter.py
-│   │   └── __init__.py
-│   ├── stt/
-│   │   ├── whisper_adapter.py
-│   │   └── __init__.py
-│   ├── tts/
-│   │   ├── piper_adapter.py
-│   │   └── __init__.py
-│   └── __init__.py
-│
-├── api/
-│   ├── app.py
-│   ├── http/
-│   │   ├── health.py
-│   │   └── __init__.py
-│   ├── ws/
-│   │   ├── stream.py                # future transport scaffold
-│   │   └── __init__.py
-│   └── __init__.py
-│
-├── audio/
-│   ├── capture.py               # host microphone implementation
-│   ├── contracts.py             # AudioInput / AudioOutput protocols
-│   ├── playback.py              # host speaker implementation
-│   └── __init__.py
-│
-├── config/
-│   ├── endpoints.py
-│   ├── settings.py              # immutable Settings + get_settings()
-│   └── __init__.py
-│
-├── pipeline/
-│   ├── host_pipeline.py         # WP-102 orchestration only
-│   ├── graph.py                 # future WP-103 scaffold
-│   ├── state.py                 # future WP-103 scaffold
-│   ├── nodes/                    # future WP-103 scaffolding
-│   └── __init__.py
-│
-├── composition/
-│   ├── bootstrap.py              # WP-102 composition root
-│   └── __init__.py
-│
-├── scripts/
-│   ├── run_wp102.py              # manual real-runtime acceptance run
-│   └── __init__.py
-│
-├── techdocs/
-│   ├── ARCH.md
-│   ├── profile-full-report-rtx-4060.md
-│   ├── roadmap.md
-│   └── SPEC.md
-│
-└── tests/
-    ├── unit/
-    │   ├── api/
-    │   ├── config/
-    │   ├── adapters/
-    │   ├── audio/
-    │   ├── pipeline/
-    │   └── composition/
-    ├── integration/
-    │   ├── test_host_pipeline_integration.py
-    │   ├── test_dialogue_graph_integration.py
-    │   └── test_affect_classifier_integration.py
-    ├── test_wp102_architecture.py
-    ├── conftest.py
-    └── __init__.py
+```bash
+python -m pytest -q
 ```
 
-`api/http/` and the future graph/node files may exist as repository scaffolding,
-but their presence does not claim that the full SPEC host server or WP-103 is
-implemented. The implemented WP-102 path is centered on `composition/`, `pipeline/`,
-`audio/`, and the three AI adapter packages. Automated verification is layered
-under `tests/unit/` and `tests/integration/`.
+Run the WP-103 integration tests specifically:
 
----
-
-## 4. WP-102 Runtime Architecture
-
-The current end-to-end objective is deliberately simple:
-
-```text
-                    HOST ONLY
-
-USB microphone
-     │
-     ▼
-┌───────────────┐
-│ Audio input   │
-└───────┬───────┘
-        │ PCM/audio data
-        ▼
-┌───────────────┐
-│ faster-       │
-│ whisper       │
-└───────┬───────┘
-        │ transcript
-        ▼
-┌───────────────┐
-│ Ollama        │
-│ LLM           │
-└───────┬───────┘
-        │ response text
-        ▼
-┌───────────────┐
-│ Piper         │
-│ TTS           │
-└───────┬───────┘
-        │ synthesized audio
-        ▼
-┌───────────────┐
-│ Host audio    │
-│ output        │
-└───────────────┘
+```bash
+python -m pytest -q tests/integration/test_dialogue_graph_integration.py tests/unit/pipeline/test_graph.py
 ```
 
-WP-102 is successful only when this host-only path can be exercised
-end-to-end.
+The graph tests may inject a fake affect detector where the test is intended to isolate graph behavior. Runtime composition uses the WP-104 classifier artifact directly.
 
-The WebSocket/robot path is not required for this work-package exit condition.
+## 10. Model boundaries: WP-103 vs WP-104
 
----
+WP-103 uses these external model boundaries:
 
-## 5. Current Module / Dependency Interface Reference
+| Component | WP-103 behavior                                          | Production owner       |
+| --------- | -------------------------------------------------------- | ---------------------- |
+| STT       | `faster-whisper`                                         | Existing host pipeline |
+| LLM       | Ollama + configured local model                          | Existing host pipeline |
+| TTS       | Piper + configured local voice                           | Existing host pipeline |
+| Affect    | `ClassifierAffectDetector` → `Low` / `Moderate` / `High` | **WP-104**             |
 
-This section describes only files and directories that currently exist in the
-repository. It does not assign unimplemented responsibilities to them.
+WP-104 owns the affect model file, openSMILE feature extraction, scikit-learn classifier, training/evaluation data, and acceptance evidence described in `techdocs/MLSPEC.md`.
 
-### 5.1 `api/app.py`
+WP-104 now supplies the implementation behind the affect adapter contract together with the model/evaluation evidence required by the roadmap.
 
-Current role: FastAPI application entry point.
+## 11. Common startup problems
 
-The file is the host API composition location.
+### `Ollama request failed`
 
-WP-102 requirement:
+Check that Ollama is running and that the configured model exists:
 
-- provide the application object needed to run the host service;
-- remain independent from robot hardware.
-
-No additional application behavior is claimed here unless implemented in the
-file.
-
-### 5.2 `api/http/health.py`
-
-Current role: HTTP health endpoint location.
-
-This provides the first simple HTTP surface used to verify that the FastAPI
-application can start independently of the AI pipeline.
-
-It is a composition/bootstrap check, not the WP-102 audio acceptance path.
-
-### 5.3 `api/ws/stream.py`
-
-Current role: WebSocket endpoint location.
-
-The host specification defines `/v1/stream` and the WebSocket message protocol.
-The complete transport implementation is outside the narrow WP-102 acceptance
-criterion.
-
-For WP-102, this file may remain scaffolding while host-only audio processing is
-built and verified.
-
-### 5.4 `config/settings.py`
-
-Current role: host runtime settings.
-
-Configuration that is needed by the current host runtime belongs here rather
-than being duplicated across API, adapters, and pipeline code.
-
-Only settings that are actually required by WP-102 should be added during this
-work package.
-
-### 5.5 `config/endpoints.py`
-
-Current role: configured service/endpoint locations.
-
-This is the single location for endpoint-related configuration already chosen
-for the repository.
-
-No new service endpoint is introduced here unless the specification or WP-102
-implementation requires it.
-
-### 5.6 `adapters/`
-
-The current adapter structure is:
-
-```text
-adapters/
-├── llm/
-├── stt/
-└── tts/
+```bash
+ollama list
 ```
 
-These folders correspond directly to the three external/local runtime
-technologies named by WP-102:
+Also verify `OLLAMA_URL` and `LLM_MODEL` in `.env`.
 
-```text
-adapters/llm  → Ollama
-adapters/stt  → faster-whisper
-adapters/tts  → Piper
+### `Piper failed to load voice model`
+
+Check `PIPER_MODEL_PATH` and confirm the directory contains the matching `.onnx` and `.json` voice files.
+
+### `faster-whisper` model download/load failure
+
+Check network access for the first model load, available disk space, and that `STT_MODEL_SIZE`, `STT_DEVICE`, and `STT_COMPUTE_TYPE` are compatible with the installed runtime.
+
+### Microphone or speaker failure
+
+Set the device fields in `.env` when the default operating-system audio device is not the one you want:
+
+```dotenv
+AUDIO_INPUT_DEVICE=
+AUDIO_OUTPUT_DEVICE=
 ```
 
-The adapter layer exists so that the rest of the host does not need to depend
-directly on technology-specific implementation details.
+The adapter reports the device/open failure at runtime rather than silently falling back.
 
-At WP-102 start, an adapter directory is a boundary; it is not evidence that
-the adapter is already implemented.
+### SQLite / trace failure on a fresh database
 
-### 5.7 `audio/`
+Use the current `scripts.run_wp103` runner. It creates the required demo user before writing the decision trace. Do not use the destructive reset seeder as a prerequisite for every live run.
 
-Current role: host-side audio handling location.
+## 12. Evidence and operational artifacts
 
-WP-102 needs a host audio path capable of receiving input from a USB microphone
-and producing host-side synthesized audio output.
+Generated databases, local model files, caches, recordings, and other runtime artifacts should remain local unless they are explicitly required as evidence for an acceptance criterion.
 
-Only the behavior actually implemented and verified in this directory should
-be considered complete.
+Keep acceptance evidence small and reproducible. For WP-103, useful evidence includes:
 
-### 5.8 `pipeline/`
+* passing WP-103 graph/integration test output;
+* a successful fresh-database live run;
+* stage-level timings from `run_wp103.py`;
+* the resulting decision trace row(s).
 
-Current role: host processing/pipeline location.
-
-`host_pipeline.py` owns only the WP-102 stage sequence. It depends on contracts
-for audio input/output and STT/LLM/TTS processing; it does not construct concrete
-implementations or import vendor SDKs. This keeps the orchestration layer
-deterministic and directly unit-testable.
-
-The later LangGraph Nodes 1–4 work belongs to WP-103, which the roadmap places
-after WP-102. fileciteturn8file1L88-L90
-
-### 5.9 `composition/`
-
-Current role: process-level composition root.
-
-`composition/bootstrap.py` is the one place where the WP-102 production objects are
-assembled: `MicrophoneAudioInput`, `WhisperSTTAdapter`, `OllamaLLMAdapter`,
-`PiperTTSAdapter`, and `SpeakerAudioOutput`. Keeping construction here prevents
-application orchestration and tests from reaching into concrete dependency setup.
-
----
-
-## 6. State and Resource Ownership
-
-For WP-102, keep state limited to what the host-only audio path actually needs.
-
-### 6.1 Runtime resources
-
-The three named model/runtime dependencies are:
-
-```text
-faster-whisper
-Ollama
-Piper
-```
-
-Each belongs behind its corresponding adapter boundary.
-
-### 6.2 Interaction data
-
-The current host-only interaction needs:
-
-```text
-microphone input
-→ audio representation
-→ transcript
-→ LLM response text
-→ synthesized audio
-```
-
-The implementation should avoid adding persistence requirements merely for
-scaffolding.
-
-### 6.3 No robot state
-
-WP-102 does not own or require:
-
-```text
-ESP32 state
-device motion
-motor commands
-robot playback
-WebSocket edge execution
-```
-
-Those belong to later work.
-
----
-
-## 7. WP-102 Control Flow
-
-The WP-102 control flow is:
-
-```text
-1. Start the host application.
-2. Initialize the host-side runtime dependencies required by WP-102.
-3. Acquire audio from the USB microphone.
-4. Pass the captured audio through the STT adapter.
-5. Pass the resulting text through the LLM adapter.
-6. Pass the generated text through the TTS adapter.
-7. Produce synthesized audio on the host.
-8. Make the host audio output observable for verification.
-```
-
-The implementation should keep each technology behind its adapter boundary.
-
-The acceptance path does not require the robot or robot WebSocket transport.
-
----
-
-## 8. Error Handling Boundary
-
-WP-102 should make failures visible at the dependency boundary rather than
-silently substituting a different runtime.
-
-### Current failure classes
-
-| ID | Failure | Boundary |
-|---|---|---|
-| ERR-1 | USB microphone unavailable | `audio/` |
-| ERR-2 | `faster-whisper` initialization/transcription failure | `adapters/stt/` |
-| ERR-3 | Ollama unavailable/model failure | `adapters/llm/` |
-| ERR-4 | Piper unavailable/synthesis failure | `adapters/tts/` |
-| ERR-5 | Host audio output unavailable | `audio/` |
-
-These identifiers are local WP-102 architecture labels; they do not replace
-error codes already defined by `SPEC.md` / `host-spec`.
-
-A failed dependency must surface as a failure of that dependency boundary. The
-host must not report the WP-102 audio-in/audio-out path as successful when one
-of its required stages did not execute.
-
----
-
-## 9. WP-102 Performance and Measurement
-
-WP-102 needs to prove that the host-only chain works, not merely that imports
-succeed.
-
-The minimum useful measurements are:
-
-```text
-microphone capture starts
-STT completes
-LLM response completes
-TTS synthesis completes
-audio output is produced
-```
-
-Where timing is collected, record the individual stage durations separately
-rather than presenting an aggregate number without knowing which stage produced
-it.
-
-The hardware capacity validation in WP-101 is the predecessor to WP-102. The
-roadmap states that WP-101 validates `llama3.1:8b` on the RTX 4060 with
-`faster-whisper small int8` loaded alongside it. fileciteturn8file7L300-L305
-
-Therefore WP-102 should use the already-established platform result rather than
-inventing a new hardware assumption.
-
----
-
-## 10. Invariants
-
-Every invariant below has a Rule, Reason, and Failure mode if violated.
-
-### INV-1. WP-102 remains host-only.
-
-Rule: the WP-102 acceptance path does not require the robot.
-
-Reason: the roadmap explicitly defines "No robot involved" for WP-102.
-
-Failure mode: host-runtime failures become entangled with firmware or transport
-failures, making the work package impossible to isolate.
-
-### INV-2. The three named AI technologies remain separate adapters.
-
-Rule: Ollama, `faster-whisper`, and Piper are accessed through their respective
-adapter boundaries.
-
-Reason: each dependency has its own runtime/API and can fail independently.
-
-Failure mode: vendor/runtime details leak through the application and make later
-replacement or testing unnecessarily coupled.
-
-### INV-3. Audio flows through the host-only chain.
-
-Rule: successful WP-102 execution must contain the complete path
-
-```text
-audio in → STT → LLM → TTS → audio out
-```
-
-Reason: that is the defined WP-102 exit condition.
-
-Failure mode: the project can falsely mark scaffolding complete when only
-individual components run independently.
-
-### INV-4. No later work package is claimed complete by folder existence.
-
-Rule: an existing directory or empty module does not count as implemented
-behavior.
-
-Reason: the repository is being scaffolded incrementally.
-
-Failure mode: the project documentation claims functionality that has not been
-built or verified.
-
-### INV-5. Configuration is not duplicated unnecessarily.
-
-Rule: values needed by multiple WP-102 components are sourced from the
-configuration layer rather than repeated as independent literals.
-
-Reason: duplicated configuration creates drift.
-
-Failure mode: two components use different runtime endpoints, model names, or
-timeouts without the discrepancy being obvious.
-
-### INV-6. Failed dependencies do not produce false success.
-
-Rule: if a required WP-102 stage fails, the end-to-end path is considered
-failed.
-
-Reason: synthesized audio output is only meaningful when the preceding stages
-actually executed.
-
-Failure mode: a fallback or placeholder is mistaken for a successful
-STT → LLM → TTS run.
-
----
-
-## 11. WP-102 Verification / Traceability
-
-WP-102 has one primary exit condition:
-
-```text
-Audio in, synthesized audio out, on the host alone.
-```
-
-The verification path is therefore:
-
-| WP-102 element | Verification | Status |
-|---|---|---|
-| FastAPI host starts | Start the host application successfully | **Verified** - health check return `{ "status": "ok" }` |
-| USB microphone input | Capture real microphone audio | **Verified** — `audio_capture` stage completed in a live run |
-| `faster-whisper` | Produce a transcript from captured audio | **Verified** — real transcript produced ("Hello hello, how are you? I'm good") |
-| Ollama | Produce a response from the transcript | **Verified** — real LLM response produced |
-| Piper | Synthesize audio from the response | **Verified** — synthesized audio produced and played |
-| Host-only output | Produce observable synthesized audio without the robot | **Verified** — audio heard on host speakers |
-| End-to-end path | Complete audio-in → synthesized-audio-out in one run | **Verified**, single run, stage durations: capture 5.39s, stt 1.41s, llm 12.97s, tts 0.54s, audio_output 12.77s |
-
-The roadmap places WP-103 after WP-102 and assigns the LangGraph Nodes 1–4 work
-to WP-103, so Node 1–4 completion is not used as a hidden prerequisite for
-declaring WP-102 complete. fileciteturn8file1L88-L90
-
----
-
-## 12. Notes on Warranted Code Changes
-
-The host-only path described in Section 4 is implemented and has been run
-successfully end-to-end (Section 11). All five stages — capture, STT, LLM,
-TTS, audio output — executed in one run with per-stage timing recorded.
-
-The architecture refactor separates construction from orchestration and makes
-the WP-102 core directly testable with injected fakes. The next warranted work
-for WP-102 is therefore focused pytest coverage: each concrete adapter should
-get happy-path and failure-path tests, the audio boundaries should get device/error
-tests, and the pipeline should verify INV-6 by proving that a failure at any
-single stage fails the whole run and is tagged with the correct stage name.
-
-As before: any change introducing robot transport, LangGraph Nodes 1-4, the
-affect branch, Porcupine, or later integration behavior remains outside
-WP-102 scope.
+See `techdocs/SPEC.md`, `techdocs/ARCH.md`, and `techdocs/roadmap.md` for the normative architecture and acceptance requirements.

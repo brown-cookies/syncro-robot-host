@@ -1,6 +1,15 @@
 # SYNCRO Host
 
-Host-side runtime for the SYNCRO robot stack. This repository contains the **WP-102 host pipeline**, the **WP-103 dialogue-graph scaffold**, and the **WP-104 acoustic-affect ML pipeline/runtime boundary**.
+Host-side runtime for the SYNCRO robot stack. This repository contains the **WP-102 host pipeline**, the **WP-103 dialogue-graph scaffold**, the **WP-104 acoustic-affect ML pipeline/runtime boundary**, and (in progress) the **Architecture Fixing sprint** that followed the WP-103/104 arch review.
+
+The fixing sprint is not finished. Phases 1-5 of its plan (graph-state
+reducers, the `HostComponents` composition-root dataclass, SQLite WAL,
+host-side audio resampling, and `InteractionRunner`) are committed and
+tested; Phases 6-19 (trace-finalization move, failure-boundary mapping,
+degraded-trace contract, timeout correction, transport, and documentation
+sync) are not. See `techdocs/ARCH.md` for the current architecture,
+including §12's list of known gaps, and `techdocs/ARCHITECTUREREVIEW12926.md`
+for the review and phase plan itself.
 
 ## What is implemented
 
@@ -80,7 +89,11 @@ audio/               Host microphone, playback, and audio contracts
 composition/         Composition root / dependency wiring
 config/              Typed environment-backed settings
 pipeline/            LangGraph state, graph, nodes, and orchestration
+  interaction.py      InteractionRunner (F3, architecture-fixing sprint) — not yet wired in, see techdocs/ARCH.md §12
 storage/             SQLite schema, context retrieval, and decision traces
+ml/affect/           WP-104 feature extraction, training, tuning, and evaluation
+datasets/            Committed WP-104 manifests and feature tables
+evidences/           Live-run stage-timing logs and WP-104 ML acceptance evidence
 scripts/             Manual operational runners and WP-103 seeding
 techdocs/            SPEC / ARCH / roadmap and supporting documents
 tests/               Unit, contract, architecture, and integration tests
@@ -160,9 +173,25 @@ DB_PATH=./syncro.db
 INTENT_CONFIDENCE_THRESHOLD=0.60
 AFFECT_DETECTOR_BACKEND=development
 AFFECT_CLASSIFIER_PATH=./models/affect/affect_svc_v1.joblib
+INTENT_TIMEOUT_S=5
+REASONING_TIMEOUT_S=6
+NON_LLM_TIMEOUT_MARGIN_S=10
+INTENT_NUM_PREDICT=40
+OLLAMA_KEEP_ALIVE=10m
+SESSION_TIMEOUT_SECONDS=30
 ```
 
 `.env` is local configuration and must not be committed.
+
+**Fixed (D5/Phase 9):** the intent classifier and the reasoning LLM call are
+two sequential calls per turn. They used to share one `OLLAMA_TIMEOUT_S`,
+which only guaranteed each call individually stayed under
+`SESSION_TIMEOUT_SECONDS` -- not their sum. They now have independent
+timeouts, `INTENT_TIMEOUT_S` and `REASONING_TIMEOUT_S`, and
+`Settings.__post_init__` rejects any configuration where
+`INTENT_TIMEOUT_S + REASONING_TIMEOUT_S + NON_LLM_TIMEOUT_MARGIN_S` is not
+under `SESSION_TIMEOUT_SECONDS`. The full model-split question (D4) is still
+deferred past this sprint.
 
 ## 3. Install and prepare Ollama
 
@@ -569,15 +598,26 @@ The wake-word stage is intentionally simulated in this host runner because wake-
 For normal application execution, use the composition root instead of constructing concrete adapters inside graph nodes:
 
 ```python
-from composition.bootstrap import build_wp103_components
+from composition.bootstrap import build_host_components
 from config.settings import get_settings
 
 settings = get_settings()
 
-graph, store, audio_input, audio_output, tts, affect_detector = (
-    build_wp103_components(settings)
-)
+components = build_host_components(settings)
+components.graph.invoke({...}) 
+components.tts.synthesize(text)
 ```
+
+**This snippet is the pre-architecture-fixing-sprint pattern and will change.**
+`pipeline/interaction.py`'s `InteractionRunner` now exists specifically to
+own the graph → TTS → resample → trace sequence shown above as one unit —
+manually calling `graph.invoke()` and then `tts.synthesize()` separately is
+exactly the "second, drifting copy of the sequence" pattern `InteractionRunner`
+was built to eliminate (see its module docstring). It is not wired into
+`build_host_components()` yet (`HostComponents.runner` is still `None` — see
+`techdocs/ARCH.md` §12), so this snippet remains accurate for what exists
+today, but do not copy it into new code once that wiring lands; use
+`components.runner.run(...)` instead once it is populated.
 
 The important dependency direction is:
 
@@ -696,15 +736,3 @@ Keep acceptance evidence small and reproducible. For WP-103, useful evidence inc
 * the resulting decision trace row(s).
 
 See `techdocs/SPEC.md`, `techdocs/ARCH.md`, and `techdocs/roadmap.md` for the normative architecture and acceptance requirements.
-
-````
-
-The actual fix is the block under **§8**, where the old five-value unpack is replaced with the current six-value return:
-
-```python
-graph, store, audio_input, audio_output, tts, affect_detector = (
-    build_wp103_components(settings)
-)
-````
-
-That matches the current composition-root return signature.
