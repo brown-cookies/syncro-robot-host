@@ -77,3 +77,14 @@ def test_settings_reads_split_timeout_environment(monkeypatch) -> None:
     assert settings.non_llm_timeout_margin_s == 8.0
     assert settings.intent_num_predict == 32
     assert settings.ollama_keep_alive == "5m"
+
+
+def test_settings_reads_interaction_queue_maxsize_environment(monkeypatch) -> None:
+    """S1/Phase 12: the InteractionWorker's bounded queue size is configurable
+    like every other budget in this file, and defaults sanely without one."""
+    settings = Settings()
+    assert settings.interaction_queue_maxsize == 8
+
+    monkeypatch.setenv("INTERACTION_QUEUE_MAXSIZE", "3")
+    settings = Settings.from_env()
+    assert settings.interaction_queue_maxsize == 3

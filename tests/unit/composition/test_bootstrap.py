@@ -4,6 +4,7 @@ from pipeline import HostPipeline
 from composition import bootstrap
 from composition.bootstrap import HostComponents
 from pipeline.interaction import InteractionRunner
+from pipeline.worker import InteractionWorker
 
 
 def test_bootstrap_injects_one_settings_instance_everywhere(monkeypatch, test_settings):
@@ -67,8 +68,9 @@ def test_bootstrap_uses_development_affect_detector_by_default(monkeypatch, test
 
 def test_bootstrap_returns_host_components_not_a_positional_tuple(monkeypatch, test_settings):
     """S2 regression: build_host_components must return HostComponents by name,
-    not a positional tuple (finding S2). New components (the runner, next) must be
-    addable as a field without breaking any existing caller that reads by name.
+    not a positional tuple (finding S2). New components (the runner, the S1
+    worker) must be addable as a field without breaking any existing caller
+    that reads by name.
     """
     _patch_graph_dependencies(monkeypatch, test_settings)
     import sys
@@ -81,12 +83,35 @@ def test_bootstrap_returns_host_components_not_a_positional_tuple(monkeypatch, t
 
     assert isinstance(result, HostComponents)
     assert not isinstance(result, tuple)
-    for field in ("graph", "store", "audio_input", "audio_output", "tts", "runner"):
+    for field in ("graph", "store", "audio_input", "audio_output", "tts", "runner", "worker"):
         assert hasattr(result, field), f"HostComponents is missing field {field!r}"
     assert isinstance(result.runner, InteractionRunner)
     assert result.runner._graph is result.graph
     assert result.runner._store is result.store
     assert result.runner._tts is result.tts
+
+
+def test_bootstrap_builds_worker_around_the_shared_runner_but_does_not_start_it(
+    monkeypatch, test_settings
+):
+    """S1 regression: the composition root assembles the InteractionWorker
+    around the same runner instance it hands out, but starting the
+    background thread is a lifecycle concern for whatever owns the process
+    (Phase 14's FastAPI lifespan) -- not a side effect of assembly.
+    """
+    _patch_graph_dependencies(monkeypatch, test_settings)
+    import sys
+    import types
+    fake_graph_module = types.ModuleType("pipeline.graph")
+    setattr(fake_graph_module, "build_dialogue_graph", lambda **kwargs: kwargs["affect_detector"])
+    monkeypatch.setitem(sys.modules, "pipeline.graph", fake_graph_module)
+
+    result = bootstrap.build_host_components(test_settings)
+
+    assert isinstance(result.worker, InteractionWorker)
+    assert result.worker._runner is result.runner
+    assert result.worker.is_alive is False
+    assert result.worker.queue_depth == 0
 
 
 def test_bootstrap_calls_warm_up_before_building_components(monkeypatch, test_settings):

@@ -74,6 +74,15 @@ class Settings:
     # loading model weights off disk on the very first call of a process.
     llm_warmup_timeout_s: float = 120.0
 
+    # S1 — bounded queue size between the (future) async transport and the
+    # single InteractionWorker thread. A caller that fills this queue gets
+    # WorkerQueueFullError immediately rather than blocking the event loop;
+    # this bound is how many interactions may be backlogged before that
+    # happens. Small on purpose: a deep queue just delays the same overload
+    # signal, it doesn't absorb it (Ollama's two sequential calls per turn
+    # are the actual bottleneck, per F6).
+    interaction_queue_maxsize: int = 8
+
     # STT
     stt_model_size: str = "small"
     stt_compute_type: str = "int8"
@@ -161,6 +170,9 @@ class Settings:
             ),
             llm_warmup_timeout_s=_float_env(
                 "LLM_WARMUP_TIMEOUT_S", defaults.llm_warmup_timeout_s
+            ),
+            interaction_queue_maxsize=_int_env(
+                "INTERACTION_QUEUE_MAXSIZE", defaults.interaction_queue_maxsize
             ),
 
             # STT

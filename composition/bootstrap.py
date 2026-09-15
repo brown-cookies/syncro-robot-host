@@ -26,6 +26,7 @@ from storage.sqlite_store import SQLiteStore
 
 if TYPE_CHECKING:
     from pipeline.interaction import InteractionRunner
+    from pipeline.worker import InteractionWorker
 
 
 logger = logging.getLogger(__name__)
@@ -50,6 +51,7 @@ class HostComponents:
     tts: Any
     affect_detector: ClassifierAffectDetector | DevelopmentAffectDetector
     runner: InteractionRunner
+    worker: InteractionWorker
 
 
 def build_host_pipeline(settings: Settings | None = None) -> HostPipeline:
@@ -197,6 +199,19 @@ def build_host_components(
         resampler=to_pcm16_16k,
     )
 
+    # S1: the worker is constructed here so it shares the composition root's
+    # single runner instance, but it is deliberately *not* started -- start()
+    # spawns a background thread, and doing that as a side effect of building
+    # components would surprise every test/caller that just wants the
+    # assembled dependencies without a thread running. Starting/stopping it
+    # is a lifecycle concern that belongs with whatever owns the process
+    # lifetime (WP-105's FastAPI `lifespan`, Phase 14), not with assembly.
+    from pipeline.worker import InteractionWorker
+
+    worker = InteractionWorker(
+        runner=runner, maxsize=settings.interaction_queue_maxsize
+    )
+
     return HostComponents(
         graph=graph,
         store=store,
@@ -205,4 +220,5 @@ def build_host_components(
         tts=tts,
         affect_detector=affect_detector,
         runner=runner,
+        worker=worker,
     )
