@@ -1255,7 +1255,7 @@ respond) rather than guessed.
 | Lead-time bounds               | [5, 60] min | Hard clamp on `L`                             |
 | Lead-time smoothing constant α | 0.3     | EMA weight                                        |
 | Classifier deployment gate     | macro-F1 ≥ 0.70 | Go/no-go, not a runtime tunable (NFR-3)   |
-| `delivery_failed` queue bound (per user) | TBC — deployment/config parameter | Must be a fixed capacity per Section 13.1; the number itself is not fixed by D7 or `roadmap.md` and is tracked as an open configuration item (Section 16), to be set before the live DEL-07 demonstration |
+| `delivery_failed` queue bound (per user) | TBC — deployment/config parameter | Must be a fixed capacity per Section 13.1; the number itself is not fixed by D7 and is tracked as an open configuration item (Section 16), to be set before the live DEL-07 demonstration |
 | Overflow policy | drop-oldest | Fixed per Section 13.1 / D7, independent of the numeric bound above |
 | Session inactivity timeout | 30 sec | Section 7.4; an in-flight session with no `audio_frame`/`end_audio` for this long is expired |
 | Reminder response window | TBC — deployment/config parameter | Section 11.2a; window after dispatch before an un-actioned reminder transitions `pending → delivery_miss`. Not fixed by any source document; tracked as an open configuration item (Section 16), same treatment as the queue bound above |
@@ -1699,27 +1699,18 @@ invented (per project decision to keep these open):
 - `delivery_failed` queue bound, per user (Section 11.3, Section 13.1) —
   that the queue must be a fixed capacity, and the overflow policy
   (drop-oldest), are fixed as of this revision, satisfying D7's behavioral
-  contract in full. The numeric capacity itself is not fixed by D7 or
-  `roadmap.md` and remains open: it is a deployment/configuration
+  contract in full. The numeric capacity itself is not fixed by D7 and remains open: it is a deployment/configuration
   parameter, to be set (informed by expected per-user reminder rate and
   expected outage duration) before implementation/testing and confirmed
   before the live DEL-07 demonstration (26 September 2026). This does not
   reopen CC-004 — D7 requires the behavior, not a number — but it is a
   genuine open item, not future tuning of an already-fixed default.
-- **Written adviser/panel confirmation of the centralized-host architecture
-  and revised privacy claim — status: PENDING, blocking.** Sections 4 and
-  14 of this document specify the centralized architecture
-  unconditionally, per `SYNCRO-redesign-15k.md` §3–§6, which the article
-  author holds. That document itself states (§10, action item 1) that
-  this is a thesis-level decision requiring adviser sign-off **before
-  anything is built against it**, and does not itself constitute that
-  sign-off. As of this revision, no written confirmation is on file and
-  none is inferable from anything the author holds — **Sections 4 and 14
-  are written as settled but remain provisional on this approval, not yet
-  authorized.** This is what is being waited on, and nothing else in
-  either article is blocked by it. **Owner: article author (Almedejar).
-  Action: obtain the adviser's written confirmation and cite the record
-  here (replacing this entry's status), or, if it is not obtainable before
-  Week 2 transport work (WP-105, WP-106) begins, escalate the absence to
-  the adviser rather than let implementation proceed against an
-  unconfirmed premise.**
+- **Centralized-host architecture and revised privacy claim — DECIDED, not blocking.**
+  Decision recorded **26 August 2026**: participant audio may cross a network
+  boundary from the participant site to the **team-operated research host**.
+  The privacy claim is therefore **not local-only** and must not be described
+  as pending or blocking. The following protections remain binding conditions
+  of this architecture and are not optional: **(1) encryption in transit,
+  (2) encryption at rest, and (3) a written retention-and-deletion schedule**.
+  These conditions are specified in Section 14 and govern implementation and
+  verification of the centralized-host data boundary.
