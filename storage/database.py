@@ -33,6 +33,15 @@ class SQLiteDatabase:
         # dependency on which connection opens first. It is a no-op for
         # ":memory:" databases, which have no file to hold WAL's separate log.
         conn.execute("PRAGMA journal_mode = WAL")
+        # Known trade-off: WAL mode means committed writes can sit in the
+        # `-wal` sidecar file (with `-shm` as its shared-memory index) rather
+        # than in `self.path` itself until SQLite checkpoints them back into
+        # the main file. Any backup or deletion that operates on `self.path`
+        # alone -- a plain file copy, or removing just the `.db` file -- can
+        # therefore miss committed data still sitting in `-wal`/`-shm`, which
+        # matters for NFR-11's deletion guarantee. Callers doing either must
+        # either checkpoint first (`PRAGMA wal_checkpoint(TRUNCATE)`) or
+        # include the `-wal`/`-shm` sidecar files alongside `self.path`.
         # sqlite3.connect() already applies a 5s busy timeout by default (its
         # own `timeout` parameter, which defaults to 5.0s and is not the same
         # setting as this PRAGMA, though it has the same effect at this value).
