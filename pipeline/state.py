@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import operator
 from typing import Annotated, Any, TypedDict
 
 
@@ -49,4 +48,3 @@ class DialogueState(TypedDict, total=False):
     # (see techdocs/ARCH.md ownership notes) - do not add a second writer to a
     # plain key without giving it a reducer here first (see finding F5).
     stage_timings_s: Annotated[dict[str, float], merge_stage_timings]
-    degradations: Annotated[list[str], operator.add]

@@ -187,9 +187,10 @@ def build_host_components(
 
     # F3: the runner is part of the composition root so every caller
     # shares the same interaction lifecycle instead of rebuilding graph -> TTS
-    # -> trace orchestration independently. The runner is intentionally built
-    # against the current graph/store objects; Phase 6 will change the graph
-    # output contract from trace persistence to pending-trace return.
+    # -> trace orchestration independently. Per F1/Phase 6, the graph output
+    # node no longer persists the trace itself -- it returns a `pending_trace`
+    # in state, and the runner (below) is the single place that finalizes and
+    # writes it.
     from pipeline.interaction import InteractionRunner
 
     runner = InteractionRunner(
