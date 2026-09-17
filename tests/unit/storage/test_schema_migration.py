@@ -19,9 +19,11 @@ from __future__ import annotations
 
 import sqlite3
 
+import pytest
+
 from storage.database import SQLiteDatabase
 from storage.decision_trace import DecisionTraceRepository
-from storage.schema import initialize_schema
+from storage.schema import _migrate_decision_trace, initialize_schema
 
 # The schema as it existed before degraded traces: intent, intent_confidence,
 # and affect_level are all NOT NULL. Everything else matches the current
@@ -152,6 +154,45 @@ def test_migration_preserves_the_row_that_already_existed(tmp_path):
     assert original["intent_confidence"] == 0.9
     assert original["affect_level"] == "Low"
     assert original["latency_ms"] == 42.0
+
+
+def test_migration_failure_mid_rebuild_rolls_back_without_losing_rows(tmp_path):
+    """A failure after the rename/create steps must leave the old table intact."""
+    db_path = str(tmp_path / "upgraded.db")
+    _build_old_schema_database(db_path)
+
+    class FailingConnection(sqlite3.Connection):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self._fail_once = True
+
+        def execute(self, sql, parameters=()):
+            if self._fail_once and sql.lstrip().upper().startswith("INSERT INTO DECISION_TRACE "):
+                self._fail_once = False
+                raise RuntimeError("injected migration failure")
+            return super().execute(sql, parameters)
+
+    conn = sqlite3.connect(db_path, factory=FailingConnection)
+    try:
+        with pytest.raises(RuntimeError, match="injected migration failure"):
+            _migrate_decision_trace(conn)
+
+        table_names = {
+            row[0]
+            for row in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table'"
+            )
+        }
+        assert "decision_trace" in table_names
+        assert "decision_trace__pre_migration" not in table_names
+
+        row = conn.execute(
+            "SELECT trace_id, intent FROM decision_trace WHERE user_id = ?",
+            ("u1",),
+        ).fetchone()
+        assert row == ("11111111-1111-1111-1111-111111111111", "add_task")
+    finally:
+        conn.close()
 
 
 def test_migration_is_idempotent_across_repeated_initialize_schema_calls(tmp_path):

@@ -2,8 +2,10 @@
 
 Host-side runtime for the SYNCRO robot stack. This repository contains the **WP-102 host pipeline**, the **WP-103 dialogue-graph scaffold**, the **WP-104 acoustic-affect ML pipeline/runtime boundary**, and the **Architecture Fixing sprint** that followed the WP-103/104 arch review, including WP-105's `/v1/stream` transport scaffold.
 
-All of the arch review's blocking findings (F1-F6) are closed, and its
-structural findings (S1-S9, I1) are committed and tested: graph-state
+The arch review's blocking findings F1-F5 are closed; F6's documented
+mitigations are committed and tested, while the separate intent/reasoning
+model split remains deferred past this sprint. Its structural findings
+(S1-S9, I1) are committed and tested: graph-state
 reducers (F5), the `HostComponents` composition-root dataclass (S2), SQLite
 WAL (S3), host-side audio resampling (S5), `InteractionRunner` owning
 trace-finalization (F1), the failure-boundary mapping (F4), the

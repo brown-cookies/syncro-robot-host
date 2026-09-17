@@ -197,24 +197,32 @@ def _migrate_decision_trace(conn: sqlite3.Connection) -> None:
     Only called after _decision_trace_needs_migration() confirms an
     old-schema table exists, so this never runs against a fresh database.
     """
-    conn.execute(
-        "ALTER TABLE decision_trace RENAME TO decision_trace__pre_migration")
-    conn.execute(
-        f"CREATE TABLE decision_trace (\n{_DECISION_TRACE_COLUMNS_SQL}\n)")
+    conn.execute("BEGIN")
+    try:
+        conn.execute(
+            "ALTER TABLE decision_trace RENAME TO decision_trace__pre_migration")
+        conn.execute(
+            f"CREATE TABLE decision_trace (\n{_DECISION_TRACE_COLUMNS_SQL}\n)")
 
-    old_columns = {
-        row[1] for row in conn.execute("PRAGMA table_info(decision_trace__pre_migration)")
-    }
-    # Copy only columns the old table actually has; a database from any
-    # earlier point in the schema's history is still handled rather than
-    # assuming today's exact column set was already present.
-    copy_columns = [c for c in DECISION_TRACE_COLUMNS if c in old_columns]
-    columns_sql = ", ".join(copy_columns)
-    conn.execute(
-        f"INSERT INTO decision_trace ({columns_sql}) "
-        f"SELECT {columns_sql} FROM decision_trace__pre_migration"
-    )
-    conn.execute("DROP TABLE decision_trace__pre_migration")
+        old_columns = {
+            row[1]
+            for row in conn.execute("PRAGMA table_info(decision_trace__pre_migration)")
+        }
+        # Copy only columns the old table actually has; a database from any
+        # earlier point in the schema's history is still handled rather than
+        # assuming today's exact column set was already present.
+        copy_columns = [c for c in DECISION_TRACE_COLUMNS if c in old_columns]
+        columns_sql = ", ".join(copy_columns)
+        conn.execute(
+            f"INSERT INTO decision_trace ({columns_sql}) "
+            f"SELECT {columns_sql} FROM decision_trace__pre_migration"
+        )
+        conn.execute("DROP TABLE decision_trace__pre_migration")
+    except Exception:
+        conn.rollback()
+        raise
+    else:
+        conn.commit()
 
 
 def initialize_schema(conn: sqlite3.Connection) -> None:
