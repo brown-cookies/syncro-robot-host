@@ -725,7 +725,7 @@ collision case in Section 7.4.
 {
   "type": "error",
   "session_id": "string — the session the error applies to",
-  "error_code": "session_collision | malformed_audio | session_timeout",
+  "error_code": "session_collision | malformed_audio | session_timeout | pipeline_failure | queue_overflow",
   "message": "string, human-readable, optional"
 }
 ```
@@ -733,7 +733,17 @@ collision case in Section 7.4.
 Receipt of `error` ends the named session on both sides without a
 `response`; the edge does not attempt playback and returns to Standby
 (`robot-runtime-spec.md` Section 6). `session_timeout` is sent by the host
-per Section 7.4's session-expiry rule, below.
+per Section 7.4's session-expiry rule, below. `pipeline_failure` is the
+host-side application error for a bounded interaction-stage failure that does
+not have a more specific transport code. `queue_overflow` is sent when a
+completed utterance (post `end_audio`) cannot be accepted onto the host's
+bounded interaction-processing queue because it is already at capacity
+(Section 11, WP-105's request queue) -- `session_id` is always known for
+this error, since it was established by `start_audio` before the queue
+submission was attempted. This is a distinct condition from Section 13.1's
+per-user reminder-delivery queue, which shares the same `degradation_reason`
+name but is an unrelated, later-pipeline concern with no `error` WS message
+of its own.
 
 ### 7.4 Session Lifecycle Rules
 
@@ -968,6 +978,28 @@ Policy-Consistency Audit depends on the full row being present to compare
 `(affect_level, deadline_proximity)` against `policy_rule` for every row
 within its domain (see RID-019 closure above for what falls outside it).
 
+A degraded interaction is an explicitly different record shape stored in the same
+`decision_trace` table as `DegradedTraceRecord`. It is used when a normal dialogue
+turn never exists (for example `pipeline_failure`, `session_timeout`, or
+`queue_overflow`). `trace_id`, `user_id`, `timestamp`, `degradation_reason`,
+`network_event`, `latency_ms`, and `latency_basis` identify the degraded event;
+`session_id` may be null for standalone transport/condition events. The explicitly
+nullable interaction-only fields are `intent`, `intent_confidence`,
+`retrieved_context_ids`, `affect_level`, and `lead_time_min`. For the
+no-interaction reasons `pipeline_failure`, `session_timeout`, and `queue_overflow`,
+`intent` must be explicitly null; the host contract enforces this with a
+`model_validator` so a degraded record cannot carry an interaction intent while
+claiming that no normal dialogue turn existed. This is an explicit SPEC-level
+contract decision rather than an inference made by the storage layer. `policy_rule`,
+`deadline_proximity`, `action_taken`, and `reminder_outcome` are written as `n/a`. A degraded row is outside the
+Policy-Consistency Audit because its `policy_rule` is always `n/a`. The normal
+`DecisionTraceRecord` remains strict and is never made nullable to accommodate
+degraded interactions.
+
+For the fixing sprint, schema evolution follows the Phase 0 D3 rule: after this
+change, delete the existing `syncro.db` before starting the host. No migration
+version table is introduced in this sprint.
+
 ### 8.4 TTS Audio Downlink — Format, Chunking, Buffering and Backpressure (closes CC-003)
 
 The message types are defined in Section 7.3; this section defines their
@@ -978,11 +1010,36 @@ content and the playback contract around them.
   both directions run at one sample rate and the edge needs only one I2S
   clock configuration. Piper's native output rate is resampled to 16 kHz
   **host-side**, before chunking; the edge never resamples.
+- **Resampling implementation.** The current host implementation uses
+  linear interpolation without a dedicated anti-alias low-pass filter.
+  This is an accepted implementation trade-off under the current
+  dependency constraints. A future audio-quality revision may replace
+  it with a band-limited resampler if measured aliasing becomes
+  material.
 - **Chunking.** Each `tts_audio_frame` carries one 100 ms segment
   (3,200 bytes at this format) of the resampled audio, sent as it becomes
   available from the synthesis pipeline rather than accumulated into one
   message. This matches the uplink's own streamed-not-buffered convention
-  (FR-H1, Section 7.3).
+  (FR-H1, Section 7.3). **Decision: the trailing frame is not padded.**
+  When an utterance's resampled length is not an exact multiple of 3,200
+  bytes, the final `tts_audio_frame` is shorter than the rest rather than
+  padded up to a full frame with silence. This is a deliberate choice, not
+  an open gap: Section 8.2's 640-byte capture unit is a property of the
+  edge's *uplink* (capture) ring buffer, sized to the wake-word engine's
+  frame length — it is a different buffer from the edge's *downlink*
+  (playback) ring buffer this section describes, and the two are not
+  required to share a size granularity. The playback ring buffer only needs
+  to accept ordinary PCM sample data of any byte length that is a whole
+  number of 16-bit samples, which every frame here always is (resampling
+  never produces a fractional sample). Padding the final frame would add
+  latency — buffering silence to reach 3,200 bytes before sending — for no
+  correctness benefit under this buffering model. This decision assumes the
+  firmware's I2S/DMA write path accepts variable-length writes into the
+  playback ring buffer; **WP-205 must confirm this against the actual
+  firmware implementation once the playback ring buffer exists (Section
+  16).** If the firmware's write path turns out to require fixed-size
+  writes, padding (explicit silence, not garbage bytes) will need to be
+  added on the host side and this section updated accordingly.
 - **Buffering / playback start.** The edge does not begin playback on the
   first `tts_audio_frame`. It accumulates into a ring buffer and starts
   playback once buffered audio reaches a **~250 ms low-water mark**, so a
@@ -1231,7 +1288,7 @@ respond) rather than guessed.
 | Lead-time bounds               | [5, 60] min | Hard clamp on `L`                             |
 | Lead-time smoothing constant α | 0.3     | EMA weight                                        |
 | Classifier deployment gate     | macro-F1 ≥ 0.70 | Go/no-go, not a runtime tunable (NFR-3)   |
-| `delivery_failed` queue bound (per user) | TBC — deployment/config parameter | Must be a fixed capacity per Section 13.1; the number itself is not fixed by D7 or `roadmap.md` and is tracked as an open configuration item (Section 16), to be set before the live DEL-07 demonstration |
+| `delivery_failed` queue bound (per user) | TBC — deployment/config parameter | Must be a fixed capacity per Section 13.1; the number itself is not fixed by D7 and is tracked as an open configuration item (Section 16), to be set before the live DEL-07 demonstration |
 | Overflow policy | drop-oldest | Fixed per Section 13.1 / D7, independent of the numeric bound above |
 | Session inactivity timeout | 30 sec | Section 7.4; an in-flight session with no `audio_frame`/`end_audio` for this long is expired |
 | Reminder response window | TBC — deployment/config parameter | Section 11.2a; window after dispatch before an un-actioned reminder transitions `pending → delivery_miss`. Not fixed by any source document; tracked as an open configuration item (Section 16), same treatment as the queue bound above |
@@ -1344,6 +1401,8 @@ failed.
 | Session in-flight past the inactivity timeout with no further frames | `session_timeout` (Section 7.4) | Send `error` (`error_code: session_timeout`), discard buffer, free `session_id` |
 | Intent confidence below threshold              | n/a (FR-4 path, not a failure) | Route to clarification response, still logged as a normal decision-trace row |
 | Idle signal absent/stale at deferred-item release time (Section 11.1 R2/R4; idle-release rule detailed in `robot-runtime-spec.md` Section 8.2, host-executed) | `activity_unavailable` | Deliver at the grace-window deadline as normal (Section 11.3) — this is not an audio-delivery failure; `degradation_reason` here records that the idle-based early-release optimization could not be attempted, not that TTS delivery itself failed |
+| Interaction pipeline fails before a normal decision trace can be completed | `pipeline_failure` | Surface `error_code: pipeline_failure` and write a degraded trace with no policy-domain result |
+| Completed utterance cannot be accepted onto the bounded interaction-processing queue (queue at capacity, Section 11) | `queue_overflow` | Surface `error_code: queue_overflow` and write a degraded trace with no policy-domain result. Distinct from Section 13.1's per-user reminder-delivery queue overflow, which shares this `degradation_reason` name but has no `error` WS message of its own |
 
 ### 13.1 Queue Bound, Outage Tracking and Drain (fulfills D7; closes RID-015, CC-004)
 
@@ -1674,27 +1733,18 @@ invented (per project decision to keep these open):
 - `delivery_failed` queue bound, per user (Section 11.3, Section 13.1) —
   that the queue must be a fixed capacity, and the overflow policy
   (drop-oldest), are fixed as of this revision, satisfying D7's behavioral
-  contract in full. The numeric capacity itself is not fixed by D7 or
-  `roadmap.md` and remains open: it is a deployment/configuration
+  contract in full. The numeric capacity itself is not fixed by D7 and remains open: it is a deployment/configuration
   parameter, to be set (informed by expected per-user reminder rate and
   expected outage duration) before implementation/testing and confirmed
   before the live DEL-07 demonstration (26 September 2026). This does not
   reopen CC-004 — D7 requires the behavior, not a number — but it is a
   genuine open item, not future tuning of an already-fixed default.
-- **Written adviser/panel confirmation of the centralized-host architecture
-  and revised privacy claim — status: PENDING, blocking.** Sections 4 and
-  14 of this document specify the centralized architecture
-  unconditionally, per `SYNCRO-redesign-15k.md` §3–§6, which the article
-  author holds. That document itself states (§10, action item 1) that
-  this is a thesis-level decision requiring adviser sign-off **before
-  anything is built against it**, and does not itself constitute that
-  sign-off. As of this revision, no written confirmation is on file and
-  none is inferable from anything the author holds — **Sections 4 and 14
-  are written as settled but remain provisional on this approval, not yet
-  authorized.** This is what is being waited on, and nothing else in
-  either article is blocked by it. **Owner: article author (Almedejar).
-  Action: obtain the adviser's written confirmation and cite the record
-  here (replacing this entry's status), or, if it is not obtainable before
-  Week 2 transport work (WP-105, WP-106) begins, escalate the absence to
-  the adviser rather than let implementation proceed against an
-  unconfirmed premise.**
+- **Centralized-host architecture and revised privacy claim — DECIDED, not blocking.**
+  Decision recorded **26 August 2026**: participant audio may cross a network
+  boundary from the participant site to the **team-operated research host**.
+  The privacy claim is therefore **not local-only** and must not be described
+  as pending or blocking. The following protections remain binding conditions
+  of this architecture and are not optional: **(1) encryption in transit,
+  (2) encryption at rest, and (3) a written retention-and-deletion schedule**.
+  These conditions are specified in Section 14 and govern implementation and
+  verification of the centralized-host data boundary.

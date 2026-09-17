@@ -1,6 +1,33 @@
 # SYNCRO Host
 
-Host-side runtime for the SYNCRO robot stack. This repository contains the **WP-102 host pipeline**, the **WP-103 dialogue-graph scaffold**, and the **WP-104 acoustic-affect ML pipeline/runtime boundary**.
+Host-side runtime for the SYNCRO robot stack. This repository contains the **WP-102 host pipeline**, the **WP-103 dialogue-graph scaffold**, the **WP-104 acoustic-affect ML pipeline/runtime boundary**, and the **Architecture Fixing sprint** that followed the WP-103/104 arch review, including WP-105's `/v1/stream` transport scaffold.
+
+The arch review's blocking findings F1-F5 are closed; F6's documented
+mitigations are committed and tested, while the separate intent/reasoning
+model split remains deferred past this sprint. Its structural findings
+(S1-S9, I1) are committed and tested: graph-state
+reducers (F5), the `HostComponents` composition-root dataclass (S2), SQLite
+WAL (S3), host-side audio resampling (S5), `InteractionRunner` owning
+trace-finalization (F1), the failure-boundary mapping (F4), the
+degraded-trace contract (F2), the intent/reasoning timeout split (F6), the
+`InteractionWorker` background thread (S1), the `Connection` auth/clock-sync
+seam (S6), and the `/v1/stream` scaffold are all in. Two things are still
+open, deliberately:
+
+* **D4** — the intent classifier and the reasoning LLM still share one
+  Ollama model (`LLM_MODEL`); the review's cheapest-first F6 mitigations
+  (independent timeouts, `num_predict`, `keep_alive`) are in, but splitting
+  them into separate intent/reasoning models is deferred past this sprint.
+* **WP-105 full-behavior transport work**, out of scope for the `/v1/stream`
+  scaffold and enumerated in `api/ws/stream.py`'s module docstring: real
+  device-token authentication (`default_dev_authenticate` accepts every
+  connection), the 30s session-inactivity reaper, real playback-rate
+  pacing on the downlink, and writing `condition_report`'s
+  `degradation_reason` onto a decision-trace row (logged only today).
+
+See `techdocs/ARCHITECTUREREVIEW12926.md` for the review and its full
+finding list, and this document's later sections for how each piece fits
+together.
 
 ## What is implemented
 
@@ -71,6 +98,8 @@ The WP-104 affect model, feature extraction, training, evaluation, and macro-F1 
 
 ```text
 api/                 FastAPI application and HTTP/WebSocket surfaces
+  ws/stream.py        /v1/stream WebSocket route (WP-105 transport scaffold)
+  ws/connection.py     Connection: auth + clock-sync seam (S6)
 adapters/            External technology adapters
   affect/             WP-104 affect runtime adapter
   llm/               Ollama adapter
@@ -80,7 +109,12 @@ audio/               Host microphone, playback, and audio contracts
 composition/         Composition root / dependency wiring
 config/              Typed environment-backed settings
 pipeline/            LangGraph state, graph, nodes, and orchestration
+  interaction.py      InteractionRunner (F1/F3/F4) — wired into build_host_components() and api/ws/stream.py
+  worker.py           InteractionWorker: bounded queue + background thread (S1)
 storage/             SQLite schema, context retrieval, and decision traces
+ml/affect/           WP-104 feature extraction, training, tuning, and evaluation
+datasets/            Committed WP-104 manifests and feature tables
+evidences/           Live-run stage-timing logs and WP-104 ML acceptance evidence
 scripts/             Manual operational runners and WP-103 seeding
 techdocs/            SPEC / ARCH / roadmap and supporting documents
 tests/               Unit, contract, architecture, and integration tests
@@ -160,9 +194,25 @@ DB_PATH=./syncro.db
 INTENT_CONFIDENCE_THRESHOLD=0.60
 AFFECT_DETECTOR_BACKEND=development
 AFFECT_CLASSIFIER_PATH=./models/affect/affect_svc_v1.joblib
+INTENT_TIMEOUT_S=5
+REASONING_TIMEOUT_S=6
+NON_LLM_TIMEOUT_MARGIN_S=10
+INTENT_NUM_PREDICT=40
+OLLAMA_KEEP_ALIVE=10m
+SESSION_TIMEOUT_SECONDS=30
 ```
 
 `.env` is local configuration and must not be committed.
+
+**Fixed (D5/F6):** the intent classifier and the reasoning LLM call are
+two sequential calls per turn. They used to share one `OLLAMA_TIMEOUT_S`,
+which only guaranteed each call individually stayed under
+`SESSION_TIMEOUT_SECONDS` -- not their sum. They now have independent
+timeouts, `INTENT_TIMEOUT_S` and `REASONING_TIMEOUT_S`, and
+`Settings.__post_init__` rejects any configuration where
+`INTENT_TIMEOUT_S + REASONING_TIMEOUT_S + NON_LLM_TIMEOUT_MARGIN_S` is not
+under `SESSION_TIMEOUT_SECONDS`. The full model-split question (D4) is still
+deferred past this sprint.
 
 ## 3. Install and prepare Ollama
 
@@ -566,18 +616,41 @@ The wake-word stage is intentionally simulated in this host runner because wake-
 
 ## 8. How the architecture is used
 
-For normal application execution, use the composition root instead of constructing concrete adapters inside graph nodes:
+For normal application execution, use the composition root and the
+`InteractionRunner` it builds — never call `graph.invoke()` and
+`tts.synthesize()` separately outside of tests:
 
 ```python
-from composition.bootstrap import build_wp103_components
+from time import monotonic
+
+from composition.bootstrap import build_host_components
 from config.settings import get_settings
+from pipeline.interaction import SessionContext
 
 settings = get_settings()
+components = build_host_components(settings)
 
-graph, store, audio_input, audio_output, tts, affect_detector = (
-    build_wp103_components(settings)
+session = SessionContext(
+    session_id="demo-session",
+    user_id="demo-user",
+    started_monotonic=monotonic(),
+)
+result = components.runner.run(
+    session=session, audio=audio, sample_rate=settings.audio_sample_rate_hz
 )
 ```
+
+`components.runner` (`pipeline/interaction.py`'s `InteractionRunner`) owns
+the graph → TTS → resample → trace sequence as one unit — this is exactly
+the "second, drifting copy of the sequence" problem it was built to
+eliminate (see its module docstring), and `build_host_components()` now
+populates `HostComponents.runner` (and `.worker`) rather than leaving them
+unset. `scripts/run_wp103.py` calls the runner directly; `api/ws/stream.py`
+calls it indirectly through `components.worker` (`InteractionWorker`, S1),
+which runs it on a single background thread so a blocking interaction never
+stalls the WebSocket event loop. Calling `graph.invoke()` and
+`tts.synthesize()` separately, as earlier versions of this document showed,
+is the pattern to avoid in new code.
 
 The important dependency direction is:
 
@@ -696,15 +769,3 @@ Keep acceptance evidence small and reproducible. For WP-103, useful evidence inc
 * the resulting decision trace row(s).
 
 See `techdocs/SPEC.md`, `techdocs/ARCH.md`, and `techdocs/roadmap.md` for the normative architecture and acceptance requirements.
-
-````
-
-The actual fix is the block under **§8**, where the old five-value unpack is replaced with the current six-value return:
-
-```python
-graph, store, audio_input, audio_output, tts, affect_detector = (
-    build_wp103_components(settings)
-)
-````
-
-That matches the current composition-root return signature.

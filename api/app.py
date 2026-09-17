@@ -1,7 +1,39 @@
+"""FastAPI application entrypoint.
+"""
+
+from __future__ import annotations
+
+from contextlib import asynccontextmanager
+from typing import AsyncIterator
+
 from fastapi import FastAPI
 
 from api.http import health
+from api.ws import stream
+from api.ws.session_registry import SessionRegistry
+from composition.bootstrap import build_host_components
+from config.settings import get_settings
 
-app = FastAPI(title="SYNCRO Host")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    settings = get_settings()
+    components = build_host_components(settings)
+    components.worker.start()
+
+    app.state.host_components = components
+    app.state.stream_deps = stream.StreamDeps(
+        worker=components.worker,
+        session_registry=SessionRegistry(),
+        audio_sample_rate_hz=settings.audio_sample_rate_hz,
+    )
+    try:
+        yield
+    finally:
+        components.worker.stop(timeout=settings.session_timeout_seconds)
+
+
+app = FastAPI(title="SYNCRO Host", lifespan=lifespan)
 
 app.include_router(health.router)
+app.include_router(stream.router)

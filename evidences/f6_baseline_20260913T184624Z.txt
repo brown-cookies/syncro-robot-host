@@ -1,0 +1,76 @@
+SYNCRO Host — F6 Baseline Measurement
+============================================================
+Generated (UTC): 2026-09-13T18:46:24.098139+00:00
+Git revision: 1cb6e8f530212cc1d57acea339c55ccf73116c48
+
+PURPOSE
+-------
+Measure the current unmodified two-LLM WP-103 path before any F6 optimization.
+No num_predict, keep_alive, model split, timeout change, or STT-device change is applied.
+
+CURRENT CONFIGURATION
+---------------------
+llm_model: llama3.1:8b-instruct-q4_K_M
+ollama_url: http://localhost:11434
+ollama_timeout_s: 60.0
+session_timeout_seconds: 30
+stt_device: cpu
+stt_model_size: small
+stt_compute_type: int8
+stt_sample_rate_hz: 16000
+
+EXPERIMENT
+----------
+Warm-up runs: 3
+Measured runs: 10
+Same captured audio replayed across runs: yes
+Production F6 changes applied: none
+
+MEASUREMENT LIMITATIONS
+-----------------------
+- The current Piper adapter is blocking; TTS onset is not exposed, so interaction_to_tts_completion_s is the observable latency proxy.
+- Affect timing comes from the Phase 1 reducer-backed graph timing field.
+- STT, intent, context, reasoning, policy, and TTS timings are observed by wrapping existing runtime boundaries in this script only.
+- The benchmark replays one captured audio sample across measured runs for repeatability; audio capture time is reported separately and is not included in interaction timing.
+- The current adapters do not expose Ollama token/eval metrics through their contracts, so this baseline records wall-clock stage latency only.
+
+SUMMARY (MEASURED RUNS)
+=======================
+stt_s: count=10, mean=2.023220489997766, median=2.072608799993759, p95=2.1687339000054635, min=1.4922942999983206, max=2.1687339000054635
+intent_s: count=10, mean=2.571465250001347, median=2.487978250006563, p95=2.8917805000091903, min=2.4564982000010787, max=2.8917805000091903
+context_s: count=10, mean=0.00169776999973692, median=0.002126699997461401, p95=0.0022551000001840293, min=0.0, max=0.0022551000001840293
+reasoning_s: count=10, mean=2.5645484900000155, median=2.8864256000015303, p95=3.911286400005338, min=0.0, max=3.911286400005338
+policy_s: count=10, mean=5.599998985417187e-07, median=0.0, p95=3.000008291564882e-06, min=0.0, max=3.000008291564882e-06
+affect_s: count=10, mean=0.11441011000279104, median=0.11365405000833562, p95=0.12602280000282917, min=0.10087569999450352, max=0.12602280000282917
+tts_s: count=10, mean=0.1700733300007414, median=0.14996584999607876, p95=0.36544180000782944, min=0.08681749999232125, max=0.36544180000782944
+graph_s: count=10, mean=7.168542810004146, median=7.5030755500047235, p95=8.683001900004456, min=4.525590400007786, max=8.683001900004456
+llm_total_s: count=10, mean=5.136013740001363, median=5.4569918000051985, p95=6.569251900000381, min=2.4564982000010787, max=6.569251900000381
+interaction_to_tts_completion_s: count=10, mean=7.338632569996117, median=7.653309100001934, p95=8.858909399990807, min=4.66490829999384, max=8.858909399990807
+total_observed_s: count=10, mean=7.3815106099980765, median=7.685389399994165, p95=8.932226499993703, min=4.723974599997746, max=8.932226499993703
+
+PER-RUN RESULTS
+===============
+run | kind | stt_s | intent_s | context_s | reasoning_s | policy_s | affect_s | tts_s | graph_s | llm_total_s | interaction_to_tts_completion_s | total_observed_s | trace_id
+------------------------------------------------------------
+1 | warmup | 1.817941 | 2.773507 | 0.005492 | 3.536369 | 0.000000 | 1.103567 | 0.186202 | 8.155948 | 6.309876 | 8.342173 | 8.359536 | 452a9ae1-c8bb-41d5-85d4-f3ea17dfd988
+2 | warmup | 1.555410 | 2.662328 | 0.002157 | 3.512180 | 0.000000 | 0.105011 | 0.362472 | 7.739540 | 6.174508 | 8.102034 | 8.182878 | d49aaad5-c57b-45f9-a371-210a4bface8e
+3 | warmup | 1.591927 | 2.655289 | 0.002490 | 3.268062 | 0.000000 | 0.102823 | 0.061070 | 7.525437 | 5.923351 | 7.586521 | 7.600042 | 0bb90ac7-8489-45f3-a414-21d104a3f281
+1 | measured | 2.028410 | 2.891781 | 0.002166 | 3.383028 | 0.000000 | 0.113770 | 0.100068 | 8.313238 | 6.274809 | 8.413323 | 8.428986 | e2c2229a-eea0-4b37-9f5c-358fa3965b3f
+2 | measured | 2.045194 | 2.656996 | 0.002175 | 2.884190 | 0.000000 | 0.122993 | 0.159730 | 7.595981 | 5.541187 | 7.755726 | 7.802151 | 3af12fa0-64d3-4f84-ae2d-5cfb8e62cd58
+3 | measured | 2.091118 | 2.491821 | 0.001997 | 3.450853 | 0.000003 | 0.115913 | 0.194400 | 8.043866 | 5.942674 | 8.238288 | 8.316946 | 3eaea3f0-063e-4929-83c0-a72c45a6bd6c
+4 | measured | 1.492294 | 2.484136 | 0.002153 | 2.888661 | 0.000000 | 0.100876 | 0.140202 | 6.875130 | 5.372797 | 7.015347 | 7.085241 | 467c0c06-87cb-4e4c-90b3-151f5347eb27
+5 | measured | 2.090860 | 2.481954 | 0.002255 | 2.767624 | 0.000003 | 0.125964 | 0.200500 | 7.350375 | 5.249578 | 7.550892 | 7.568628 | 7576156a-8464-4908-a021-2a77ae6b9c68
+6 | measured | 2.054243 | 2.464402 | 0.000000 | 0.000000 | 0.000000 | 0.126023 | 0.139303 | 4.525590 | 2.464402 | 4.664908 | 4.725063 | 2398b1e8-9803-4bd1-bb94-4dc4fb8a8245
+7 | measured | 2.102836 | 2.456498 | 0.000000 | 0.000000 | 0.000000 | 0.102404 | 0.138378 | 4.566396 | 2.456498 | 4.704790 | 4.723975 | 9940b02c-7ed0-4533-b2fd-afb1af2b6640
+8 | measured | 2.168734 | 2.464357 | 0.002182 | 3.678486 | 0.000000 | 0.112522 | 0.365442 | 8.321679 | 6.142843 | 8.687136 | 8.704904 | 132d64d0-fc01-4549-affe-c83a6bfdf252
+9 | measured | 2.054358 | 2.664742 | 0.001950 | 2.681356 | 0.000000 | 0.113538 | 0.086817 | 7.410170 | 5.346098 | 7.497006 | 7.526986 | 40a48ed2-3175-45fe-8e10-d94b09e6f4d9
+10 | measured | 2.104157 | 2.657965 | 0.002101 | 3.911286 | 0.000000 | 0.110099 | 0.175892 | 8.683002 | 6.569252 | 8.858909 | 8.932226 | 3210dd20-a458-4b0f-b9ee-003d8ea174cd
+
+STAGE TIMING SOURCE
+===================
+adapter-method probes + graph reducer timings
+
+BASELINE USE
+=============
+Use this TXT evidence as the before-measurement baseline for Phase 9 F6 decisions.
+Do not treat it as optimized performance evidence; no F6 optimization is applied here.

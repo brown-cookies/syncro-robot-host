@@ -1,0 +1,12 @@
+[startup] Warming 'llama3.1:8b-instruct-q4_K_M' into Ollama (cold load can take a while on first run)...
+WP-103 live dialogue graph
+[config] affect_detector_backend='classifier' affect_classifier_path='./models/affect/affect_svc_v1.joblib' (exists=True) resolved_detector=ClassifierAffectDetector
+[config] ollama_model='llama3.1:8b-instruct-q4_K_M' stt_model_size='small' compute_type='int8'
+[config] db_path='./syncro.db' user_id='wp103-demo-user'
+[wake_word] Host wake-word model is edge-owned per SPEC; this runner simulates the received event.
+[audio_capture] Recording 5s from the USB microphone -- speak now...
+[wake_word] Simulating edge-confirmed wake word 'syncro' for local development
+[start_audio] session_id=4cc06c4d-1740-4e5c-b6c7-b026fce933e4 user_id=wp103-demo-user wake_word_detected_at=1789499458295
+[audio_capture] OK (5.288s, sample_rate=16000)
+[interaction] Running InteractionRunner (graph -> TTS -> resample -> trace)...
+[interaction] FAILED at stage='intent' wire_code='pipeline_failure': Intent classification request failed: HTTPConnectionPool(host='localhost', port=11434): Read timed out. (read timeout=5.0)

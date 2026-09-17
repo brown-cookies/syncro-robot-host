@@ -26,6 +26,7 @@ DegradationReason = Literal[
     "activity_unavailable",
     "queue_overflow",
     "affect_detector_failure",
+    "pipeline_failure",
 ]
 NetworkEvent = Literal[
     "connect_attempt",
@@ -49,6 +50,45 @@ class ResponsePayload(_Contract):
     state_tag: StateTag | None = None
     policy_rule: PolicyRule
     lead_time_min: float
+
+
+class DegradedTraceRecord(_Contract):
+    """Decision-trace record for interactions that never produced a normal turn."""
+
+    trace_id: UUID
+    session_id: str | None
+    user_id: str
+    timestamp: datetime
+    intent: str | None = None
+    intent_confidence: float | None = Field(default=None, ge=0.0, le=1.0)
+    retrieved_context_ids: list[str] | None = None
+    affect_level: Literal["Low", "Moderate", "High"] | None = None
+    deadline_proximity: Literal["n/a"] = "n/a"
+    policy_rule: Literal["n/a"] = "n/a"
+    action_taken: Literal["n/a"] = "n/a"
+    lead_time_min: float | None = None
+    reminder_outcome: Literal["n/a"] = "n/a"
+    degradation_reason: DegradationReason
+    network_event: NetworkEvent | None = None
+    latency_ms: float = Field(default=0.0, ge=0.0)
+    latency_basis: LatencyBasis = "host_observed_only"
+
+    @model_validator(mode="after")
+    def validate_degraded_fields(self) -> "DegradedTraceRecord":
+        """Enforce the Phase 8 degraded-record contract."""
+        no_interaction_reasons = {
+            "session_timeout",
+            "queue_overflow",
+            "pipeline_failure",
+        }
+        if self.degradation_reason in no_interaction_reasons and self.intent is not None:
+            raise ValueError(
+                "degraded traces with no-interaction reasons cannot carry an intent"
+            )
+        if self.degradation_reason in no_interaction_reasons:
+            if self.policy_rule != "n/a" or self.deadline_proximity != "n/a":
+                raise ValueError("degraded traces cannot carry a policy-domain result")
+        return self
 
 
 class DecisionTraceRecord(_Contract):

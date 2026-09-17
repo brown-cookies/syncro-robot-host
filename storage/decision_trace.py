@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from pipeline.contracts import DecisionTraceRecord
+from pipeline.contracts import DegradedTraceRecord, DecisionTraceRecord
 from storage.database import SQLiteDatabase
 
 
@@ -39,6 +39,21 @@ class DecisionTraceRepository:
                 values,
             )
 
+    def save_degraded(self, record: dict[str, Any]) -> None:
+        """Persist a validated degraded trace in the shared decision_trace table."""
+        validated = DegradedTraceRecord.model_validate(record)
+        record_json = validated.model_dump(mode="json")
+        values = [record_json.get(name) for name in TRACE_FIELDS]
+        values[6] = json.dumps(values[6]) if values[6] is not None else None
+
+        with self._database.connection() as conn:
+            conn.execute(
+                f"INSERT INTO decision_trace ({', '.join(TRACE_FIELDS)}) "
+                f"VALUES ({', '.join('?' for _ in TRACE_FIELDS)})",
+                values,
+            )
+
+
     def suppress_pending_reminder_traces(self, user_id: str) -> int:
         """Suppress other pending reminder traces when policy requires it."""
         if not user_id:
@@ -67,6 +82,7 @@ class DecisionTraceRepository:
         result: list[dict[str, Any]] = []
         for row in rows:
             item = dict(row)
-            item["retrieved_context_ids"] = json.loads(item["retrieved_context_ids"])
+            if item["retrieved_context_ids"] is not None:
+                item["retrieved_context_ids"] = json.loads(item["retrieved_context_ids"])
             result.append(item)
         return result

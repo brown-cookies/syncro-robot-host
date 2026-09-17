@@ -53,8 +53,35 @@ class Settings:
     ollama_url: str = "http://localhost:11434"
     llm_model: str = "llama3.1:8b-instruct-q4_K_M"
     ollama_num_ctx: int = 2048
-    ollama_timeout_s: float = 60.0
     intent_confidence_threshold: float = 0.60
+
+    # F6/D5 — the intent classifier and reasoning LLM are two sequential
+    # Ollama calls per turn. They used to share one `ollama_timeout_s`, which
+    # only guaranteed each call individually stayed under the session budget
+    # — not their sum. These three are sized so
+    # intent_timeout_s + reasoning_timeout_s + non_llm_timeout_margin_s stays
+    # under session_timeout_seconds; see __post_init__.
+    intent_timeout_s: float = 5.0
+    reasoning_timeout_s: float = 6.0
+    non_llm_timeout_margin_s: float = 10.0
+    intent_num_predict: int = 40
+    ollama_keep_alive: str = "10m"
+
+    # One-time cold-load budget for the composition-root warm-up call, kept
+    # deliberately separate from intent_timeout_s/reasoning_timeout_s: those
+    # two are meant to bound per-turn *inference* latency under D5's
+    # invariant, not the multi-second-to-tens-of-seconds cost of Ollama
+    # loading model weights off disk on the very first call of a process.
+    llm_warmup_timeout_s: float = 120.0
+
+    # S1 — bounded queue size between the (future) async transport and the
+    # single InteractionWorker thread. A caller that fills this queue gets
+    # WorkerQueueFullError immediately rather than blocking the event loop;
+    # this bound is how many interactions may be backlogged before that
+    # happens. Small on purpose: a deep queue just delays the same overload
+    # signal, it doesn't absorb it (Ollama's two sequential calls per turn
+    # are the actual bottleneck, per F6).
+    interaction_queue_maxsize: int = 8
 
     # STT
     stt_model_size: str = "small"
@@ -92,6 +119,22 @@ class Settings:
     # Logging
     log_level: str = "INFO"
 
+    def __post_init__(self) -> None:
+        """Enforce the D5 sum-based timeout invariant this dataclass can't express per-field."""
+        budget = (
+            self.intent_timeout_s
+            + self.reasoning_timeout_s
+            + self.non_llm_timeout_margin_s
+        )
+        if budget >= self.session_timeout_seconds:
+            raise ValueError(
+                "D5 invariant violated: intent_timeout_s + reasoning_timeout_s + "
+                f"non_llm_timeout_margin_s totals {budget}s, which is not under "
+                f"session_timeout_seconds ({self.session_timeout_seconds}s). "
+                "The two sequential Ollama calls could outlast the session "
+                "budget even though each individually looks fine."
+            )
+
     @classmethod
     def from_env(cls) -> "Settings":
         """Build application settings from the current environment."""
@@ -107,11 +150,29 @@ class Settings:
             ollama_url=os.getenv("OLLAMA_URL", defaults.ollama_url),
             llm_model=os.getenv("LLM_MODEL", defaults.llm_model),
             ollama_num_ctx=_int_env("OLLAMA_NUM_CTX", defaults.ollama_num_ctx),
-            ollama_timeout_s=_float_env(
-                "OLLAMA_TIMEOUT_S", defaults.ollama_timeout_s
-            ),
             intent_confidence_threshold=_float_env(
                 "INTENT_CONFIDENCE_THRESHOLD", defaults.intent_confidence_threshold
+            ),
+            intent_timeout_s=_float_env(
+                "INTENT_TIMEOUT_S", defaults.intent_timeout_s
+            ),
+            reasoning_timeout_s=_float_env(
+                "REASONING_TIMEOUT_S", defaults.reasoning_timeout_s
+            ),
+            non_llm_timeout_margin_s=_float_env(
+                "NON_LLM_TIMEOUT_MARGIN_S", defaults.non_llm_timeout_margin_s
+            ),
+            intent_num_predict=_int_env(
+                "INTENT_NUM_PREDICT", defaults.intent_num_predict
+            ),
+            ollama_keep_alive=os.getenv(
+                "OLLAMA_KEEP_ALIVE", defaults.ollama_keep_alive
+            ),
+            llm_warmup_timeout_s=_float_env(
+                "LLM_WARMUP_TIMEOUT_S", defaults.llm_warmup_timeout_s
+            ),
+            interaction_queue_maxsize=_int_env(
+                "INTERACTION_QUEUE_MAXSIZE", defaults.interaction_queue_maxsize
             ),
 
             # STT

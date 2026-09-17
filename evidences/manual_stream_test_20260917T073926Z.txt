@@ -1,0 +1,45 @@
+[audio_capture] Recording 3.0s from the default microphone -- speak now...
+[audio_capture] OK
+[audio_source] microphone
+[config] uri='ws://127.0.0.1:8765/v1/stream' user_id='manual-stream-test-user'
+[clock_sync] request edge_send_ms=1789630752245
+[clock_sync] response {'type': 'clock_sync_response', 'edge_send_ms': 1789630752245, 'host_recv_ms': 1789630752245, 'host_send_ms': 1789630752245}
+[start_audio] session_id=4a6421c9-4a55-4c71-80ea-2cb3b0223b4c user_id=manual-stream-test-user wake_word_detected_at=1789630752245
+[start_audio] {'type': 'ready', 'session_id': '4a6421c9-4a55-4c71-80ea-2cb3b0223b4c'}
+[uplink_audio] sending 30 frame(s), 96000 bytes (3.00s of 16kHz PCM16)
+[interaction] response received after 8.005s
+[interaction] tts_text: Hello! I'm doing well, thank you for asking. However, I don't have any overdue tasks to report at this time.
+[interaction] policy_rule: n/a
+[interaction] state_tag: speaking
+[interaction] lead_time_min: 15.0
+[downlink_audio] received 61 chunk(s), 194304 bytes
+[tts_audio_end] {"type":"tts_audio_end","session_id":"4a6421c9-4a55-4c71-80ea-2cb3b0223b4c","frame_count":61}
+[audio_output] Playing synthesized audio on host speakers...
+[audio_output] OK
+
+--- DEL-03 decision trace (via direct db access, see this script's docstring) ---
+  trace_id: fb06b4e5-c85c-4e1e-8521-c336c94e6747
+  session_id: 4a6421c9-4a55-4c71-80ea-2cb3b0223b4c
+  user_id: manual-stream-test-user
+  timestamp: 2026-09-17T07:39:20.038145Z
+  intent: ask_status
+  intent_confidence: 1.0
+  retrieved_context_ids: []
+  affect_level: High
+  deadline_proximity: n/a
+  policy_rule: n/a
+  action_taken: deliver
+  lead_time_min: 15.0
+  reminder_outcome: n/a
+  degradation_reason: None
+  network_event: None
+  latency_ms: 7993.634521484375
+  latency_basis: wake_word_to_tts
+
+--- pipeline breakdown, by node (pipeline/graph.py) ---
+[node1_stt] transcript: not available -- not a persisted field, and InteractionRunner's F3 boundary never returns intermediate graph state to begin with (see this function's docstring)
+[node1_intent] intent=ask_status intent_confidence=1.0
+[node2_context] retrieved_context_ids=[]
+[affect] affect_level=High degradation_reason=None
+[node3_llm] draft_response: not available -- only node4_policy's finalized text crosses the wire, as tts_text (see [interaction] above)
+[node4_policy] policy_rule=n/a deadline_proximity=n/a action_taken=deliver lead_time_min=15.0 reminder_outcome=n/a

@@ -40,8 +40,11 @@ def test_llm_builds_expected_request(monkeypatch, test_settings):
         "model": "test-model",
         "prompt": "hello",
         "stream": False,
+        "keep_alive": "10m",
         "options": {"num_ctx": 512},
     }
+    # Reasoning calls use reasoning_timeout_s (D5), independent of the intent
+    # classifier's intent_timeout_s.
     assert captured["kwargs"]["timeout"] == 1.0
 
 

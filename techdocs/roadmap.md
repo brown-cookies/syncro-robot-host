@@ -7,12 +7,12 @@
 | **From** | Yuqin Han (韩玉琴) |
 | **To** | Team 9 — Almedejar, Espinosa, Marimla · BS Computer Engineering, Holy Angel University |
 | **Document type** | Project execution plan |
-| **Revision** | 2.1 |
-| **Date** | 23 August 2026 |
+| **Revision** | 2.5 |
+| **Date** | 14 September 2026 |
 | **Status** | Baselined. Schedule of record for the 1 October 2026 prototype defense |
 | **Delivery window** | Sunday 23 August 2026 – Thursday 1 October 2026 · 39 calendar days |
-| **Supersedes** | `SYNCRO-dev-learning-roadmap.md` §11 (schedule only; that document remains the reference for *what to learn*) · Revision 1.0 of this plan, 16 August 2026 |
-| **Reads with** | `SYNCRO-panel-dispositions-signed.md` (D1–D8 dispositions, **signed**) · `SYNCRO-redesign-15k.md` (architecture of record) · `SYNCRO-edge-compute-alternatives.md` (requirements R1–R10, platform selection) · `../archive/REVIEWPANELENGG-TEAM9.md` (reasoning behind D1–D8, role assignments) |
+| **Supersedes** | `manuscript/SYNCRO-dev-learning-roadmap.md` §11 (schedule only; that document remains the reference for *what to learn*) · Revision 1.0 of this plan, 16 August 2026 |
+| **Reads with** | `decisions/SYNCRO-panel-dispositions-signed.md` (D1–D8 dispositions, **signed**) · `decisions/SYNCRO-redesign-15k.md` (architecture of record) · `decisions/SYNCRO-edge-compute-alternatives.md` (requirements R1–R10, platform selection) · `archive/REVIEWPANELENGG-TEAM9.md` (reasoning behind D1–D8, role assignments) |
 | **Baseline dependency** | Procurement succeeds; all parts ordered 23 August, boards in hand by 29 August. See RSK-03 |
 | **Distribution** | Team 9 · project adviser · external firmware reviewer |
 
@@ -22,8 +22,11 @@
 |:---|:---|:---|:---|
 | 1.0 | 16 Aug 2026 | Y. Han | Initial sprint roadmap |
 | 2.0 | 19 Aug 2026 | Y. Han | Restructured as a project execution plan. All Rev 1.0 content preserved and reorganised into standard delivery artifacts: work breakdown structure, RACI matrix, requirements traceability matrix, risk register, assumptions/dependencies/constraints register, change control, deferred-scope backlog. Two substantive corrections: (a) the firmware review tiers, previously labelled R1/R2/R3, collided with system requirements R1–R10 and are renamed **Review Class A/B/C**; (b) traceability now covers all ten requirements, including those deliberately deferred, which Rev 1.0 left unstated. No dates, owners, or scope decisions were changed |
-| 2.2 | 26 Aug 2026 | Y. Han | Reduced and citation-repaired ahead of transmission to the AI/software lead. **Removed as duplication:** the RACI matrix (§3 and §2 already carry exactly one accountable owner per package and per deliverable); the per-week owner/work tables in §4.4 (restated §3 verbatim — §4.4 now carries objectives, gates and exit conditions only); the communications cadence and escalation tables (§11.1); five risk narratives that restated their own register rows (§8.3); and 23 glossary entries for standard pipeline components. **Citations repaired:** Figure 17 re-cited to `SYNCRO-redesign-15k.md` §6.1, which carries the same VRAM numbers in prose; a broken `../archive/REVIEWPANELENGG.md` reference at §8 corrected to `-TEAM9`; §7 notes that all ten requirements are restated in full in-table. **No dates, owners, work packages, gates, risks, acceptance criteria or scope decisions changed.** 934 lines to 793 |
-| 2.1 | 23 Aug 2026 | Y. Han | Panel dispositions D1–D8 signed by the project adviser (letter of 20 Aug 2026). Disposition of record moves from `../archive/REVIEWPANELENGG-TEAM9.md` to `SYNCRO-panel-dispositions-signed.md`; both prior decision records archived. New **RSK-13** records that the panel has not yet ruled on the three reconsiderations (D4, D6, D7) or on whether any item was a condition of approval. **RSK-01 and A-01 are unchanged** — the letter does not raise the privacy claim and G1b still runs on 23 Aug. No dates, owners or scope decisions changed |
+| 2.1 | 23 Aug 2026 | Y. Han | Panel dispositions D1–D8 signed by the project adviser (letter of 20 Aug 2026). Disposition of record moves from `archive/REVIEWPANELENGG-TEAM9.md` to `decisions/SYNCRO-panel-dispositions-signed.md`; both prior decision records archived. New **RSK-13** records that the panel has not yet ruled on the three reconsiderations (D4, D6, D7) or on whether any item was a condition of approval. **RSK-01 and A-01 are unchanged** — the letter does not raise the privacy claim and G1b still runs on 23 Aug. No dates, owners or scope decisions changed |
+| 2.2 | 26 Aug 2026 | Y. Han | Reduced and citation-repaired ahead of transmission to the AI/software lead. **Removed as duplication:** the RACI matrix (§3 and §2 already carry exactly one accountable owner per package and per deliverable); the per-week owner/work tables in §4.4 (restated §3 verbatim — §4.4 now carries objectives, gates and exit conditions only); the communications cadence and escalation tables (§11.1); five risk narratives that restated their own register rows (§8.3); and 23 glossary entries for standard pipeline components. **Citations repaired:** Figure 17 re-cited to `decisions/SYNCRO-redesign-15k.md` §6.1, which carries the same VRAM numbers in prose; a broken `archive/REVIEWPANELENGG.md` reference at §8 corrected to `-TEAM9`; §7 notes that all ten requirements are restated in full in-table. **No dates, owners, work packages, gates, risks, acceptance criteria or scope decisions changed.** 934 lines to 793 |
+| 2.3 | 3 Sep 2026 | Y. Han | **G1b answered yes.** The project adviser confirmed A-01 and A-07 in person on 26 August 2026. The privacy claim may change: audio may cross a network boundary to a research-controlled host. The 1 October defense grades a **prototype**, not a complete system, and the adviser stated further that **a software-only prototype is acceptable if hardware is not available**. **RSK-01 and RSK-10 are closed**; A-01 and A-07 are confirmed. RSK-03, RSK-04 and RSK-06 retain their likelihoods but fall in impact, because a Half A demonstration is now an adviser-sanctioned outcome rather than a salvage — see §8.2. WP-303 is unblocked. The three protections at `decisions/SYNCRO-redesign-15k.md` §4.1 — WireGuard in transit, encryption at rest, and a written retention-and-deletion schedule — are design conditions of the changed claim and remain binding; this approval does not discharge them. No dates, owners, work packages, gates, acceptance criteria or scope decisions changed |
+| 2.4 | 14 Sep 2026 | Y. Han | Housekeeping. The header block still read Revision 2.1 / 23 August 2026 after Revs 2.2 and 2.3 were added; corrected to the current revision and date. The revision history table was out of order (2.2 above 2.1) and a blank line split the 2.3 row into a separate table; rows re-sorted and merged. **No dates, owners, work packages, gates, risks, acceptance criteria or scope decisions changed** |
+| 2.5 | 14 Sep 2026 | Y. Han | **G1 answered yes; RSK-02 and A-02 closed.** The 17 August 2026 GPU measurement (runs `20260817T024232Z` and `20260817T024334Z`) answered G1 six days ahead of the scheduled gate but was never recorded in this plan: 5,876 MiB resident against the 6.5–7.4 GB budget, 1,687 MiB margin, 50.6 tok/s, 2.605 s warm. WP-101 marked complete. New §8.2 records the measurement and what it does not settle (the end-to-end turn sits at 98% of the 3 s ceiling with two stages unmeasured; no risk row is added until the plan owner fixes whether 3 s is end-to-end or LLM-stage). Former §8.2–8.4 renumbered §8.3–8.5. **Citation repair:** the register cited §8.4–§8.7 for RSK-05 to RSK-08 and A-05/D-03, subsections removed in Rev 2.2; all now point at §8.4 (the notes). **No dates, owners, work packages, gates, acceptance criteria or scope decisions changed** |
 
 ### Approval
 
@@ -33,8 +36,8 @@
 | AI/software lead | Almedejar | Workstream 1 and 4 acceptance | Pending acknowledgement |
 | Hardware lead | Marimla | Workstream 2 acceptance | Pending acknowledgement |
 | Methods lead | Espinosa | Workstream 3 and 5 acceptance | Pending acknowledgement |
-| Project adviser | — | D1–D8 panel dispositions | **Signed** — letter of 20 Aug 2026, `SYNCRO-panel-dispositions-signed.md` |
-| Project adviser | — | A-01 (privacy claim) and A-07 (prototype-scope rubric) | **Still required by 23 Aug** — see G1b. Not covered by the signed letter |
+| Project adviser | — | D1–D8 panel dispositions | **Signed** — letter of 20 Aug 2026, `decisions/SYNCRO-panel-dispositions-signed.md` |
+| Project adviser | — | A-01 (privacy claim) and A-07 (prototype-scope rubric) | **Both confirmed** — in person, 26 Aug 2026. G1b answered yes; see §8.1 |
 
 ---
 
@@ -101,7 +104,7 @@ Identifier schemes used throughout. Each identifier is unique across the project
 
 | Prefix | Meaning | Defined in | Example |
 |:---|:---|:---|:---|
-| `R1`–`R10` | System requirement | `SYNCRO-edge-compute-alternatives.md` §3 | R6 — offline timer cache |
+| `R1`–`R10` | System requirement | `decisions/SYNCRO-edge-compute-alternatives.md` §3 | R6 — offline timer cache |
 | `DEL-nn` | Deliverable | §2 | DEL-06 |
 | `WP-nnn` | Work package | §3 | WP-207 |
 | `G1`–`G6` | Schedule gate — go/no-go decision point | §4.2 | G3 |
@@ -110,7 +113,7 @@ Identifier schemes used throughout. Each identifier is unique across the project
 | `RSK-nn` | Risk register entry | §8 | RSK-01 |
 | `A-nn` / `D-nn` / `C-nn` | Assumption / dependency / constraint | §9 | A-07 |
 | `BL-nn` | Deferred-scope backlog item | §12 | BL-04 |
-| `D1`–`D8` | Panel disposition | `SYNCRO-panel-dispositions-signed.md` | D8 console |
+| `D1`–`D8` | Panel disposition | `decisions/SYNCRO-panel-dispositions-signed.md` | D8 console |
 
 Workstream numbering: **1** host AI pipeline · **2** edge unit · **3** research methods and
 compliance · **4** integration (stretch) · **5** defense readiness and project management.
@@ -162,7 +165,7 @@ windows rather than hours; the team is part-time and hour-based estimates would 
 
 | WP | Work package | Owner | Window | Predecessor | Exit condition |
 |:---|:---|:---|:---|:---|:---|
-| **WP-101** | Platform capacity validation: `llama3.1:8b` on the RTX 4060 within the VRAM budget at `SYNCRO-redesign-15k.md` §6.1, `num_ctx` pinned to 2048, `faster-whisper small int8` loaded alongside | Marimla | 23 Aug | — | G1 answered with a timed measurement on a ~350-token request |
+| **WP-101** | Platform capacity validation: `llama3.1:8b` on the RTX 4060 within the VRAM budget at `decisions/SYNCRO-redesign-15k.md` §6.1, `num_ctx` pinned to 2048, `faster-whisper small int8` loaded alongside | Marimla | 23 Aug (measured 17 Aug) | — | **Complete** — G1 answered yes on the 17 Aug 2026 measurement: 5,876 MiB resident, 1,687 MiB margin, 2.605 s warm on a ~350-token request (§8.2) |
 | **WP-102** | Host runtime scaffolding: FastAPI + Ollama + `faster-whisper` + Piper, wired end to end and driven by a USB microphone. No robot involved | Almedejar | W0 | WP-101 | Audio in, synthesized audio out, on the host alone |
 | **WP-103** | Dialogue graph Nodes 1–4 on LangGraph, with the production policy table and decision-trace capture from the first commit | Almedejar | W1–W3 | WP-102 | DEL-01, DEL-03 acceptance criteria met |
 | **WP-104** | Affect branch: openSMILE eGeMAPS v02 → `StandardScaler` → `SVC(rbf, class_weight="balanced")`, evaluated with `GroupKFold` grouped by speaker | Almedejar | W1 | — | DEL-02: macro-F1 reported with method documented |
@@ -190,7 +193,7 @@ windows rather than hours; the team is part-time and hour-based estimates would 
 
 | WP | Work package | Owner | Window | Predecessor | Exit condition |
 |:---|:---|:---|:---|:---|:---|
-| **WP-301** | Adviser consultation on the privacy claim. Conducted in person, not by email | Espinosa | 23 Aug | — | G1b answered and recorded |
+| **WP-301** | Adviser consultation on the privacy claim. Conducted in person, not by email | Espinosa | 23 Aug (held 26 Aug) | — | **Complete** — G1b answered yes and recorded, 26 Aug 2026 (§8.1) |
 | **WP-302** | Ethics amendment drafting. Runs beyond this plan to December | Espinosa | W0–W5 → Dec | WP-301 | DEL-10 acceptance criteria met |
 | **WP-303** | Consent materials rewritten against the revised data boundary | Espinosa | W1 | WP-301 | Materials consistent with the approved architecture |
 | **WP-304** | D8 console stub: task entry and self-report only | Espinosa | W1 | — | Stub accepts task entry and self-report; full console is BL-05 |
@@ -235,8 +238,8 @@ gate changes the plan on the same day.** It does not roll silently into the foll
 
 | Gate | Date | Entry criteria | Decision question | Authority | Exit — go | Exit — no-go |
 |:---|:---|:---|:---|:---|:---|:---|
-| **G1** | Sun 23 Aug | Host machine available; Ollama installed | Does `ollama run llama3.1:8b` run at usable speed on the RTX 4060, inside the VRAM budget at `SYNCRO-redesign-15k.md` §6.1 (~6.5-7.4 GB of 8 GB)? | Marimla | Proceed with WP-102 | **Stop. The architecture is invalid.** Re-triage before any expenditure — RSK-02 |
-| **G1b** | Sun 23 Aug | Adviser meeting held in person | Has the adviser confirmed the privacy claim can change? | Espinosa | Proceed on the current architecture | Escalate the same day — RSK-01, §8.1 |
+| **G1** | Sun 23 Aug — measured **17 Aug** | Host machine available; Ollama installed | Does `ollama run llama3.1:8b` run at usable speed on the RTX 4060, inside the VRAM budget at `decisions/SYNCRO-redesign-15k.md` §6.1 (~6.5-7.4 GB of 8 GB)? | Marimla | **Answered yes, 17 Aug 2026.** 5,876 MiB resident against the 6.5–7.4 GB budget, 100% GPU residency, 50.6 tok/s — §8.2. WP-102 proceeds | Not taken |
+| **G1b** | Sun 23 Aug — held **26 Aug** | Adviser meeting held in person | Has the adviser confirmed the privacy claim can change? | Espinosa | **Answered yes, 26 Aug 2026.** Proceed on the current architecture — §8.1 | Not taken |
 | **G2** | Sun 30 Aug | Boards in hand; WP-202 complete | Does full-duplex I2S work under ESPHome with no C written? | Marimla | Proceed to WP-205 | Diagnose per RSK-04; fall back to the classic ESP32 per RSK-03 if the cause is procurement |
 | **G3** | Sun 6 Sep | WP-102, WP-103, WP-104 substantially complete | Is Half A demonstrable end to end, and is the macro-F1 figure known? | Almedejar | Proceed to WP-105 | Reduce Node 4 depth and preserve the pipeline. **The macro-F1 figure is not optional** — RSK-05 |
 | **G4** | Sun 13 Sep | WP-105 and WP-205 complete | Does audio move board → host → board? | Both leads | Proceed to WP-401 | DEL-11 drops to stretch-only; both halves still demonstrate independently |
@@ -265,7 +268,8 @@ states each week's objective, its gates, and anything that is not derivable from
 **W0 · 23-30 Aug — confirm or invalidate the architecture. Gates: G1, G1b (23rd) · G2 (30th).**
 Four activities in flight by the end of day one; no item waits on any other. G1 is roughly fifteen
 minutes. WP-201 orders **both** board tracks in a single order the same day. G1b is in person, not
-by email. At WP-202, `ESP.getPsramSize()` returning zero means the wrong SKU arrived — RSK-12.
+by email; it was held on 26 August and answered yes — §8.1. At WP-202, `ESP.getPsramSize()`
+returning zero means the wrong SKU arrived — RSK-12.
 *Exit: architecture confirmed, hardware on the bench, privacy question answered, Half A produces
 speech.*
 
@@ -280,7 +284,7 @@ generalise. *Exit: Half A demonstrates end to end and the macro-F1 figure exists
 WP-105 uses plain WebSocket for the demonstration; TLS and per-device tokens are BL-03. WP-106
 produces the ring-buffer and FSM module specifications, which are RC-A and are written to the
 standard in §6.4. Framing, audio format and the downlink contract are fixed by
-`../realsearch/transport-framing-decision.md` and are not open at this point. RR-1 covers the ring
+`decisions/transport-framing-decision.md` and are not open at this point. RR-1 covers the ring
 buffer and ISR-shared state. *Exit: audio moves board -> host -> board.*
 
 **W3 · 14-20 Sep — integration, classified stretch. Gates: RR-2 (Fri 18th) · G5 (Sun 20th).**
@@ -312,16 +316,16 @@ seated.
 
 ### 5.1 Team and roles
 
-Role assignments follow those recorded in `../archive/REVIEWPANELENGG-TEAM9.md`. The D1–D8 dispositions
-those assignments serve are now signed — `SYNCRO-panel-dispositions-signed.md`.
+Role assignments follow those recorded in `archive/REVIEWPANELENGG-TEAM9.md`. The D1–D8 dispositions
+those assignments serve are now signed — `decisions/SYNCRO-panel-dispositions-signed.md`.
 
 | Name | Role | Accountable for | Gates owned | Peak load |
 |:---|:---|:---|:---|:---|
 | **Almedejar** | AI/software lead | Workstream 1 in full · firmware **specification** and review · the protocol boundary · the latency budget | G3 | W1 |
 | **Marimla** | Hardware lead | Workstream 2 in full — board, wiring, bench debugging, firmware integration, chassis, power | G1, G2 | W4 |
-| **Espinosa** | Methods lead | Workstream 3 and 5 — ethics amendment, consent materials, D8 stub, defense materials, the study-design half of the defense | G1b | W4 |
+| **Espinosa** | Methods lead | Workstream 3 and 5 — ethics amendment, consent materials, D8 stub, defense materials, the study-design half of the defense | G1b (closed 26 Aug) | W4 |
 | **Morgan** | External firmware reviewer (NASA) | Firmware review at three scheduled rounds, approximately six hours in total. **Not a build resource** | — | — |
-| **Adviser** | Project adviser | A-01 privacy claim · A-07 prototype-scope rubric | — | — |
+| **Adviser** | Project adviser | A-01 privacy claim · A-07 prototype-scope rubric — **both confirmed 26 Aug 2026** | — | — |
 
 **The division that matters.** Almedejar writes the firmware specification and reviews the result;
 Marimla owns the board and everything physical. Neither writes embedded C from a blank file.
@@ -404,7 +408,7 @@ calendar.
   Almedejar writes a module specification    requirement, interface, invariants, failure modes
         |
         v
-  AI authors the C                           NASA/JPL Power of 10, house style per ../sandbox/
+  AI authors the C                           NASA/JPL Power of 10, house style per firmware-reference/
         |
         v
   Almedejar reads and self-reviews           no first draft is forwarded
@@ -432,7 +436,7 @@ that survive a clean compile and a happy-path bench run.
 
 ### 6.5 Coding standard
 
-**NASA/JPL "Power of 10."** Ten rules on one page. `../sandbox/` is already written to it, and the
+**NASA/JPL "Power of 10."** Ten rules on one page. `firmware-reference/` is already written to it, and the
 standard exists specifically to make embedded C reviewable by an engineer who did not write it.
 
 | Rule applied | Effect |
@@ -459,7 +463,7 @@ rather than notional. Without it, the review cost per module is unbounded.*
 
 ## 7. Requirements traceability matrix
 
-All ten system requirements from `SYNCRO-edge-compute-alternatives.md` §3, mapped to deliverables,
+All ten system requirements from `decisions/SYNCRO-edge-compute-alternatives.md` §3, mapped to deliverables,
 work packages, verification gates and evidence. Each requirement is restated in full below, so this
 table is readable without the source document. Requirements not satisfied in the prototype are
 listed with their deferral reference — this table is the source for the declaration at Appendix A,
@@ -478,7 +482,7 @@ item 10.
 | **R9** | Low power (1–2 W), passive cooling, safe unattended in a participant's home | DEL-09 (partial) | WP-206 | — | Enclosure and power arrangement only | **Partially satisfied.** Unattended-safety verification requires BL-02 |
 | **R10** | Survive a 10-day unattended deployment without a service visit | — | — | — | — | **Deferred — BL-02.** Cannot be compressed; the test takes ten days |
 
-**Concurrency.** The 8-client figure in `SYNCRO-redesign-15k.md` §6.2 is an **analytic bound, not a
+**Concurrency.** The 8-client figure in `decisions/SYNCRO-redesign-15k.md` §6.2 is an **analytic bound, not a
 measurement**. With one kit the measured ceiling is 1. It is presented at the defense as a
 projection, with the measurement scheduled — see BL-09 and RSK-11.
 
@@ -494,53 +498,98 @@ follow the standard set: **Avoid · Mitigate · Transfer · Accept**.
 
 | ID | Risk | L | I | Exp | Owner | Trigger / detection | Response | Contingency |
 |:---|:---|:---:|:---:|:---:|:---|:---|:---|:---|
-| **RSK-01** | The adviser does not approve the change to the privacy claim, invalidating the architecture being built | M | **Critical** | **H** | Espinosa | G1b answered "no" on 23 Aug | **Avoid** — resolve on day one, in person, before any expenditure | §8.1 |
-| **RSK-02** | The host GPU cannot run an 8B model within the VRAM budget | L | **Critical** | **M** | Marimla | G1 timing or VRAM measurement on 23 Aug | **Avoid** — validate before ordering | Architecture is invalid; stop and re-triage before spending |
-| **RSK-03** | Procurement slips; boards not in hand by 29 Aug | M | H | **H** | Marimla | Supplier confirmation not received, or delivery not made by 29 Aug | **Mitigate** — order both tracks on day one, single order | §8.2 |
-| **RSK-04** | Full-duplex I2S fails at G2 | L | H | **M** | Marimla | G2 answered "no" on 30 Aug | **Mitigate** — validate on a no-code path so the failure isolates to hardware | §8.3 |
+| **RSK-01** | ~~The adviser does not approve the change to the privacy claim, invalidating the architecture being built~~ | — | — | **Closed** | Espinosa | — | **Closed 26 Aug 2026** — G1b answered yes, A-01 confirmed | §8.1 |
+| **RSK-02** | ~~The host GPU cannot run an 8B model within the VRAM budget~~ | — | — | **Closed** | Marimla | — | **Closed 17 Aug 2026** — G1 answered yes on measurement, A-02 confirmed | §8.2 |
+| **RSK-03** | Procurement slips; boards not in hand by 29 Aug | M | H | **H** | Marimla | Supplier confirmation not received, or delivery not made by 29 Aug | **Mitigate** — order both tracks on day one, single order | §8.3 |
+| **RSK-04** | Full-duplex I2S fails at G2 | L | H | **M** | Marimla | G2 answered "no" on 30 Aug | **Mitigate** — validate on a no-code path so the failure isolates to hardware | §8.4 |
 | **RSK-05** | The affect classifier returns macro-F1 below 0.70 | M | M | **M** | Almedejar | WP-104 result, Week 1 | **Mitigate** — schedule earliest, report the method honestly | §8.4 |
-| **RSK-06** | Integration does not land by G5 | **H** | L | **M** | Both leads | G5 answered "no" on 20 Sep | **Accept** — DEL-11 is classified stretch precisely for this reason | §8.5 |
-| **RSK-07** | The live demonstration fails in the room, on unfamiliar network and acoustics | M | M | **M** | Espinosa | Observed at WP-505 or during the defense | **Mitigate** — WP-503 video backup by 26 Sep | §8.6 |
-| **RSK-08** | The external reviewer becomes unavailable for one or more rounds | M | M | **M** | Almedejar | Round not scheduled or not delivered | **Accept with disclosure** — the rounds gate merge quality, not the schedule | §8.7 |
+| **RSK-06** | Integration does not land by G5 | **H** | L | **M** | Both leads | G5 answered "no" on 20 Sep | **Accept** — DEL-11 is classified stretch precisely for this reason | §8.4 |
+| **RSK-07** | The live demonstration fails in the room, on unfamiliar network and acoustics | M | M | **M** | Espinosa | Observed at WP-505 or during the defense | **Mitigate** — WP-503 video backup by 26 Sep | §8.4 |
+| **RSK-08** | The external reviewer becomes unavailable for one or more rounds | M | M | **M** | Almedejar | Round not scheduled or not delivered | **Accept with disclosure** — the rounds gate merge quality, not the schedule | §8.4 |
 | **RSK-09** | A defect class in AI-authored firmware repeatedly escapes review | L | H | **M** | Almedejar | The same defect class recurs across two review rounds | **Mitigate** — widen RC-A scope, add bench tests from Appendix B, escalate the schedule | Move affected modules to team-authored code with reviewer pairing |
-| **RSK-10** | The defense rubric requires a complete system rather than a prototype | L | **Critical** | **M** | Espinosa | Rubric published or confirmed by the adviser | **Avoid** — confirm A-07 explicitly with the adviser; it is one question | Re-scope immediately. §2 and §12 both rest on this distinction |
+| **RSK-10** | ~~The defense rubric requires a complete system rather than a prototype~~ | — | — | **Closed** | Espinosa | — | **Closed 26 Aug 2026** — A-07 confirmed, and a software-only prototype is acceptable if hardware is not available | §8.1 |
 | **RSK-11** | The analytic concurrency bound is read by the panel as a measurement | M | H | **M** | Almedejar | Any slide or statement presenting the 8-client figure without qualification | **Avoid** — state it as a projection with the measurement scheduled | Correct on the spot and cite BL-09 |
 | **RSK-12** | ESP32-S3 boards arrive without PSRAM (part number lacking the `R8` suffix) | M | H | **M** | Marimla | `ESP.getPsramSize()` returns zero at WP-202 | **Avoid** — require `R8` in the listing at order time | Treat as RSK-03; fall back to the classic ESP32 path |
-| **RSK-13** | The panel rules against one or more of the three reconsiderations (D4, D6, D7), or declares an item a *condition of approval* rather than a recommendation | M | H | **M** | Espinosa | Panel response to the letter of 20 Aug, or no response before 1 Oct | **Mitigate** — the letter asks the question explicitly and offers a discussion before the prototype defense | §8.4 |
+| **RSK-13** | The panel rules against one or more of the three reconsiderations (D4, D6, D7), or declares an item a *condition of approval* rather than a recommendation | M | H | **M** | Espinosa | Panel response to the letter of 20 Aug, or no response before 1 Oct | **Mitigate** — the letter asks the question explicitly and offers a discussion before the prototype defense | §8.5 |
 
-### 8.1 RSK-01 — the privacy claim is not approved (G1b)
+### 8.1 RSK-01 — the privacy claim (G1b). **Closed 26 August 2026**
 
-**The highest-consequence risk in this plan, and it is not a technical one.**
-`SYNCRO-redesign-15k.md` §10 item 1 establishes that moving audio across a network boundary is a
-thesis-level decision on which everything else rests. If the adviser declines, the architecture
-under construction is the wrong one, and 39 days would be spent demonstrating a system that cannot
-ship.
+**Answered yes.** The project adviser confirmed in person on 26 August 2026 that the privacy claim
+may change: audio may cross a network boundary to a research-controlled host. A-01 is confirmed and
+RSK-01 is closed. The architecture under construction is the sanctioned one, and Workstreams 1 and 2
+proceed against it.
 
-**Response:** this is a day-one, in-person conversation. It is not delegated to email, and no
-expenditure is committed before it is answered.
+**A-07 was confirmed in the same conversation, and went further than the assumption asked.** The
+1 October event grades a **prototype**, not a complete system — and the adviser stated that a
+**software-only prototype is acceptable if hardware is not available**. RSK-10 is closed. The
+consequence is recorded at §8.3: a Half A demonstration standing alone is now an adviser-sanctioned
+outcome, not a salvage.
 
-> **The signed panel-disposition letter does not close this risk.** The adviser's signature on
-> `SYNCRO-panel-dispositions-signed.md` (20 Aug 2026) approves the **D1–D8 dispositions** and
-> nothing else. That letter never raises the privacy claim. A-01 is a separate question, G1b
-> still runs on 23 August, and RSK-01 remains the highest-consequence risk in this plan.
+**What the approval does not do.** It does not discharge the three protections that
+`decisions/SYNCRO-redesign-15k.md` §4.1 attaches to the changed claim — WireGuard in transit,
+encryption at rest, and a written retention-and-deletion schedule. Those are conditions of the
+design, not of the adviser's answer, and they remain binding. The team also becomes the named
+RA 10173 data controller. Neither specification currently states what audio, transcript or feature
+data is persisted, for how long, or how it is deleted; that gap is open as RID-014 in
+`reviews/spec-review_v11.md` and is now the load-bearing item on this subject.
 
-### 8.2 RSK-03 — boards do not arrive by 29 August
+**Downstream.** WP-303, consent materials rewritten against the revised data boundary, is unblocked
+and due at the close of W1 on Sunday 6 September. WP-302, the ethics amendment, proceeds on the
+confirmed boundary.
+
+> **Historical note, retained.** The signed panel-disposition letter of 20 August 2026
+> (`decisions/SYNCRO-panel-dispositions-signed.md`) approves the **D1–D8 dispositions** and nothing
+> else, and never raised the privacy claim. That remained the position until 26 August, when the
+> separate conversation recorded above answered it.
+
+### 8.2 RSK-02 — the 8B model on the RTX 4060 (G1). **Closed 17 August 2026**
+
+**Answered yes, by measurement.** A GPU evaluation of the host configuration was run on 17 August
+2026, six days ahead of the scheduled gate (runs `20260817T024232Z` and `20260817T024334Z`,
+RTX 4060, 8 GB; recorded in `reviews/report.md` and `manuscript/SYNCRO-prototype-defense.md`
+§VIII). With `llama3.1:8b` at Q4_K_M and `faster-whisper small int8` co-resident, `num_ctx` 2048:
+
+| Measure | Measured | Budget (`decisions/SYNCRO-redesign-15k.md` §6.1) |
+|:---|:---|:---|
+| Total resident VRAM during a request | 5,876 MiB | 6.5–7.4 GB |
+| Remaining margin | 1,687 MiB | 0.6–1.5 GB |
+| GPU residency of model weights | 100% | 100% |
+| Generation rate | 50.6 tok/s | — |
+| LLM stage, warm, ~350 in / 120 out tokens | 2.47 s (2.605 s end-to-end on the harness; 5.209 s cold) | 1–3 s |
+| Spill cliff | `num_ctx` 16384, eight times the pin | — |
+| Sustained load | 69 °C, SM clock flat at 2190 MHz, no rate degradation | — |
+
+The workload fits once with more margin than budgeted and does not fit twice, which is what the
+budget claimed. RSK-02 is closed and A-02 is confirmed. The "architecture is invalid" branch at G1
+was never taken.
+
+**What the measurement does not settle.** It answers the VRAM and model-stage questions, not the
+end-to-end turn. Speech-to-text, LLM and orchestration together measure 2.948 s — 98% of the 3 s
+ceiling — with openSMILE and Piper not installed at the time of the run and the wake word,
+endpointing and network hops on the edge, outside the harness. Adding either missing stage puts a
+turn over 3 s on these numbers. The corpus has never fixed whether the 3 s figure is end-to-end or
+LLM-stage only; that decision is the plan owner's and is not a risk-register entry until it is
+made. The per-stage measured budget is DEL-04, populated by WP-108 in W2–W4 and due at the G6 feature freeze on 26 September.
+`keep_alive` must be pinned for the study window: on the arrival rate stated in
+`manuscript/SYNCRO-prototype-defense.md` §VIII (about one interaction every sixteen minutes with two kits), Ollama's default five-minute eviction would make every turn a cold turn.
+
+### 8.3 RSK-03 — boards do not arrive by 29 August
 
 | Slip | Response |
 |:---|:---|
 | 1–5 days | Absorbed. Week 1 is bench-proving work and compresses |
 | More than one week | Build Half B on the **classic ESP32**. It also carries two I2S peripherals, so full-duplex remains available. What it lacks is PSRAM, which matters for a production configuration of wake-word model plus TLS plus buffers, and much less on a bench with small buffers and no TLS. The defense states plainly that the production board is the S3, and why |
-| Nothing arrives | Half A demonstrates alone; Half B is presented as design and specification. A weak outcome, but not a failing one for a *prototype* defense |
+| Nothing arrives | Half A demonstrates alone; Half B is presented as design and specification. **The adviser confirmed on 26 Aug 2026 that a software-only prototype is acceptable if hardware is not available** (A-07, §8.1), so this is a sanctioned outcome rather than a salvage. A weaker demonstration, but not a failing one |
 
-### 8.3 Notes on the remaining risks
+### 8.4 Notes on the remaining risks
 
 - **RSK-04, I2S at G2.** G2 deliberately uses a no-code path so a failure isolates to hardware.
   **Check the microphone L/R channel-select pins first.** If the failure is genuinely on the S3 the
-  platform decision was wrong, and `SYNCRO-edge-compute-alternatives.md` §9 step 5 (Orange Pi Zero
+  platform decision was wrong, and `decisions/SYNCRO-edge-compute-alternatives.md` §9 step 5 (Orange Pi Zero
   2W / Radxa Zero 3W, retaining Linux and Python) becomes live — but not inside 39 days. For this
   defense: demonstrate Half A and report the finding.
 - **RSK-05, macro-F1 below 0.70.** Not a demonstration failure — a finding, and a legitimate one to
-  present. `../archive/REVIEWPANELENGG-TEAM9.md` already names this the largest project risk and
+  present. `archive/REVIEWPANELENGG-TEAM9.md` already names this the largest project risk and
   already specifies the mitigation: the D2 idle-time signal as a second, low-cost,
   language-independent context signal. Present the figure, the speaker-independent method that
   produced it, and the mitigation path. A measured negative result carries more weight with a panel
@@ -554,7 +603,7 @@ expenditure is committed before it is answered.
 
 ---
 
-### 8.4 RSK-13 — the panel rules against a reconsideration, or names a condition of approval
+### 8.5 RSK-13 — the panel rules against a reconsideration, or names a condition of approval
 
 The letter of 20 August 2026 disposes of all eight panel recommendations and asks the panel to
 reconsider three: **D4** (email notifier — declined, substitute built), **D6** (hardware ambience
@@ -591,26 +640,26 @@ trigger and a response.
 
 | ID | Assumption | Invalidated by | Response | Risk |
 |:---|:---|:---|:---|:---|
-| **A-01** | The adviser approves the change to the privacy claim | A "no" at G1b | §8.1 — stop and re-scope | RSK-01 |
-| **A-02** | The RTX 4060 runs an 8B model within the VRAM budget | A "no" at G1 | Architecture is invalid; re-triage | RSK-02 |
-| **A-03** | Procurement succeeds; boards in hand by 29 Aug | Stock or shipping failure | §8.2 | RSK-03 |
-| **A-04** | The ESP32-S3 supports full-duplex I2S across two controllers | A "no" at G2 | §8.3 | RSK-04 |
-| **A-05** | The external reviewer is available for approximately six hours across three rounds | Her schedule | §8.7 | RSK-08 |
+| **A-01** | ~~The adviser approves the change to the privacy claim~~ **Confirmed 26 Aug 2026.** No longer an assumption | — | — | RSK-01, closed |
+| **A-02** | ~~The RTX 4060 runs an 8B model within the VRAM budget~~ **Confirmed by measurement, 17 Aug 2026.** No longer an assumption | — | — | RSK-02, closed |
+| **A-03** | Procurement succeeds; boards in hand by 29 Aug | Stock or shipping failure | §8.3 | RSK-03 |
+| **A-04** | The ESP32-S3 supports full-duplex I2S across two controllers | A "no" at G2 | §8.4 | RSK-04 |
+| **A-05** | The external reviewer is available for approximately six hours across three rounds | Her schedule | §8.4 | RSK-08 |
 | **A-06** | AI-authored firmware plus expert review is sound for RC-A modules | A defect class the review misses repeatedly | Widen RC-A, add bench tests from Appendix B, escalate the schedule | RSK-09 |
-| **A-07** | 1 October is a **prototype** defense, not a final one | A rubric requiring a complete system | Re-scope immediately | RSK-10 |
-| **A-08** | The panel accepts the three reconsiderations (D4, D6, D7), or does not rule before 1 Oct | A panel ruling against any of the three, or any item named a *condition of approval* | §8.4 | RSK-13 |
+| **A-07** | ~~1 October is a **prototype** defense, not a final one~~ **Confirmed 26 Aug 2026**, and extended: a **software-only prototype is acceptable if hardware is not available**. No longer an assumption | — | — | RSK-10, closed |
+| **A-08** | The panel accepts the three reconsiderations (D4, D6, D7), or does not rule before 1 Oct | A panel ruling against any of the three, or any item named a *condition of approval* | §8.5 | RSK-13 |
 
-**A-07 and A-01 each require an explicit answer from the adviser.** A-07 is one question and the
-entire scope division in Part I rests on it. A-01 is not covered by the signed disposition letter —
-that letter covers D1-D8 only — and is decided at G1b on 23 August, §8.1.
+**A-01 and A-07 were both answered by the adviser in person on 26 August 2026**, and the answers
+are recorded at §8.1. Both rows are retained above, struck through and marked closed rather than
+deleted, because the plan was built on them while they were open.
 
 ### 9.2 Dependencies
 
 | ID | Dependency | Owner of the dependency | Needed by | If unmet |
 |:---|:---|:---|:---|:---|
-| **D-01** | Adviser availability for an in-person conversation on 23 Aug | Adviser | 23 Aug | G1b slips; RSK-01 exposure rises daily |
-| **D-02** | Supplier stock for ESP32-S3 N16R8/N8R8 and the audio parts | Suppliers | 23 Aug order, 29 Aug delivery | RSK-03, §8.2 |
-| **D-03** | External reviewer availability, ~6 h across RR-1 to RR-3 | External reviewer | 11, 18, 25 Sep | RSK-08, §8.7 |
+| **D-01** | ~~Adviser availability for an in-person conversation on 23 Aug~~ **Met** — conversation held 26 Aug 2026 | Adviser | 23 Aug | Closed |
+| **D-02** | Supplier stock for ESP32-S3 N16R8/N8R8 and the audio parts | Suppliers | 23 Aug order, 29 Aug delivery | RSK-03, §8.3 |
+| **D-03** | External reviewer availability, ~6 h across RR-1 to RR-3 | External reviewer | 11, 18, 25 Sep | RSK-08, §8.4 |
 | **D-04** | Host machine with the RTX 4060, available for the full window | Team | 23 Aug onward | Workstream 1 stops; no fallback within budget |
 | **D-05** | Picovoice Porcupine access key | Almedejar | W3 (WP-107) | openWakeWord fallback per R1; wake-word claim in the manuscript changes |
 | **D-06** | Defense venue and network access before the panel is seated | Institution | 1 Oct | WP-505 cannot run; RSK-07 exposure rises |
@@ -695,14 +744,14 @@ scope**, and each item is declared proactively at the defense (Appendix A, item 
 | **BL-02** | 10-day unattended reliability soak | R10, R9 | Cannot be compressed — the test takes ten days | November |
 | **BL-03** | TLS, pinned certificate, per-device tokens | R3 | Plain WebSocket is sufficient on a controlled bench network. **The security property must be restated in the manuscript regardless** | October |
 | **BL-04** | Kit 2 | — | One kit demonstrates; two are required for fieldwork | November |
-| **BL-05** | D8 PWA console, full implementation | — | Stub only in the prototype. 13–20 days per `../archive/REVIEWPANELENGG-TEAM9.md` | November |
+| **BL-05** | D8 PWA console, full implementation | — | Stub only in the prototype. 13–20 days per `archive/REVIEWPANELENGG-TEAM9.md` | November |
 | **BL-06** | Full SQLite schema | — | Minimal tables for the demonstration; the fieldwork schema is a separate design activity | October |
 | **BL-07** | **Ethics approval** | — | Drafting starts 24 Aug. C-05 budgets 45 days drafting plus 60 days review. **No plan change alters this date** | **December** |
 | **BL-08** | Any fieldwork data | — | Requires ethics approval (BL-07) and two kits (BL-04) | January 2027 |
-| **BL-09** | **The concurrency result** | — | **With one kit the measured ceiling is 1, not 8** (C-03). The 8-client figure in `SYNCRO-redesign-15k.md` §6.2 is an analytic bound | Fieldwork |
+| **BL-09** | **The concurrency result** | — | **With one kit the measured ceiling is 1, not 8** (C-03). The 8-client figure in `decisions/SYNCRO-redesign-15k.md` §6.2 is an analytic bound | Fieldwork |
 
 **BL-09 requires particular care in presentation.** It is the contribution that replaces the claim
-given up in `SYNCRO-redesign-15k.md` §4.1. Presenting a modelled bound as a measurement is the
+given up in `decisions/SYNCRO-redesign-15k.md` §4.1. Presenting a modelled bound as a measurement is the
 category of error over which a panel discards an entire result. It is stated as a projection, with
 the measurement scheduled — see RSK-11.
 
@@ -775,7 +824,7 @@ Only terms that carry a decision, a part number or a constraint. Standard pipeli
 
 | Term | Definition |
 |:---|:---|
-| **D1-D8** | Panel dispositions from the proposal defense, signed by the adviser in `SYNCRO-panel-dispositions-signed.md` and reasoned in `../archive/REVIEWPANELENGG-TEAM9.md`. D2 is the idle-time context signal; D7 the pop-up fallback path; D8 the participant console |
+| **D1-D8** | Panel dispositions from the proposal defense, signed by the adviser in `decisions/SYNCRO-panel-dispositions-signed.md` and reasoned in `archive/REVIEWPANELENGG-TEAM9.md`. D2 is the idle-time context signal; D7 the pop-up fallback path; D8 the participant console |
 | **ESPHome** | A configuration-driven firmware generator for ESP32 devices. Used for G2 validation only, then discarded |
 | **FSM** | Finite state machine. Here, the edge unit's interaction state controller; an RC-A module |
 | **`GroupKFold`** | A scikit-learn cross-validation strategy that keeps all samples from one group — here, one speaker — within a single fold, producing speaker-independent evaluation |
