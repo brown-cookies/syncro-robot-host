@@ -15,6 +15,17 @@ clause), and does not touch the uplink (capture) path.
 No new dependency is introduced. Linear interpolation is adequate for
 resampling speech at the ratios this project uses (e.g. 22,050 -> 16,000 Hz)
 and avoids adding scipy under the sprint freeze (arch review S5).
+
+Known trade-off (no anti-alias filter): `np.interp` resampling below has no
+low-pass/anti-alias stage before downsampling. Any source energy above the
+new Nyquist frequency (8 kHz at this module's 16 kHz target) folds back into
+the audible band as aliasing distortion rather than being removed. This is
+accepted, not overlooked (SPEC 8.4): Piper's synthesized speech has limited
+energy that high, and a proper anti-alias filter means adding `scipy` (or
+hand-rolling one), which the arch review's S5 recommendation explicitly
+avoided under the sprint freeze. If a future voice/synthesis change pushes
+more energy above 8 kHz (e.g. a higher-quality Piper voice), this trade-off
+should be revisited.
 """
 
 from __future__ import annotations
@@ -76,9 +87,12 @@ def chunk_100ms(pcm: np.ndarray) -> list[bytes]:
     SPEC 8.4's wire format -- the raw payload of one ``tts_audio_frame``
     message, with no JSON header, ready to send as-is. The final frame is
     shorter than 3,200 bytes when ``pcm``'s length is not an exact multiple of
-    ``SAMPLES_PER_FRAME``; SPEC 8.4 chunks "as it becomes available" and does
-    not require padding a short trailing remainder up to a full frame, so this
-    does not pad it. Returns an empty list for empty input.
+    ``SAMPLES_PER_FRAME``; per SPEC 8.4's chunking decision, this trailing
+    remainder is sent as-is, not padded up to a full frame -- see that
+    section for why the edge's downlink playback buffer does not need
+    fixed-size writes the way the uplink's 640-byte capture unit does, and
+    the open item for WP-205 to confirm this against the real firmware.
+    Returns an empty list for empty input.
     """
     pcm = np.asarray(pcm, dtype=np.int16)
     if pcm.ndim != 1:

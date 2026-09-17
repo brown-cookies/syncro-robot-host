@@ -1010,11 +1010,36 @@ content and the playback contract around them.
   both directions run at one sample rate and the edge needs only one I2S
   clock configuration. Piper's native output rate is resampled to 16 kHz
   **host-side**, before chunking; the edge never resamples.
+- **Resampling implementation.** The current host implementation uses
+  linear interpolation without a dedicated anti-alias low-pass filter.
+  This is an accepted implementation trade-off under the current
+  dependency constraints. A future audio-quality revision may replace
+  it with a band-limited resampler if measured aliasing becomes
+  material.
 - **Chunking.** Each `tts_audio_frame` carries one 100 ms segment
   (3,200 bytes at this format) of the resampled audio, sent as it becomes
   available from the synthesis pipeline rather than accumulated into one
   message. This matches the uplink's own streamed-not-buffered convention
-  (FR-H1, Section 7.3).
+  (FR-H1, Section 7.3). **Decision: the trailing frame is not padded.**
+  When an utterance's resampled length is not an exact multiple of 3,200
+  bytes, the final `tts_audio_frame` is shorter than the rest rather than
+  padded up to a full frame with silence. This is a deliberate choice, not
+  an open gap: Section 8.2's 640-byte capture unit is a property of the
+  edge's *uplink* (capture) ring buffer, sized to the wake-word engine's
+  frame length — it is a different buffer from the edge's *downlink*
+  (playback) ring buffer this section describes, and the two are not
+  required to share a size granularity. The playback ring buffer only needs
+  to accept ordinary PCM sample data of any byte length that is a whole
+  number of 16-bit samples, which every frame here always is (resampling
+  never produces a fractional sample). Padding the final frame would add
+  latency — buffering silence to reach 3,200 bytes before sending — for no
+  correctness benefit under this buffering model. This decision assumes the
+  firmware's I2S/DMA write path accepts variable-length writes into the
+  playback ring buffer; **WP-205 must confirm this against the actual
+  firmware implementation once the playback ring buffer exists (Section
+  16).** If the firmware's write path turns out to require fixed-size
+  writes, padding (explicit silence, not garbage bytes) will need to be
+  added on the host side and this section updated accordingly.
 - **Buffering / playback start.** The edge does not begin playback on the
   first `tts_audio_frame`. It accumulates into a ring buffer and starts
   playback once buffered audio reaches a **~250 ms low-water mark**, so a
