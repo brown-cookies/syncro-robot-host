@@ -7,8 +7,8 @@
 | **From** | Yuqin Han (韩玉琴) |
 | **To** | Team 9 — Almedejar, Espinosa, Marimla · BS Computer Engineering, Holy Angel University |
 | **Document type** | Project execution plan |
-| **Revision** | 2.5 |
-| **Date** | 14 September 2026 |
+| **Revision** | 2.6 |
+| **Date** | 16 September 2026 |
 | **Status** | Baselined. Schedule of record for the 1 October 2026 prototype defense |
 | **Delivery window** | Sunday 23 August 2026 – Thursday 1 October 2026 · 39 calendar days |
 | **Supersedes** | `manuscript/SYNCRO-dev-learning-roadmap.md` §11 (schedule only; that document remains the reference for *what to learn*) · Revision 1.0 of this plan, 16 August 2026 |
@@ -27,6 +27,7 @@
 | 2.3 | 3 Sep 2026 | Y. Han | **G1b answered yes.** The project adviser confirmed A-01 and A-07 in person on 26 August 2026. The privacy claim may change: audio may cross a network boundary to a research-controlled host. The 1 October defense grades a **prototype**, not a complete system, and the adviser stated further that **a software-only prototype is acceptable if hardware is not available**. **RSK-01 and RSK-10 are closed**; A-01 and A-07 are confirmed. RSK-03, RSK-04 and RSK-06 retain their likelihoods but fall in impact, because a Half A demonstration is now an adviser-sanctioned outcome rather than a salvage — see §8.2. WP-303 is unblocked. The three protections at `decisions/SYNCRO-redesign-15k.md` §4.1 — WireGuard in transit, encryption at rest, and a written retention-and-deletion schedule — are design conditions of the changed claim and remain binding; this approval does not discharge them. No dates, owners, work packages, gates, acceptance criteria or scope decisions changed |
 | 2.4 | 14 Sep 2026 | Y. Han | Housekeeping. The header block still read Revision 2.1 / 23 August 2026 after Revs 2.2 and 2.3 were added; corrected to the current revision and date. The revision history table was out of order (2.2 above 2.1) and a blank line split the 2.3 row into a separate table; rows re-sorted and merged. **No dates, owners, work packages, gates, risks, acceptance criteria or scope decisions changed** |
 | 2.5 | 14 Sep 2026 | Y. Han | **G1 answered yes; RSK-02 and A-02 closed.** The 17 August 2026 GPU measurement (runs `20260817T024232Z` and `20260817T024334Z`) answered G1 six days ahead of the scheduled gate but was never recorded in this plan: 5,876 MiB resident against the 6.5–7.4 GB budget, 1,687 MiB margin, 50.6 tok/s, 2.605 s warm. WP-101 marked complete. New §8.2 records the measurement and what it does not settle (the end-to-end turn sits at 98% of the 3 s ceiling with two stages unmeasured; no risk row is added until the plan owner fixes whether 3 s is end-to-end or LLM-stage). Former §8.2–8.4 renumbered §8.3–8.5. **Citation repair:** the register cited §8.4–§8.7 for RSK-05 to RSK-08 and A-05/D-03, subsections removed in Rev 2.2; all now point at §8.4 (the notes). **No dates, owners, work packages, gates, acceptance criteria or scope decisions changed** |
+| 2.6 | 16 Sep 2026 | Y. Han | **Adviser instructions on consent, ethics review, the controller, the participant framing and the system's scope** — meeting held **16 September 2026**, relayed by the team the same day (§8.6). Five instructions, taken as decisions of record: (1) the consent form is **not written until the prototype is finished** — WP-303 is deferred past 1 October and becomes **BL-10**; (2) **no university ethics review is required** — DEL-10, WP-302, BL-07 and C-05 are **withdrawn**, and BL-08 now depends on BL-10 and BL-04 rather than on an approval; (3) the team is the **RA 10173 personal information controller (PIC)** — the dispute raised by the 13 September consent-form review is resolved in favour of the decisions of record; (4) participants are **evaluators of the prototype, not subjects of study** — a methods-level restatement Espinosa owns; (5) **the system is "too much"** — the adviser wants "a system that can be plugged into the computer, then schedules the meetings and habits of the participants", and named the legal and ethics content as an example of over-complication. Instruction 5 has two readings, one presentational and one thesis-level, and the plan cannot tell which from one sentence: **new RSK-15** carries it, and the team asks the adviser one written question before the 26 September freeze (§8.6). One observation is also recorded: the adviser referred repeatedly to the features the panel recommended as though they were in the build, so **RSK-13 rises from M to H likelihood**; the panel should be assumed not to have registered the reconsideration letter. New **RSK-14** and **A-09** carry the exposure of instruction (2) being verbal. Cascade applied the same day: manuscript Rev C, cost estimate Rev 1.1, redesign Rev B, consent-form review filed and annotated (§8.6, last paragraph). **No dates, gates or Workstream 1–2 scope changed.** Workstream 3 scope is reduced as stated |
 
 ### Approval
 
@@ -136,7 +137,7 @@ as satisfied or not satisfied without further judgement.
 | **DEL-07** | Degradation path | R7 | 2 | Marimla | On host unreachability the unit emits an enum `degradation_reason`, queues interactions to a fixed-capacity store with defined overflow behaviour, increments an outage counter, and drains the queue on reconnection | Live demonstration; queue and counter state before and after | G6 |
 | **DEL-08** | Motor actuation, hardware mute switch, status LED | R5, R8 | 2 | Marimla | Motors actuate under PWM control; the mute switch cuts capture in hardware; the LED reflects device state | Live demonstration | G6 |
 | **DEL-09** | One assembled kit, powered, in an enclosure | — | 2 | Marimla | The unit operates from its own power arrangement inside an enclosure, and survives being carried, unpacked and set up without rework | Physical inspection at G6; transport test in W5 | G6 |
-| **DEL-10** | Ethics amendment, drafted | — | 3 | Espinosa | A complete amendment document exists and is ready for submission. **Approval is explicitly not in scope** — see BL-07 | Draft document | Ongoing → Dec |
+| **DEL-10** | ~~Ethics amendment, drafted~~ | — | 3 | Espinosa | **Withdrawn 16 Sep 2026** — the adviser stated that no university ethics review is required (§8.6). Row retained because the plan carried it for four weeks | — | — |
 | **DEL-11** | *(Stretch)* End-to-end integration: wake word on device → audio to host → pipeline → synthesized speech from the unit's own speaker | R1–R4 | 4 | Both leads | The full loop completes at least once, end to end, on real hardware. Reliability is not part of the criterion | Recorded run | G5 |
 
 ### 2.1 Priority and stretch scope
@@ -194,8 +195,8 @@ windows rather than hours; the team is part-time and hour-based estimates would 
 | WP | Work package | Owner | Window | Predecessor | Exit condition |
 |:---|:---|:---|:---|:---|:---|
 | **WP-301** | Adviser consultation on the privacy claim. Conducted in person, not by email | Espinosa | 23 Aug (held 26 Aug) | — | **Complete** — G1b answered yes and recorded, 26 Aug 2026 (§8.1) |
-| **WP-302** | Ethics amendment drafting. Runs beyond this plan to December | Espinosa | W0–W5 → Dec | WP-301 | DEL-10 acceptance criteria met |
-| **WP-303** | Consent materials rewritten against the revised data boundary | Espinosa | W1 | WP-301 | Materials consistent with the approved architecture |
+| **WP-302** | ~~Ethics amendment drafting. Runs beyond this plan to December~~ | Espinosa | — | — | **Withdrawn 16 Sep 2026** — no university ethics review is required (§8.6) |
+| **WP-303** | Consent materials rewritten against the revised data boundary | Espinosa | ~~W1~~ **after 1 Oct** | WP-301, a finished prototype | **Deferred 16 Sep 2026** to **BL-10** on the adviser's instruction: the form is not written until the prototype is finished (§8.6). The seven blockers and nine material issues of the 13 September review (`reviews/consent-form-review.docx`) stay open and are answered when BL-10 runs |
 | **WP-304** | D8 console stub: task entry and self-report only | Espinosa | W1 | — | Stub accepts task entry and self-report; full console is BL-05 |
 
 ### WBS 4 — Integration (stretch) · Owner: both leads
@@ -224,8 +225,8 @@ windows rather than hours; the team is part-time and hour-based estimates would 
 | Week | Dates | Almedejar — WS1 | Marimla — WS2 | Espinosa — WS3/5 | Gates |
 |:---|:---|:---|:---|:---|:---|
 | **W0** | Sun 23 – Sun 30 Aug | WP-102 host scaffolding | WP-201 procurement (day one) · WP-202 bring-up · WP-203 | WP-301 adviser consultation · WP-302 begins | **G1**, **G1b** (23rd) · **G2** (30th) |
-| **W1** | Mon 31 Aug – Sun 6 Sep | WP-103 Nodes 1–4 · **WP-104 affect branch** | WP-204 bench characterisation · WP-205 begins | WP-303 consent · WP-304 D8 stub | **G3** (6th) |
-| **W2** | Mon 7 – Sun 13 Sep | WP-105 transport · WP-106 module specs | WP-205 firmware, bench debug | WP-302 continues | **RR-1** (11th) · **G4** (13th) |
+| **W1** | Mon 31 Aug – Sun 6 Sep | WP-103 Nodes 1–4 · **WP-104 affect branch** | WP-204 bench characterisation · WP-205 begins | ~~WP-303 consent~~ (deferred to BL-10, Rev 2.6) · WP-304 D8 stub | **G3** (6th) |
+| **W2** | Mon 7 – Sun 13 Sep | WP-105 transport · WP-106 module specs | WP-205 firmware, bench debug | ~~WP-302 continues~~ (withdrawn, Rev 2.6) | **RR-1** (11th) · **G4** (13th) |
 | **W3** | Mon 14 – Sun 20 Sep | WP-107 Porcupine · WP-103 trace capture | WP-206 enclosure, power, cabling | WP-501 deck begins | **RR-2** (18th) · **G5** (20th) |
 | | | ← **WP-401 integration push, both leads** → | | | |
 | **W4** | Mon 21 – Sun 27 Sep | WP-108 latency budget and figures | **WP-207 R6 · WP-208 R7** · WP-209 motors, mute, LED | WP-502 script · **WP-503 video by 26th** | **RR-3** (25th) · **G6 FREEZE** (26th) |
@@ -323,7 +324,7 @@ those assignments serve are now signed — `decisions/SYNCRO-panel-dispositions-
 |:---|:---|:---|:---|:---|
 | **Almedejar** | AI/software lead | Workstream 1 in full · firmware **specification** and review · the protocol boundary · the latency budget | G3 | W1 |
 | **Marimla** | Hardware lead | Workstream 2 in full — board, wiring, bench debugging, firmware integration, chassis, power | G1, G2 | W4 |
-| **Espinosa** | Methods lead | Workstream 3 and 5 — ethics amendment, consent materials, D8 stub, defense materials, the study-design half of the defense | G1b (closed 26 Aug) | W4 |
+| **Espinosa** | Methods lead | Workstream 3 and 5 — consent materials (deferred to BL-10), D8 stub, defense materials, the study-design half of the defense including the evaluator framing (§8.6). The ethics amendment was withdrawn 16 Sep | G1b (closed 26 Aug) | W4 |
 | **Morgan** | External firmware reviewer (NASA) | Firmware review at three scheduled rounds, approximately six hours in total. **Not a build resource** | — | — |
 | **Adviser** | Project adviser | A-01 privacy claim · A-07 prototype-scope rubric — **both confirmed 26 Aug 2026** | — | — |
 
@@ -510,7 +511,9 @@ follow the standard set: **Avoid · Mitigate · Transfer · Accept**.
 | **RSK-10** | ~~The defense rubric requires a complete system rather than a prototype~~ | — | — | **Closed** | Espinosa | — | **Closed 26 Aug 2026** — A-07 confirmed, and a software-only prototype is acceptable if hardware is not available | §8.1 |
 | **RSK-11** | The analytic concurrency bound is read by the panel as a measurement | M | H | **M** | Almedejar | Any slide or statement presenting the 8-client figure without qualification | **Avoid** — state it as a projection with the measurement scheduled | Correct on the spot and cite BL-09 |
 | **RSK-12** | ESP32-S3 boards arrive without PSRAM (part number lacking the `R8` suffix) | M | H | **M** | Marimla | `ESP.getPsramSize()` returns zero at WP-202 | **Avoid** — require `R8` in the listing at order time | Treat as RSK-03; fall back to the classic ESP32 path |
-| **RSK-13** | The panel rules against one or more of the three reconsiderations (D4, D6, D7), or declares an item a *condition of approval* rather than a recommendation | M | H | **M** | Espinosa | Panel response to the letter of 20 Aug, or no response before 1 Oct | **Mitigate** — the letter asks the question explicitly and offers a discussion before the prototype defense | §8.5 |
+| **RSK-13** | The panel rules against one or more of the three reconsiderations (D4, D6, D7), or declares an item a *condition of approval* rather than a recommendation | **H** | H | **H** | Espinosa | Panel response to the letter of 20 Aug, or no response before 1 Oct. **Raised M → H on 16 Sep 2026**: the adviser referred to the panel's recommended features as though they were in the build (§8.6) | **Mitigate** — the letter asks the question explicitly and offers a discussion before the prototype defense; state the D4, D6 and D7 positions aloud at the defense before the panel raises them | §8.5 |
+| **RSK-14** | The adviser's instruction that no university ethics review is required is verbal; the university, the panel or the manuscript's own NFR-13 later requires one before fieldwork | L | H | **M** | Espinosa | A written requirement from any university body, or a panel question at the defense about ethics clearance | **Mitigate** — obtain the instruction in writing (one line from the adviser); restate NFR-13 and Section XXV of the manuscript so the panel is not promised a review that will not happen | Reinstate WP-302 and BL-07 with C-05's 105-day budget; fieldwork (BL-08) moves accordingly. No effect on 1 Oct |
+| **RSK-15** | The adviser's statement of 16 Sep that the system is "too much" is read by her, or by the panel, as an instruction to remove the reasoning pipeline — the thesis's stated contribution — rather than to simplify the demonstration and the paper | M | H | **H** | Espinosa | The adviser's answer to the one written question (§8.6 item 5), or a panel question at the defense about why the system does more than schedule | **Mitigate** — ask the question in writing before G6; proceed on the presentational reading meanwhile; present the demonstration as "plug in, speak, it schedules" with the pipeline underneath; strip legal and ethics text to the one required paragraph | If Reading B is confirmed: re-plan under §10 the same day; DEL-01 to DEL-04 become the pipeline *as built* presented as engineering evidence, and the demonstration narrows to the D8 console and timers. Thesis-level; escalate to the plan owner and the adviser together |
 
 ### 8.1 RSK-01 — the privacy claim (G1b). **Closed 26 August 2026**
 
@@ -529,13 +532,16 @@ outcome, not a salvage.
 `decisions/SYNCRO-redesign-15k.md` §4.1 attaches to the changed claim — WireGuard in transit,
 encryption at rest, and a written retention-and-deletion schedule. Those are conditions of the
 design, not of the adviser's answer, and they remain binding. The team also becomes the named
-RA 10173 data controller. Neither specification currently states what audio, transcript or feature
-data is persisted, for how long, or how it is deleted; that gap is open as RID-014 in
-`reviews/spec-review_v11.md` and is now the load-bearing item on this subject.
+RA 10173 personal information controller (PIC) — **confirmed by the adviser on 16 September 2026
+(§8.6)**, which settles the dispute the 13 September consent-form review had raised. Neither
+specification currently states what audio, transcript or feature data is persisted, for how long,
+or how it is deleted; that gap is open as RID-014 in `reviews/spec-review_v11.md` and is now the
+load-bearing item on this subject.
 
-**Downstream.** WP-303, consent materials rewritten against the revised data boundary, is unblocked
-and due at the close of W1 on Sunday 6 September. WP-302, the ethics amendment, proceeds on the
-confirmed boundary.
+**Downstream.** WP-303, consent materials rewritten against the revised data boundary, was
+unblocked and due at the close of W1 on Sunday 6 September. It did not close; on 16 September it
+was **deferred to BL-10** on the adviser's instruction that the form is not written until the
+prototype is finished. WP-302, the ethics amendment, was **withdrawn** the same day (§8.6).
 
 > **Historical note, retained.** The signed panel-disposition letter of 20 August 2026
 > (`decisions/SYNCRO-panel-dispositions-signed.md`) approves the **D1–D8 dispositions** and nothing
@@ -619,6 +625,15 @@ so — but they change a great deal. If screen delivery were mandated as the **p
 that contradicts the attention-preservation argument which is the study's primary thesis, and it
 is a conversation about the thesis rather than about the build.
 
+**Observation of 16 September 2026, which raises the likelihood to H.** In the meeting
+recorded at §8.6 the adviser referred repeatedly to the features the panel had recommended as
+though they were part of the build. The adviser signed the letter that declines D4, defers D6 and
+reduces D7 to a fallback. The plain reading is that the letter's positions have not registered with
+the person who signed it, and the panel, which has not answered, should be assumed not to have
+registered them either. The mitigation is unchanged in kind and stronger in degree: the team states
+the D4, D6 and D7 positions aloud at the defense, with the letter in hand, before the panel raises
+them as omissions.
+
 | Panel outcome | Consequence for this plan |
 |:---|:---|
 | No response before 1 Oct | Build proceeds on the signed dispositions. State the position plainly at the defense and note the letter is outstanding |
@@ -628,6 +643,53 @@ is a conversation about the thesis rather than about the build.
 
 **Response:** Espinosa tracks the panel response. The distinction is already requested in writing,
 which is the mitigation — an unasked question cannot be answered before the defense.
+
+### 8.6 The adviser's instructions of 16 September 2026 — consent, ethics review, controller, participant framing, scope
+
+**Meeting with the project adviser, 16 September 2026**, relayed by the team the same day and
+recorded the same day. The instructions were relayed as confirmed and stated, and are taken as
+decisions of record. The adviser's words below are as the team reported them, not a transcript.
+
+| # | The adviser said | Decision recorded | What changes in this plan |
+|:---|:---|:---|:---|
+| 1 | The consent form is not written yet — the prototype is not finished | **Consent materials are written after the prototype is complete**, not before the defense | WP-303 deferred to **BL-10**, target after 1 October 2026. The 13 September review's seven blockers and nine material issues stay open until then. Nothing on the 1 October critical path depends on the form |
+| 2 | Disregard university ethical consent — it is not needed | **No university ethics review is required for this study** | DEL-10, WP-302, BL-07 and C-05 **withdrawn**. BL-08 (fieldwork data) now depends on BL-10 and BL-04, not on an approval. The ₱1,500 ethics-submission line in `decisions/syncro-costestimate-15k-revision1.md` and action B4 there are released — that document takes its own revision. **RSK-14 and A-09 carry the exposure of this being verbal** |
+| 3 | The PIC is us, the researchers | **The team is the RA 10173 personal information controller.** The 13 September consent-form review's position that the university is the controller is wrong on this point, and the decisions of record stand | §8.1 restated. The gate-meeting question "who is the controller" is answered; the retention-and-deletion schedule (RID-014) is the team's to write, as it always was |
+| 4 | We treat the participants as evaluators, not as an object | **The people who interact with the prototype are evaluators of the system, not subjects of study** | A methods-level restatement Espinosa owns: research design, participant selection, procedures, instruments and the ethics section of the manuscript (Sections XIX–XXV) must describe an evaluation of the prototype by evaluators, and NFR-11 / NFR-13 must be restated. Applied in manuscript Revision C the same day |
+| 5 | The system is too much; we are making it too complicated, even adding ethical consent related to law. She wants a system that can be plugged into the computer, then schedules the meetings and habits of the participants — that is all | **Recorded, not yet actionable.** The statement has two readings and the plan cannot choose between them. **Reading A — presentational:** the demonstration and the paper should be simpler; the legal and ethics content should shrink to what the 26 August decision requires; the reasoning pipeline stays as the contribution underneath a plain "plug in, speak, it schedules" story. **Reading B — thesis-level:** remove the LLM reasoning pipeline and the affect branch (Objectives 1 and 2, RQ1 and RQ2, DEL-01 to DEL-04) and deliver a scheduling console with timers. Reading A is presentation work inside the current plan. Reading B abandons the stated contribution twelve days before the freeze, contradicts the panel's signed D1–D8 (which *add* features), and contradicts the adviser's own approval of the shared-host architecture on 26 August | **RSK-15** opened. The team asks the adviser **one written question** before Saturday 26 September (G6): *"Do you want us to remove the LLM reasoning pipeline and affect branch from the thesis, or keep them and make the demonstration and the paper simpler?"* Until she answers, the plan proceeds on **Reading A** — the demonstration narrative for Appendix A becomes "plug in, speak, it schedules", and no further legal or ethics text is added to anything the adviser or panel will read. Reading B, if she confirms it, is a re-plan under §10 change control and is escalated the same day |
+
+**What this does not change.** Instruction 5 changes nothing in Workstreams 1 and 2 until the
+adviser answers the question above; the build to 26 September continues as planned. Instruction 2
+removes the *approval*, not the *protections*. The three
+conditions of the changed privacy claim — encryption in transit, encryption at rest, and a written
+retention-and-deletion schedule (RID-014, unwritten) — are conditions of the design at
+`decisions/SYNCRO-redesign-15k.md` §4.1 and stay binding. Being the named PIC under RA 10173 is an
+obligation the team carries whether or not a university body reviews the study; instruction 3
+confirms who carries it. The demonstration on 1 October still runs plain WebSocket on a bench
+network (BL-03) and is never described as the deployment configuration.
+
+**Closure criteria, one per instruction, evaluable by a third party.**
+
+| # | Closed when |
+|:---|:---|
+| 1 | BL-10 has a start date recorded after the prototype is declared finished, and the consent form answers every blocker of the 13 September review |
+| 2 | The adviser's statement that no ethics review is required exists in writing — one line, dated — and the manuscript's NFR-13 and Section XXV no longer promise a review. Until the written line exists, RSK-14 stays open |
+| 3 | §8.1 of this plan and Section XXV of the manuscript both name the team as PIC, and no working document still describes the controller as disputed |
+| 4 | The manuscript's Sections XIX–XXV describe evaluators of a prototype, not study subjects, and the adviser has seen the restated text |
+| 5 | The adviser's written answer to the one question exists, dated, and the plan records which reading applies. Under Reading A: Appendix A's narrative reads "plug in, speak, it schedules" and the manuscript's legal and ethics content is one paragraph in Section XXV. Under Reading B: a re-plan is recorded under §10 with a new revision of this document |
+
+**Cross-document consequences, applied the same day.** The manuscript
+(`manuscript/SYNCRO-prototype-defense.md`) is at **Revision C**: NFR-11, NFR-13, the Section XI.F
+cost line, the Scope bullet on the data boundary and Sections XIX–XXV restated; whether the three
+participant-behaviour measures stay as context measures is left to Espinosa as its open item (6).
+The cost estimate (`decisions/syncro-costestimate-15k-revision1.md`) is at **Revision 1.1**: the
+₱1,500 ethics-review fee removed, direct outlay ₱9,528, reserve ₱5,472 (36.5%), phase 6 gated on
+the consent materials and the retention schedule. The architecture of record
+(`decisions/SYNCRO-redesign-15k.md`) is at **Revision B**: §4.1 change 4 loses its ethics
+submission, budget figures aligned, §11 ethics rows re-pointed to manuscript Section XXV. The 13
+September consent-form review is filed at `reviews/consent-form-review.md` with a status note
+overruling its finding B2. `CLAUDE.md`, `INDEX.md` and `reviews/gate-meeting-brief.md` Item 7
+corrected. **None of the three revised documents has been transmitted to the team.**
 
 ---
 
@@ -648,6 +710,8 @@ trigger and a response.
 | **A-06** | AI-authored firmware plus expert review is sound for RC-A modules | A defect class the review misses repeatedly | Widen RC-A, add bench tests from Appendix B, escalate the schedule | RSK-09 |
 | **A-07** | ~~1 October is a **prototype** defense, not a final one~~ **Confirmed 26 Aug 2026**, and extended: a **software-only prototype is acceptable if hardware is not available**. No longer an assumption | — | — | RSK-10, closed |
 | **A-08** | The panel accepts the three reconsiderations (D4, D6, D7), or does not rule before 1 Oct | A panel ruling against any of the three, or any item named a *condition of approval* | §8.5 | RSK-13 |
+| **A-09** | The adviser's verbal instruction of 16 September 2026 that no university ethics review is required stands | A written requirement for review from any university body, or the panel at the defense | §8.6; reinstate WP-302 and BL-07 | RSK-14 |
+| **A-10** | The adviser's "too much" of 16 Sep 2026 is a presentational instruction (simplify the demonstration and the paper), not a thesis-level one (remove the reasoning pipeline) | Her written answer to the §8.6 item 5 question says otherwise, or a panel question does | §8.6; re-plan under §10 | RSK-15 |
 
 **A-01 and A-07 were both answered by the adviser in person on 26 August 2026**, and the answers
 are recorded at §8.1. Both rows are retained above, struck through and marked closed rather than
@@ -672,7 +736,7 @@ deleted, because the plan was built on them while they were open.
 | **C-02** | Budget approximately ₱15,000, self-funded, no institutional support | One kit only; no spare high-value parts beyond the dual-track board order |
 | **C-03** | One assembled kit | The concurrency result cannot be measured — BL-09, RSK-11 |
 | **C-04** | Three-person team, part-time, carrying concurrent coursework | Effort is expressed as calendar windows, not hours; no capacity for parallel recovery work |
-| **C-05** | Ethics approval budgets 45 days drafting plus 60 days review | Ethics approval cannot land before December regardless of plan changes — BL-07 |
+| **C-05** | ~~Ethics approval budgets 45 days drafting plus 60 days review~~ | **Withdrawn 16 Sep 2026** — no university ethics review is required (§8.6). The 105-day figure is retained here only as the budget RSK-14's contingency would reinstate |
 | **C-06** | Embedded C is outside the team's existing competence | Drives the firmware model in §6.2 and the review budget in §5.3 |
 
 ---
@@ -746,9 +810,10 @@ scope**, and each item is declared proactively at the defense (Appendix A, item 
 | **BL-04** | Kit 2 | — | One kit demonstrates; two are required for fieldwork | November |
 | **BL-05** | D8 PWA console, full implementation | — | Stub only in the prototype. 13–20 days per `archive/REVIEWPANELENGG-TEAM9.md` | November |
 | **BL-06** | Full SQLite schema | — | Minimal tables for the demonstration; the fieldwork schema is a separate design activity | October |
-| **BL-07** | **Ethics approval** | — | Drafting starts 24 Aug. C-05 budgets 45 days drafting plus 60 days review. **No plan change alters this date** | **December** |
-| **BL-08** | Any fieldwork data | — | Requires ethics approval (BL-07) and two kits (BL-04) | January 2027 |
+| **BL-07** | ~~**Ethics approval**~~ | — | **Withdrawn 16 Sep 2026** — the adviser stated that no university ethics review is required (§8.6). Reinstated only if RSK-14 fires | — |
+| **BL-08** | Any fieldwork data | — | Requires the consent materials (BL-10) and two kits (BL-04). ~~Ethics approval (BL-07)~~ removed 16 Sep 2026 | January 2027 |
 | **BL-09** | **The concurrency result** | — | **With one kit the measured ceiling is 1, not 8** (C-03). The 8-client figure in `decisions/SYNCRO-redesign-15k.md` §6.2 is an analytic bound | Fieldwork |
+| **BL-10** | **Consent materials** rewritten against the revised data boundary (formerly WP-303) | — | The adviser instructed on 16 September 2026 that the form is not written until the prototype is finished (§8.6). The 13 September review's seven blockers and nine material issues are answered here. Gates BL-08 | **After 1 Oct 2026** |
 
 **BL-09 requires particular care in presentation.** It is the contribution that replaces the claim
 given up in `decisions/SYNCRO-redesign-15k.md` §4.1. Presenting a modelled bound as a measurement is the
