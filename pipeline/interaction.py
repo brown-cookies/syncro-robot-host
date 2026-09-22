@@ -228,6 +228,27 @@ class InteractionRunner:
                 trace_required=disposition.trace_required,
             ) from exc
 
+    def persist_session_timeout_trace(self, *, session: SessionContext) -> None:
+        """Persist a degraded trace for a session the transport layer
+        reclaimed via its inactivity timeout (SPEC 7.4), before `end_audio`
+        ever submitted it to this runner.
+
+        This is the transport layer's entry point into the same F1/F4
+        degraded-trace path `run()`'s exception handler uses internally.
+        There is no `InteractionError` to classify here -- the interaction
+        never started -- only the disposition to persist, so this builds
+        one directly rather than routing through `_classify_failure`.
+        """
+        self._persist_degraded_trace(
+            session=session,
+            disposition=FailureDisposition(
+                stage="transport",
+                wire_code="session_timeout",
+                degradation_reason="session_timeout",
+                trace_required=True,
+            ),
+        )
+
     def _persist_degraded_trace(
         self, *, session: SessionContext, disposition: FailureDisposition
     ) -> None:

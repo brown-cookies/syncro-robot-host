@@ -11,13 +11,18 @@ What this file *does* do: accept a connection, authenticate it, run the
 SPEC 7.4 clock-sync handshake, track one in-flight session per connection
 against both `Connection` (local) and `SessionRegistry` (host-wide),
 buffer uplink `audio_frame` bytes, submit a completed utterance to the
-`InteractionWorker` queue, and stream the response and TTS audio back.
-What it deliberately does *not* do, left for later, full-behavior work:
+`InteractionWorker` queue, stream the response and TTS audio back, and
+reclaim a session abandoned mid-utterance once it exceeds SPEC 7.4's
+inactivity timeout (`StreamDeps.session_timeout_seconds`, `_StreamSession
+.run_reaper`) -- closing the "abandoned sessions accumulate for the
+process lifetime" gap that rule describes. What it deliberately does *not*
+do, left for later, full-behavior work:
 
 - Real device authentication (`default_dev_authenticate` accepts every
-  connection) -- SPEC 7.4's device-token check is unimplemented.
-- The 30s session-inactivity reaper (SPEC 7.4) -- a session abandoned
-  without a clean `end_audio`/disconnect is never reclaimed here.
+  connection) -- SPEC 7.4's device-token check is unimplemented. BL-03
+  defers this past the prototype defense (plain WebSocket is sufficient
+  on a controlled bench network); this is not scaffold debt to close in
+  a hurry.
 - Real playback-rate pacing on the downlink -- see `api/ws/downlink.py`.
 - Writing `condition_report`'s `degradation_reason` into a decision-trace
   row (SPEC 7.3) -- logged only for now.
@@ -93,9 +98,15 @@ class StreamDeps:
 
     Deliberately a narrower bundle than `composition.bootstrap.HostComponents`:
     the route only ever touches the worker queue, the session registry, and
-    two settings values, never the graph/store/tts objects `HostComponents`
+    a few settings values, never the graph/store/tts objects `HostComponents`
     also carries. Built once by `api/app.py`'s lifespan and attached to
     `app.state`; read-only for the life of the process.
+
+    `session_timeout_seconds` defaults to `config.settings.Settings`'s own
+    default (30s) so a `StreamDeps` built without wiring it up still
+    matches SPEC 7.4; `api/app.py`'s lifespan passes the real configured
+    value explicitly. Tests shorten it to get fast, deterministic reaper
+    coverage without a real 30s wait.
     """
 
     worker: InteractionWorker
@@ -103,6 +114,7 @@ class StreamDeps:
     audio_sample_rate_hz: int
     authenticate: Callable[[Mapping[str, str]], DeviceIdentity] = default_dev_authenticate
     downlink_pacer: DownlinkPacer = field(default_factory=ImmediateDownlinkPacer)
+    session_timeout_seconds: float = 30.0
 
 
 def get_stream_deps(websocket: WebSocket) -> StreamDeps:
@@ -139,6 +151,7 @@ class _InFlightSession:
     user_id: str
     wake_word_detected_at: int
     started_monotonic: float
+    last_activity_monotonic: float
     audio_buffer: bytearray = field(default_factory=bytearray)
     frame_count: int = 0
 
@@ -182,13 +195,97 @@ class _StreamSession:
     async def handle_disconnect(self) -> None:
         """Best-effort cleanup when the socket drops mid-session.
 
-        SPEC 7.4's real answer here is the 30s session-timeout reaper
-        freeing an abandoned `session_id` even without a clean disconnect;
-        this only covers the case where the ASGI layer does tell us the
-        socket closed. A reaper for sessions abandoned without any
-        disconnect event is still full-behavior work, not this scaffold.
+        Complements, rather than duplicates, `run_reaper`'s inactivity
+        timeout below: this covers the case where the ASGI layer *does*
+        tell us the socket closed (a clean disconnect), which is normally
+        much faster than waiting out the full inactivity window. The
+        reaper is what still catches a hard network drop that never
+        delivers a `websocket.disconnect` event at all.
         """
         self._release_session()
+
+    def _seconds_since_activity(self) -> float | None:
+        """Seconds since the in-flight session last saw activity, or
+        `None` if there is no in-flight session right now."""
+        if self._in_flight is None:
+            return None
+        return monotonic() - self._in_flight.last_activity_monotonic
+
+    async def _reclaim_if_stale(self) -> bool:
+        """Reclaim the in-flight session if it has exceeded SPEC 7.4's
+        inactivity timeout. Returns whether a session was reclaimed.
+
+        Per SPEC 7.4 this only watches the pre-`end_audio` window -- "no
+        `audio_frame` or `end_audio` received" -- not overall interaction
+        processing time: `_handle_end_audio` always releases the session
+        (`self._in_flight = None`, via `_release_session`) before or as
+        soon as it hands the utterance to the worker, on every path
+        (success, `InteractionError`, `WorkerQueueFullError`), so this
+        check and worker processing never overlap for the same session.
+        Total processing time is bounded separately, by
+        `INTENT_TIMEOUT_S + REASONING_TIMEOUT_S + NON_LLM_TIMEOUT_MARGIN_S
+        < SESSION_TIMEOUT_SECONDS` (`config/settings.py`'s own
+        `__post_init__` check) -- there is no second timeout to invent
+        here.
+        """
+        idle = self._seconds_since_activity()
+        if idle is None or idle < self._deps.session_timeout_seconds:
+            return False
+        in_flight = self._in_flight
+        assert in_flight is not None  # narrowed by the `idle is None` check above
+        await self._send_error(session_id=in_flight.session_id, error_code="session_timeout")
+        if self._in_flight is not in_flight:
+            # A legitimate end_audio (or error/collision) completed on the
+            # main receive loop while the line above was awaiting the
+            # socket write -- the only yield point in this method. The
+            # stray error message just sent is an unavoidable cost of that
+            # race (any timeout mechanism has it: a check and a real
+            # message can always land on either side of one instant), but
+            # this session_id already belongs to someone else's outcome
+            # now -- don't also persist a bogus trace or touch state that
+            # isn't ours to release.
+            return False
+        session = SessionContext(
+            session_id=in_flight.session_id,
+            user_id=in_flight.user_id,
+            started_monotonic=in_flight.started_monotonic,
+            wake_word_detected_at=in_flight.wake_word_detected_at,
+            clock_offset_ms=self._connection.clock_offset_ms,
+        )
+        self._deps.worker.runner.persist_session_timeout_trace(session=session)
+        self._release_session()
+        return True
+
+    async def run_reaper(self) -> None:
+        """Background task: periodically reclaim a session abandoned
+        without a clean `end_audio`/disconnect (SPEC 7.4's inactivity
+        timeout). One instance is started per connection in
+        `stream_endpoint` and cancelled in its `finally` block.
+
+        Polls on a fixed interval rather than scheduling one `asyncio`
+        timer per session: with at most one in-flight session per
+        connection (SPEC 7.4), a plain poll is simpler than juggling timer
+        handles across `start_audio`/`end_audio`/`error`, and the ~30s
+        target timeout tolerates a coarser poll granularity than this
+        while still detecting a test-shortened timeout quickly.
+        """
+        poll_interval_s = max(0.01, min(5.0, self._deps.session_timeout_seconds / 5))
+        try:
+            while True:
+                await asyncio.sleep(poll_interval_s)
+                try:
+                    await self._reclaim_if_stale()
+                except Exception:
+                    # Don't let one bad iteration -- e.g. sending on a
+                    # socket that's mid-close -- kill background
+                    # monitoring for whatever remains of this connection's
+                    # lifetime, or surface as an unexpected exception from
+                    # `await reaper_task` in stream_endpoint's cleanup.
+                    logger.exception(
+                        "session-timeout reaper iteration failed; continuing to poll"
+                    )
+        except asyncio.CancelledError:
+            pass  # normal shutdown path -- stream_endpoint cancels this on disconnect
 
     async def handle_binary(self, data: bytes) -> None:
         """`audio_frame` (SPEC 8.2): raw uplink PCM, no envelope."""
@@ -205,6 +302,7 @@ class _StreamSession:
             return
         self._in_flight.audio_buffer.extend(data)
         self._in_flight.frame_count += 1
+        self._in_flight.last_activity_monotonic = monotonic()
 
     async def handle_text(self, raw: str) -> None:
         """Dispatch one JSON control message by its `type` field.
@@ -247,11 +345,13 @@ class _StreamSession:
             await self._send_error(session_id=message.session_id, error_code="session_collision")
             return
 
+        now = monotonic()
         self._in_flight = _InFlightSession(
             session_id=message.session_id,
             user_id=message.user_id,
             wake_word_detected_at=message.wake_word_detected_at,
-            started_monotonic=monotonic(),
+            started_monotonic=now,
+            last_activity_monotonic=now,
         )
         await self._send_json(ReadyMessage(session_id=message.session_id))
 
@@ -371,6 +471,7 @@ async def stream_endpoint(websocket: WebSocket, deps: StreamDeps = Depends(get_s
         return
 
     session = _StreamSession(websocket=websocket, connection=connection, deps=deps)
+    reaper_task = asyncio.create_task(session.run_reaper())
     try:
         while True:
             frame = await websocket.receive()
@@ -386,6 +487,8 @@ async def stream_endpoint(websocket: WebSocket, deps: StreamDeps = Depends(get_s
     except WebSocketDisconnect:
         pass
     finally:
+        reaper_task.cancel()
+        await reaper_task
         await session.handle_disconnect()
 
 
