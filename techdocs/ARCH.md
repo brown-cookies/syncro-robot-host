@@ -519,7 +519,7 @@ pattern to avoid in any new entry point.
 | ERR-6 | Affect classifier artifact never loads at startup. | `FileNotFoundError`/`RuntimeError` from `ClassifierAffectDetector.__init__`, caught in `build_host_components`. | Composition falls back to `DevelopmentAffectDetector` for the process lifetime (section 6). | Logged once at startup; no per-turn trace impact. |
 | ERR-7 | Worker queue is full. | `InteractionWorker.submit` raises `WorkerQueueFullError`. | Caller (the WebSocket route) must reject the new work rather than block the event loop (LD-4, LD-5). | No trace — the interaction never started. |
 | ERR-8 | Submission arrives after `stop()`. | `WorkerStoppedError`. | Caller must treat this as a shutdown-in-progress condition. | No trace. |
-| ERR-9 | Session exceeds the WP-105 inactivity timeout mid-utterance. | `_StreamSession.run_reaper` (see `techdocs/work-packages/WP-105.md`). | Session is reclaimed; `condition_report`'s `degradation_reason` is logged only, not yet written to a decision-trace row (a stated WP-105 scope boundary). | Logged, not persisted to trace today. |
+| ERR-9 | Session exceeds the WP-105 inactivity timeout mid-utterance. | `_StreamSession.run_reaper` is planned by WP-105 but is not implemented yet. | Session reclamation is still an open WP-105 item; an abandoned session is not reclaimed by an inactivity reaper today. `condition_report`'s `degradation_reason` is also logged only, not yet written to a decision-trace row. | No reaper trace exists today; condition-report degradation remains logged, not persisted to trace. |
 
 Any exception not explicitly named above but matching `ValueError` or
 `RuntimeError` still resolves through the F4 map's catch-all rows (section
@@ -543,10 +543,9 @@ Default values: `intent_timeout_s=5`, `reasoning_timeout_s=6`,
 reasoning LLM are two sequential Ollama calls per turn (LD-7); they used to
 share one timeout, which meant a slow reasoning call could starve the
 budget the intent classifier needed, or vice versa. Splitting them (F6) lets
-each call be bounded independently while the sum invariant still guarantees
-the whole turn fits inside `session_timeout_seconds` before the WP-105
-session reaper (`techdocs/work-packages/WP-105.md`) would reclaim the
-session out from under it.
+each call be bounded independently while the sum invariant guarantees the
+whole turn fits inside the 30-second session ceiling that the WP-105
+inactivity reaper is required to enforce once implemented.
 
 `llm_warmup_timeout_s` (default 120s) is deliberately separate from both
 per-turn timeouts (section 6): it bounds Ollama's cold-start model load at
@@ -670,9 +669,10 @@ just documented.**
 Rule: `intent_timeout_s + reasoning_timeout_s + non_llm_timeout_margin_s`
 must be strictly less than `session_timeout_seconds`; `config/settings.py`
 raises at load time if this does not hold.
-Reason: a per-turn budget that exceeds the session timeout would let the
-WP-105 session reaper reclaim a session mid-turn on every single
-interaction, not just as a rare edge case (section 9).
+Reason: a per-turn budget that exceeds the session timeout would allow
+the WP-105 inactivity reaper, once implemented, to reclaim a session
+mid-turn on every interaction rather than only as a rare edge case
+(section 9).
 Failure mode if violated: were this only documented and not enforced, a
 future settings change (raising `reasoning_timeout_s` without checking the
 sum) would ship silently and only surface as sessions timing out under
@@ -708,9 +708,8 @@ the current source in `adapters/contracts.py`, `adapters/stt/whisper_adapter.py`
 `adapters/llm/ollama_adapter.py`, `adapters/tts/piper_adapter.py`,
 `adapters/affect/`, `pipeline/graph.py`, `pipeline/interaction.py`,
 `pipeline/worker.py`, and `composition/bootstrap.py` as read during
-authoring, not recalled from memory. No defect or inconsistency in that
-source was identified while writing this document; the discrepancies found
-earlier in this reorganization (the `PIPER_MODEL_PATH` extension mismatch,
-the stale F6 status previously in `techdocs/ARCH.md`, and the WP-105 reaper
-being documented as deferred when it is implemented) were all in
-documentation, not in the source transcribed here.
+authoring, not recalled from memory. The discrepancies found during this
+reorganization are documentation/source-alignment issues: the
+`PIPER_MODEL_PATH` extension mismatch, the stale F6 status previously in
+`techdocs/ARCH.md`, and the WP-105 reaper being documented as implemented
+when it is actually deferred.
