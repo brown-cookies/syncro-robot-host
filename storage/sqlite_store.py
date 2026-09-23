@@ -112,8 +112,8 @@ class SQLiteStore:
         """
         if not user_id:
             raise ValueError("user_id is required")
-        if not title:
-            raise ValueError("title is required")
+        if not title or not title.strip():
+            raise ValueError("title must contain non-whitespace characters")
 
         task_id = str(uuid4())
         now = datetime.now(timezone.utc)

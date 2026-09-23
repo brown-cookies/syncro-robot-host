@@ -215,10 +215,19 @@ class DecisionTraceRepository:
                     ),
                 )
 
-            dispatched_at = datetime.fromisoformat(row["timestamp"])
+            try:
+                dispatched_at = datetime.fromisoformat(row["timestamp"])
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    f"reminder trace {trace_id!r} has an invalid dispatch timestamp"
+                ) from exc
             if dispatched_at.tzinfo is None:
                 dispatched_at = dispatched_at.replace(tzinfo=timezone.utc)
-            if now - dispatched_at > timedelta(minutes=response_window_minutes):
+            if dispatched_at > now:
+                raise ValueError(
+                    f"reminder trace {trace_id!r} has a future dispatch timestamp"
+                )
+            if now - dispatched_at >= timedelta(minutes=response_window_minutes):
                 return ExecutionOutcome(
                     succeeded=False,
                     intent=intent,

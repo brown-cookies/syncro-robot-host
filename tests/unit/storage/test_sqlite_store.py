@@ -1,5 +1,6 @@
 from storage.decision_trace import compute_lead_time_ema
 import pytest
+from unittest.mock import patch
 from datetime import datetime, timedelta, timezone
 import sqlite3
 
@@ -372,6 +373,14 @@ def test_save_task_generates_task_id_and_persists_row(tmp_path):
     assert row == ("u1", "Buy milk", "high", "pending")
 
 
+def test_save_task_rejects_whitespace_only_title(tmp_path):
+    store = SQLiteStore(str(tmp_path / "tasks.db"))
+    store.ensure_user("u1")
+
+    with pytest.raises(ValueError, match="non-whitespace"):
+        store.save_task("u1", "   \t  ")
+
+
 def test_save_task_never_accepts_a_caller_supplied_id(tmp_path):
     """save_task's signature has no task_id parameter at all -- the id is
     always generated at the persistence boundary."""
@@ -433,6 +442,57 @@ def _outcome_kwargs(**overrides):
     )
     kwargs.update(overrides)
     return kwargs
+
+
+def test_update_reminder_outcome_exact_window_boundary_is_rejected(tmp_path):
+    db_path = str(tmp_path / "boundary.db")
+    store = SQLiteStore(db_path)
+    fixed_now = datetime(2026, 9, 24, 16, 0, tzinfo=timezone.utc)
+    dispatched_at = fixed_now - timedelta(minutes=10)
+    trace_id = _seed_pending_reminder(
+        store, db_path, dispatched_at=dispatched_at
+    )
+
+    with patch("storage.decision_trace.datetime") as mock_datetime:
+        mock_datetime.now.return_value = fixed_now
+        mock_datetime.fromisoformat.side_effect = datetime.fromisoformat
+        outcome = store.update_reminder_outcome(
+            user_id="u1", trace_id=trace_id, outcome="accepted",
+            **_outcome_kwargs(),
+        )
+
+    assert outcome.succeeded is False
+    assert outcome.error_code == "reminder_not_pending"
+
+
+def test_update_reminder_outcome_future_timestamp_raises_error(tmp_path):
+    db_path = str(tmp_path / "future.db")
+    store = SQLiteStore(db_path)
+    future = datetime.now(timezone.utc) + timedelta(minutes=1)
+    trace_id = _seed_pending_reminder(store, db_path, dispatched_at=future)
+
+    with pytest.raises(ValueError, match="future dispatch timestamp"):
+        store.update_reminder_outcome(
+            user_id="u1", trace_id=trace_id, outcome="accepted",
+            **_outcome_kwargs(),
+        )
+
+
+def test_update_reminder_outcome_malformed_timestamp_raises_error(tmp_path):
+    db_path = str(tmp_path / "malformed.db")
+    store = SQLiteStore(db_path)
+    trace_id = _seed_pending_reminder(store, db_path)
+    with sqlite3.connect(db_path) as conn:
+        conn.execute(
+            "UPDATE decision_trace SET timestamp = ? WHERE trace_id = ?",
+            ("not-a-timestamp", trace_id),
+        )
+
+    with pytest.raises(ValueError, match="invalid dispatch timestamp"):
+        store.update_reminder_outcome(
+            user_id="u1", trace_id=trace_id, outcome="accepted",
+            **_outcome_kwargs(),
+        )
 
 
 def test_update_reminder_outcome_accepted_updates_in_place_same_trace_id(tmp_path):

@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 StateTag = Literal["idle", "listening", "speaking", "break_prompt", "deferred"]
 AffectLevel = Literal["Low", "Moderate", "High"]
@@ -175,6 +175,14 @@ class AddTaskSlots(_ExecutableSlots):
     deadline: datetime | None = None
     notes: str | None = None
     priority: Literal["low", "normal", "high"] = "normal"
+
+    @field_validator("title")
+    @classmethod
+    def reject_whitespace_only_title(cls, value: str) -> str:
+        """Reject titles that contain no meaningful non-whitespace content."""
+        if not value.strip():
+            raise ValueError("title must contain non-whitespace characters")
+        return value
 
 
 class RescheduleTaskSlots(_ExecutableSlots):

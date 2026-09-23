@@ -52,3 +52,18 @@ def test_phase17_live_intents_are_outside_r1_r5_policy_domain(intent):
     assert result["reminder_outcome"] == "n/a"
     assert result["final_response"] == "The action is ready."
     assert result["action_taken"] == "deliver"
+
+
+def test_non_policy_intents_are_documentation_metadata():
+    from pipeline.nodes.policy import NON_POLICY_INTENTS, POLICY_GOVERNED_INTENTS
+
+    assert NON_POLICY_INTENTS == frozenset({
+        "ask_status",
+        "request_summary",
+        "request_break",
+        "add_task",
+        "reschedule_task",
+        "snooze_reminder",
+        "dismiss_reminder",
+    })
+    assert POLICY_GOVERNED_INTENTS == frozenset()

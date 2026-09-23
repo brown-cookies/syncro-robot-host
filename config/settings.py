@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import os
 from dataclasses import dataclass
 from functools import lru_cache
@@ -133,6 +134,23 @@ class Settings:
                 f"session_timeout_seconds ({self.session_timeout_seconds}s). "
                 "The two sequential Ollama calls could outlast the session "
                 "budget even though each individually looks fine."
+            )
+
+        if not math.isfinite(self.alpha) or not 0.0 < self.alpha < 1.0:
+            raise ValueError(
+                "alpha must be finite and strictly between 0 and 1"
+            )
+        if self.lead_time_min <= 0:
+            raise ValueError("lead_time_min must be greater than 0")
+        if self.lead_time_max < self.lead_time_min:
+            raise ValueError("lead_time_max must be greater than or equal to lead_time_min")
+        if (
+            not math.isfinite(float(self.lead_time_default))
+            or self.lead_time_default < self.lead_time_min
+            or self.lead_time_default > self.lead_time_max
+        ):
+            raise ValueError(
+                "lead_time_default must be finite and within lead_time_min and lead_time_max"
             )
 
     @classmethod
