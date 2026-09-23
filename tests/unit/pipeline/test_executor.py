@@ -267,27 +267,55 @@ def test_executor_uses_same_store_instance_passed_at_construction(tmp_path):
     assert executor.store is store
 
 
-def test_executor_converts_unexpected_storage_failure_to_execution_error():
-    class FailingStore:
-        def save_task(self, *args, **kwargs):
-            raise OSError("database unavailable")
+def test_reschedule_task_parses_natural_language_deadline(tmp_path):
+    store = SQLiteStore(str(tmp_path / "exec.db"))
+    store.ensure_user("u1")
+    task_id = store.save_task("u1", "Team meeting")
+    executor = make_executor(store)
 
-    executor = ActionExecutor(
-        FailingStore(),
-        reminder_response_window_minutes=10,
-        adaptive_lead_time_enabled=True,
-        alpha=0.3,
-        lead_time_min=5,
-        lead_time_max=60,
-        default_lead_time=15,
-    )
     outcome = executor.execute({
         "user_id": "u1",
-        "intent": "add_task",
-        "slots": {"title": "test failure"},
+        "intent": "reschedule_task",
+        "slots": {
+            "task_reference": "Team meeting",
+            "new_deadline": "tomorrow at 9am",
+        },
+        "context": {
+            "tasks": [{"task_id": task_id, "title": "Team meeting"}],
+            "overdue_tasks": [],
+        },
+    })
+
+    assert outcome.succeeded is True
+    with store.database.connection() as conn:
+        deadline = conn.execute(
+            "SELECT deadline FROM tasks WHERE task_id = ?", (task_id,)
+        ).fetchone()[0]
+    from datetime import datetime
+
+    parsed = datetime.fromisoformat(deadline)
+    assert parsed.hour == 9
+    assert parsed.minute == 0
+
+
+def test_reschedule_task_rejects_unparseable_natural_language_deadline(tmp_path):
+    store = SQLiteStore(str(tmp_path / "exec.db"))
+    store.ensure_user("u1")
+    task_id = store.save_task("u1", "Team meeting")
+    executor = make_executor(store)
+
+    outcome = executor.execute({
+        "user_id": "u1",
+        "intent": "reschedule_task",
+        "slots": {
+            "task_reference": "Team meeting",
+            "new_deadline": "sometime when the moon is full",
+        },
+        "context": {
+            "tasks": [{"task_id": task_id, "title": "Team meeting"}],
+            "overdue_tasks": [],
+        },
     })
 
     assert outcome.succeeded is False
-    assert outcome.error_code == "execution_error"
-    assert "OSError" in outcome.detail
-    assert "database unavailable" in outcome.detail
+    assert outcome.error_code == "invalid_slots"

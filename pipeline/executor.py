@@ -6,6 +6,7 @@ from typing import Any
 
 from pydantic import ValidationError
 
+from pipeline.deadline_parser import DeadlineParseError, parse_deadline
 from pipeline.contracts import (
     AddTaskSlots,
     DismissReminderSlots,
@@ -147,9 +148,14 @@ class ActionExecutor:
                 )
 
         try:
+            parsed_deadline = parse_deadline(raw_slots.get("new_deadline"))
             slots = RescheduleTaskSlots(
                 task_id=task_id,
-                new_deadline=raw_slots.get("new_deadline"),
+                new_deadline=parsed_deadline,
+            )
+        except DeadlineParseError as exc:
+            return self._failure(
+                "reschedule_task", "invalid_slots", str(exc)
             )
         except ValidationError as exc:
             return self._failure(

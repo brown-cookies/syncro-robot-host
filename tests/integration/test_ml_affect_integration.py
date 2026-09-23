@@ -23,7 +23,6 @@ def make_test_executor(store):
         lead_time_min=5,
         lead_time_max=60,
         default_lead_time=15,
-        executor=make_test_executor(store),
     )
 
 
@@ -84,7 +83,6 @@ def test_classifier_detector_reaches_pending_trace(monkeypatch, tmp_path):
         deadline_proximity_hours=2,
         grace_window_minutes=15,
         default_lead_time=15,
-        executor=make_test_executor(store),
     )
 
     user_id = "wp104-integration-user"
