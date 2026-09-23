@@ -169,6 +169,7 @@ def invoke_dialogue(
     user_id: str,
     audio: Any,
     sample_rate: int,
+    interaction_sequence: int = 0,
 ) -> DialogueGraphResult:
     """Invoke the dialogue graph with the supplied request state."""
     started = monotonic()
@@ -176,6 +177,7 @@ def invoke_dialogue(
         {
             "session_id": session_id,
             "user_id": user_id,
+            "interaction_sequence": interaction_sequence,
             "audio": audio,
             "sample_rate": sample_rate,
             "started_monotonic": started,

@@ -24,6 +24,11 @@ class DialogueState(TypedDict, total=False):
     # Used for user-scoped context and storage operations.
     user_id: str
 
+    # Host-assigned per-user interaction sequence used to make reminder-mutating
+    # utterance ordering explicit. This is transient graph state only; it is
+    # never persisted as a decision_trace field.
+    interaction_sequence: int
+
     # Raw input audio for the current utterance.
     # Consumed by the STT and affect-analysis branches.
     audio: Any

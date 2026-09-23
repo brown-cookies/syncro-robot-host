@@ -271,3 +271,144 @@ def test_start_called_twice_raises():
 def test_maxsize_must_be_at_least_one():
     with pytest.raises(ValueError):
         InteractionWorker(runner=FakeRunner(), maxsize=0)
+
+
+# --- reminder-mutation ordering -------------------------------------------
+
+
+def test_accepted_interactions_get_monotonic_per_user_sequences():
+    runner = FakeRunner()
+    worker = InteractionWorker(runner=runner, maxsize=4)
+    worker.start()
+    try:
+        f1 = worker.submit(
+            session=make_session(session_id="u1-1", user_id="u1"),
+            audio=AUDIO,
+            sample_rate=16_000,
+        )
+        f2 = worker.submit(
+            session=make_session(session_id="u1-2", user_id="u1"),
+            audio=AUDIO,
+            sample_rate=16_000,
+        )
+        assert f1.result(timeout=2.0).session_id == "u1-1"
+        assert f2.result(timeout=2.0).session_id == "u1-2"
+        assert [call.interaction_sequence for call in runner.calls] == [1, 2]
+    finally:
+        worker.stop(timeout=2.0)
+
+
+def test_interaction_sequences_are_scoped_per_user():
+    runner = FakeRunner()
+    worker = InteractionWorker(runner=runner, maxsize=4)
+    worker.start()
+    try:
+        futures = [
+            worker.submit(
+                session=make_session(session_id="u1-1", user_id="u1"),
+                audio=AUDIO,
+                sample_rate=16_000,
+            ),
+            worker.submit(
+                session=make_session(session_id="u2-1", user_id="u2"),
+                audio=AUDIO,
+                sample_rate=16_000,
+            ),
+            worker.submit(
+                session=make_session(session_id="u1-2", user_id="u1"),
+                audio=AUDIO,
+                sample_rate=16_000,
+            ),
+        ]
+        for future in futures:
+            future.result(timeout=2.0)
+        assert [(call.user_id, call.interaction_sequence) for call in runner.calls] == [
+            ("u1", 1),
+            ("u2", 1),
+            ("u1", 2),
+        ]
+    finally:
+        worker.stop(timeout=2.0)
+
+
+def test_newer_same_user_interaction_finishes_after_older_mutation():
+    state = {"reminder-r1": None}
+    lock = threading.Lock()
+
+    class MutatingRunner(FakeRunner):
+        actions = {
+            "older": "snoozed",
+            "newer": "accepted",
+        }
+
+        def run(self, *, session, audio, sample_rate):
+            result = super().run(session=session, audio=audio, sample_rate=sample_rate)
+            with lock:
+                state["reminder-r1"] = self.actions[session.session_id]
+            return result
+
+    runner = MutatingRunner()
+    worker = InteractionWorker(runner=runner, maxsize=4)
+    worker.start()
+    try:
+        older = worker.submit(
+            session=make_session(session_id="older", user_id="u1"),
+            audio=AUDIO,
+            sample_rate=16_000,
+        )
+        newer = worker.submit(
+            session=make_session(session_id="newer", user_id="u1"),
+            audio=AUDIO,
+            sample_rate=16_000,
+        )
+        older.result(timeout=2.0)
+        newer.result(timeout=2.0)
+
+        assert [call.interaction_sequence for call in runner.calls] == [1, 2]
+        assert state["reminder-r1"] == "accepted"
+    finally:
+        worker.stop(timeout=2.0)
+
+
+
+def test_concurrent_same_user_submissions_preserve_sequence_execution_order():
+    runner = FakeRunner()
+    gate = runner.block_on("blocker")
+    worker = InteractionWorker(runner=runner, maxsize=32)
+    worker.start()
+    try:
+        worker.submit(
+            session=make_session(session_id="blocker", user_id="u1"),
+            audio=AUDIO,
+            sample_rate=16_000,
+        )
+        assert _wait_until(lambda: len(runner.calls) == 1)
+
+        sessions = [make_session(session_id=f"queued-{i}", user_id="u1") for i in range(10)]
+        futures = []
+        submit_threads = []
+        futures_lock = threading.Lock()
+
+        def submit_one(session):
+            future = worker.submit(session=session, audio=AUDIO, sample_rate=16_000)
+            with futures_lock:
+                futures.append((session.session_id, future))
+
+        for session in sessions:
+            thread = threading.Thread(target=submit_one, args=(session,))
+            submit_threads.append(thread)
+            thread.start()
+        for thread in submit_threads:
+            thread.join(timeout=2.0)
+            assert not thread.is_alive()
+
+        gate.set()
+        for _, future in futures:
+            future.result(timeout=2.0)
+
+        queued_calls = [call for call in runner.calls if call.session_id.startswith("queued-")]
+        assert [call.interaction_sequence for call in queued_calls] == list(range(2, 12))
+    finally:
+        if not gate.is_set():
+            gate.set()
+        worker.stop(timeout=2.0)

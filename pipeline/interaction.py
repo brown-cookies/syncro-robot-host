@@ -58,6 +58,12 @@ class SessionContext:
     session_id: str
     user_id: str
     started_monotonic: float
+    # Host-assigned per-user interaction order. The transport/worker boundary
+    # assigns this sequence when an accepted utterance enters the single FIFO
+    # interaction worker. A later sequence is therefore a newer user utterance.
+    # Direct runner callers may leave it at 0 because they do not participate
+    # in the transport ordering boundary.
+    interaction_sequence: int = 0
     wake_word_detected_at: int | None = None  # edge-clock epoch ms, SPEC 7.3
     clock_offset_ms: float | None = None
 
@@ -228,6 +234,7 @@ class InteractionRunner:
                 user_id=session.user_id,
                 audio=audio,
                 sample_rate=sample_rate,
+                interaction_sequence=session.interaction_sequence,
             )
             state: dict[str, Any] = cast(dict[str, Any], graph_result.state)
 
