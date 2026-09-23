@@ -235,3 +235,96 @@ def test_clarification_path_returns_before_the_mutation_guard():
     assert result["draft_response"] == final_response
     assert result["proposed_action"] == "clarify"
     assert llm.prompt is None
+
+
+class OutcomeLLM:
+    def __init__(self, response: str):
+        self.response = response
+        self.prompt = None
+
+    def generate(self, prompt):
+        self.prompt = prompt
+        return self.response
+
+
+def test_llm_failed_execution_blocks_fabricated_confirmation():
+    llm = OutcomeLLM(
+        '{"response_text":"I added the task for you.","proposed_action":"respond"}'
+    )
+    node = make_llm_node(llm)
+    result = node({
+        "intent": "add_task",
+        "intent_confidence": 0.98,
+        "transcript": "add my thesis task",
+        "slots": {"title": "my thesis task"},
+        "context": {"tasks": [], "overdue_tasks": []},
+        "execution_outcome": {
+            "succeeded": False,
+            "intent": "add_task",
+            "error_code": "invalid_slots",
+            "detail": "invalid deadline",
+        },
+    })
+    assert "I have not added that yet" in result["draft_response"]
+    assert '"succeeded": false' in llm.prompt
+
+
+def test_llm_failed_execution_allows_honest_failure_response():
+    llm = OutcomeLLM(
+        '{"response_text":"I could not add that task because the deadline was invalid.","proposed_action":"respond"}'
+    )
+    node = make_llm_node(llm)
+    result = node({
+        "intent": "add_task",
+        "intent_confidence": 0.98,
+        "transcript": "add my thesis task",
+        "slots": {"title": "my thesis task"},
+        "context": {"tasks": [], "overdue_tasks": []},
+        "execution_outcome": {
+            "succeeded": False,
+            "intent": "add_task",
+            "error_code": "invalid_slots",
+            "detail": "invalid deadline",
+        },
+    })
+    assert result["draft_response"] == (
+        "I could not add that task because the deadline was invalid."
+    )
+
+
+def test_llm_successful_execution_allows_truthful_confirmation():
+    llm = OutcomeLLM(
+        '{"response_text":"I added the task for you.","proposed_action":"respond"}'
+    )
+    node = make_llm_node(llm)
+    result = node({
+        "intent": "add_task",
+        "intent_confidence": 0.98,
+        "transcript": "add my thesis task",
+        "slots": {"title": "my thesis task"},
+        "context": {"tasks": [], "overdue_tasks": []},
+        "execution_outcome": {
+            "succeeded": True,
+            "intent": "add_task",
+            "target_id": "task-123",
+            "detail": "task 'task-123' created",
+        },
+    })
+    assert result["draft_response"] == "I added the task for you."
+    assert '"succeeded": true' in llm.prompt
+
+
+def test_llm_without_execution_outcome_keeps_propose_only_safety():
+    llm = OutcomeLLM(
+        '{"response_text":"I added the task for you.","proposed_action":"respond"}'
+    )
+    node = make_llm_node(llm)
+    result = node({
+        "intent": "add_task",
+        "intent_confidence": 0.98,
+        "transcript": "add my thesis task",
+        "slots": {"title": "my thesis task"},
+        "context": {"tasks": [], "overdue_tasks": []},
+    })
+    assert "I have not added that yet" in result["draft_response"]
+    assert "No authoritative execution result exists" in llm.prompt

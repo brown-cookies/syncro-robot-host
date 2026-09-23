@@ -74,6 +74,14 @@ class InteractionResult:
     stage_timings_s: dict[str, float]
     latency_ms: float
     latency_basis: str
+
+    # Evidence-only snapshots from the completed graph state. These are not
+    # persisted as new decision-trace fields and are not part of the transport
+    # response contract; run_wp103.py uses them to make live evidence explicit.
+    intent: str
+    slots: dict[str, Any]
+    execution_outcome: dict[str, Any] | None
+
     # Set when the interaction completed but degraded (e.g. "tts_timeout").
     # In that case `tts_audio` is empty and the edge falls back to the text
     # in `response_payload["tts_text"]`.
@@ -206,7 +214,6 @@ class InteractionRunner:
         self._tts_executor.shutdown(wait=False, cancel_futures=True)
         self._tts_executor = None
 
-
     def run(self, *, session: SessionContext, audio: np.ndarray, sample_rate: int) -> InteractionResult:
         """Run one full interaction and return its result.
 
@@ -226,7 +233,8 @@ class InteractionRunner:
 
             response_payload = state.get("response_payload")
             if response_payload is None:
-                raise KeyError("dialogue graph state is missing 'response_payload'")
+                raise KeyError(
+                    "dialogue graph state is missing 'response_payload'")
             pending_trace_raw = state.get("pending_trace")
             if pending_trace_raw is None:
                 raise KeyError(
@@ -285,13 +293,21 @@ class InteractionRunner:
                 latency_ms=latency_ms,
                 latency_basis=latency_basis,
                 degradation_reason=degradation_reason,
+                intent=str(state.get("intent", "")),
+                slots=dict(state.get("slots", {})),
+                execution_outcome=(
+                    dict(state["execution_outcome"])
+                    if isinstance(state.get("execution_outcome"), dict)
+                    else None
+                ),
             )
         except InteractionError:
             raise
         except Exception as exc:  # noqa: BLE001 - interaction boundary
             disposition = self._classify_failure(exc)
             if disposition.trace_required:
-                self._persist_degraded_trace(session=session, disposition=disposition)
+                self._persist_degraded_trace(
+                    session=session, disposition=disposition)
             raise InteractionError(
                 disposition.stage,
                 exc,
