@@ -29,6 +29,29 @@ def make_llm_node(llm):
 
         context = state.get("context", {})
         reasoning_context = _select_context_for_request(transcript, context)
+        execution_outcome = state.get("execution_outcome")
+
+        if isinstance(execution_outcome, dict):
+            outcome_text = json.dumps(execution_outcome, ensure_ascii=True)
+            if execution_outcome.get("succeeded") is True:
+                execution_instructions = (
+                    "- An authoritative executor confirms the mutation succeeded. "
+                    "You may truthfully confirm that completed mutation in response_text. "
+                    "Do not invent details beyond the outcome and supplied context."
+                )
+            else:
+                execution_instructions = (
+                    "- An authoritative executor reports failure. "
+                    "Do not claim that the mutation happened. Explain the failure "
+                    "helpfully using the supplied detail, without inventing a target or result."
+                )
+        else:
+            outcome_text = "null"
+            execution_instructions = (
+                "- No authoritative execution result exists for this turn. "
+                "For executable intents, phrase the response as a proposal/request "
+                "and do not claim the mutation completed."
+            )
 
         prompt = f"""You are the SYNCRO dialogue reasoner.
 Return ONLY JSON: {{"response_text":"...","proposed_action":"..."}}.
@@ -38,6 +61,7 @@ Intent: {intent}
 Intent confidence: {intent_confidence}
 Slots: {json.dumps(state.get("slots", {}), ensure_ascii=True)}
 Retrieved context: {json.dumps(reasoning_context, ensure_ascii=True)}
+Authoritative execution outcome: {outcome_text}
 
 Context-selection rules:
 - If the user asks for overdue task(s), use ONLY the overdue_tasks list.
@@ -45,13 +69,12 @@ Context-selection rules:
 - If there are no overdue tasks, say that there are no overdue tasks.
 - For other task-list requests, use the relevant task lists in the retrieved context.
 
-Execution boundary:
-- Node 3 ONLY drafts a response and proposed action. It does NOT execute database or task mutations.
-- Never claim that a task was added, rescheduled, snoozed, or dismissed as completed.
-- For add_task or reschedule_task, phrase the output as a proposed/requested action, not as a completed mutation.
-- For snooze_reminder or dismiss_reminder, describe the requested reminder action as a proposal unless an executor explicitly confirms success.
+Execution truthfulness rules:
+- The executor is authoritative; proposed_action is never proof that a mutation happened.
+{execution_instructions}
+- Never invent a successful mutation or a target that is absent from the supplied state.
 
-Write a useful natural-language response based on the intent, utterance, and context.
+Write a useful natural-language response based on the intent, utterance, context, and actual execution outcome.
 Never output motor commands or low-level hardware instructions.
 """
         raw = llm.generate(prompt)
@@ -63,9 +86,18 @@ Never output motor commands or low-level hardware instructions.
         if not isinstance(proposed_action, str) or not proposed_action.strip():
             proposed_action = "respond"
 
-        response_text = _reject_unexecuted_mutation_claim(
-            intent, response_text.strip()
+        response_text = response_text.strip()
+        execution_succeeded = (
+            isinstance(execution_outcome, dict)
+            and execution_outcome.get("succeeded") is True
         )
+        if not execution_succeeded:
+            # The lexical guard remains the backstop whenever execution is
+            # absent or failed. A confirmed success is allowed through because
+            # the executor, not the LLM, is the authority for completion.
+            response_text = _reject_unexecuted_mutation_claim(
+                intent, response_text
+            )
         return {"draft_response": response_text, "proposed_action": proposed_action.strip()}
     return llm_node
 

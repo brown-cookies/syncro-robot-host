@@ -72,6 +72,12 @@ class InteractionResult:
     stage_timings_s: dict[str, float]
     latency_ms: float
     latency_basis: str
+    # Evidence-only snapshots from the completed graph state. These are not
+    # persisted as new decision-trace fields and are not part of the transport
+    # response contract; run_wp103.py uses them to make live evidence explicit.
+    intent: str
+    slots: dict[str, Any]
+    execution_outcome: dict[str, Any] | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -213,6 +219,13 @@ class InteractionRunner:
                 stage_timings_s=stage_timings_s,
                 latency_ms=latency_ms,
                 latency_basis=latency_basis,
+                intent=str(state.get("intent", "")),
+                slots=dict(state.get("slots", {})),
+                execution_outcome=(
+                    dict(state["execution_outcome"])
+                    if isinstance(state.get("execution_outcome"), dict)
+                    else None
+                ),
             )
         except InteractionError:
             raise

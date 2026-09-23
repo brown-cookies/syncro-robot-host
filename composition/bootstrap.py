@@ -23,6 +23,7 @@ from audio.resample import to_pcm16_16k
 from config.settings import Settings, get_settings
 from pipeline.host_pipeline import HostPipeline
 from storage.sqlite_store import SQLiteStore
+from pipeline.reference_resolution import ReferenceClarificationStore
 
 if TYPE_CHECKING:
     from pipeline.interaction import InteractionRunner
@@ -152,6 +153,8 @@ def build_host_components(
 
     from pipeline.graph import build_dialogue_graph
 
+    reference_clarification_store = ReferenceClarificationStore()
+
     if affect_detector is None:
         backend = settings.affect_detector_backend.strip().lower()
         if backend == "development":
@@ -172,6 +175,18 @@ def build_host_components(
                 "AFFECT_DETECTOR_BACKEND must be 'development' or 'classifier'"
             )
 
+    from pipeline.executor import ActionExecutor
+
+    executor = ActionExecutor(
+        store,
+        reminder_response_window_minutes=settings.reminder_response_window_minutes,
+        adaptive_lead_time_enabled=settings.adaptive_lead_time_enabled,
+        alpha=settings.alpha,
+        lead_time_min=settings.lead_time_min,
+        lead_time_max=settings.lead_time_max,
+        default_lead_time=settings.lead_time_default,
+    )
+
     graph = build_dialogue_graph(
         stt=stt,
         intent_classifier=intent_classifier,
@@ -183,6 +198,9 @@ def build_host_components(
         deadline_proximity_hours=settings.deadline_proximity_hours,
         grace_window_minutes=settings.grace_window_minutes,
         default_lead_time=settings.lead_time_default,
+        executor=executor,
+        reference_clarification_store=reference_clarification_store,
+        reminder_response_window_minutes=settings.reminder_response_window_minutes,
     )
 
     # F3: the runner is part of the composition root so every caller

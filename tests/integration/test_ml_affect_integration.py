@@ -11,6 +11,20 @@ from adapters.affect import ClassifierAffectDetector
 from ml.affect.artifacts import save_model_artifact
 from pipeline.graph import build_dialogue_graph
 from storage.sqlite_store import SQLiteStore
+from pipeline.executor import ActionExecutor
+
+
+def make_test_executor(store):
+    return ActionExecutor(
+        store,
+        reminder_response_window_minutes=10,
+        adaptive_lead_time_enabled=True,
+        alpha=0.3,
+        lead_time_min=5,
+        lead_time_max=60,
+        default_lead_time=15,
+        executor=make_test_executor(store),
+    )
 
 
 class FixedAffectModel:
@@ -70,6 +84,7 @@ def test_classifier_detector_reaches_pending_trace(monkeypatch, tmp_path):
         deadline_proximity_hours=2,
         grace_window_minutes=15,
         default_lead_time=15,
+        executor=make_test_executor(store),
     )
 
     user_id = "wp104-integration-user"

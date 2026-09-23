@@ -13,10 +13,20 @@ POLICY_RULES: dict[tuple[str, str], str] = {
     ("High", "imminent"): "R5",
 }
 
-# Section 8.3 explicitly excludes these interactions from the R1-R5 policy
-# domain. Keeping this set centralized prevents fabricated policy decisions.
-NON_POLICY_INTENTS = frozenset({"ask_status", "request_summary"})
-POLICY_GOVERNED_INTENTS = frozenset({"dismiss_reminder", "snooze_reminder"})
+# Documentation metadata only: Section 8.3 explicitly excludes
+# conversational and immediate-action turns from the R1-R5 reminder-delivery
+# policy domain. This set is intentionally not used to decide policy routing;
+# POLICY_GOVERNED_INTENTS is the executable policy-domain gate.
+NON_POLICY_INTENTS = frozenset({
+    "ask_status",
+    "request_summary",
+    "request_break",
+    "add_task",
+    "reschedule_task",
+    "snooze_reminder",
+    "dismiss_reminder",
+})
+POLICY_GOVERNED_INTENTS = frozenset()
 
 
 def apply_policy(affect_level: str, deadline_proximity: str) -> str:
@@ -40,8 +50,9 @@ def make_policy_node(grace_window_minutes: int, default_lead_time: float, store=
         if intent is None:
             raise RuntimeError("Node 4 policy requires intent in DialogueState.")
 
-        # Clarification and summary/status interactions never enter the policy
-        # domain. This is required by SPEC §8.3 (policy_rule/deadline both n/a).
+        # This node currently has no live conversational intents in the R1-R5
+        # policy domain. Immediate action intents are executor-owned; reminder
+        # delivery/defer remains scheduler-owned for the future policy tick.
         governed = intent in POLICY_GOVERNED_INTENTS
         affect = state.get("affect_level")
         proximity = state.get("deadline_proximity", "n/a")

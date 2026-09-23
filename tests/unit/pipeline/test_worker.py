@@ -34,6 +34,9 @@ def make_result(**overrides) -> InteractionResult:
         stage_timings_s={},
         latency_ms=1.0,
         latency_basis="host_observed_only",
+        intent="ask_status",
+        slots={},
+        execution_outcome=None,
     )
     fields.update(overrides)
     return InteractionResult(**fields)
