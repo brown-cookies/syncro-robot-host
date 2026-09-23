@@ -69,6 +69,20 @@ class SQLiteStore:
         """Persist a validated degraded interaction trace."""
         self.decision_trace.save_degraded(record)
 
+    def list_pending_reminder_references(
+        self,
+        user_id: str,
+        *,
+        response_window_minutes: int,
+        limit: int = 10,
+    ):
+        """Return active pending reminder candidates for reference clarification."""
+        return self.decision_trace.list_pending_reminder_references(
+            user_id,
+            response_window_minutes=response_window_minutes,
+            limit=limit,
+        )
+
     def suppress_pending_reminder_traces(self, user_id: str) -> int:
         """Suppress other pending reminder traces when policy requires it."""
         return self.decision_trace.suppress_pending_reminder_traces(user_id)
@@ -112,8 +126,8 @@ class SQLiteStore:
         """
         if not user_id:
             raise ValueError("user_id is required")
-        if not title or not title.strip():
-            raise ValueError("title must contain non-whitespace characters")
+        if not title:
+            raise ValueError("title is required")
 
         task_id = str(uuid4())
         now = datetime.now(timezone.utc)

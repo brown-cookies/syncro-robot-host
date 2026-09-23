@@ -270,3 +270,118 @@ def test_graph_bypasses_executor_for_low_confidence_clarification(tmp_path):
     assert "execution_outcome" not in result
     assert result["proposed_action"] == "clarify"
     assert result["policy_rule"] == "n/a"
+
+
+def test_graph_asks_for_ambiguous_reminder_then_executes_after_clarification(tmp_path):
+    from datetime import datetime, timezone
+    from uuid import uuid4
+
+    from pipeline.reference_resolution import ReferenceClarificationStore
+
+    store = SQLiteStore(str(tmp_path / "reference-lifecycle.db"))
+    store.ensure_user("u-reference")
+    t1 = store.save_task("u-reference", "Submit thesis")
+    t2 = store.save_task("u-reference", "Team meeting")
+    now = datetime.now(timezone.utc).isoformat()
+    with store.database.connection() as conn:
+        for task_id in (t1, t2):
+            conn.execute(
+                """
+                INSERT INTO decision_trace(
+                    trace_id, session_id, user_id, timestamp, intent,
+                    intent_confidence, retrieved_context_ids, affect_level,
+                    deadline_proximity, policy_rule, action_taken, lead_time_min,
+                    reminder_outcome, degradation_reason, network_event,
+                    latency_ms, latency_basis
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    str(uuid4()),
+                    "reminder-session",
+                    "u-reference",
+                    now,
+                    "request_summary",
+                    0.96,
+                    f'["{task_id}"]',
+                    "Moderate",
+                    "not_imminent",
+                    "R2",
+                    "defer",
+                    15.0,
+                    "pending",
+                    None,
+                    None,
+                    1.0,
+                    "host_observed_only",
+                ),
+            )
+
+    class SequenceSTT:
+        def __init__(self):
+            self.transcripts = ["snooze that reminder", "the thesis one"]
+
+        def transcribe(self, audio, sample_rate):
+            return self.transcripts.pop(0)
+
+    class ReminderIntent:
+        def __init__(self):
+            self.calls = 0
+
+        def classify(self, transcript):
+            self.calls += 1
+            return "snooze_reminder", 0.96, {"snooze_minutes": 10}
+
+    class CaptureLLM(FakeLLM):
+        def __init__(self):
+            self.prompts = []
+
+        def generate(self, prompt):
+            self.prompts.append(prompt)
+            return '{"response_text":"The reminder action is complete.","proposed_action":"respond"}'
+
+    clarification_store = ReferenceClarificationStore()
+    intent = ReminderIntent()
+    llm = CaptureLLM()
+    graph = build_dialogue_graph(
+        stt=SequenceSTT(),
+        intent_classifier=intent,
+        llm=llm,
+        store=store,
+        affect_detector=FakeAffect(),
+        confidence_threshold=0.60,
+        context_top_k=5,
+        deadline_proximity_hours=2,
+        grace_window_minutes=15,
+        default_lead_time=15,
+        executor=make_test_executor(store),
+        reference_clarification_store=clarification_store,
+        reminder_response_window_minutes=10,
+    )
+
+    first = graph.invoke({
+        "session_id": "s-reference-1",
+        "user_id": "u-reference",
+        "audio": np.zeros(160, dtype=np.float32),
+        "sample_rate": 16000,
+    })
+
+    assert first["reference_resolution_status"] == "needs_clarification"
+    assert first["proposed_action"] == "clarify"
+    assert "Which reminder do you mean?" in first["final_response"]
+    assert "execution_outcome" not in first
+    assert clarification_store.get("u-reference") is not None
+    assert intent.calls == 1
+
+    second = graph.invoke({
+        "session_id": "s-reference-2",
+        "user_id": "u-reference",
+        "audio": np.zeros(160, dtype=np.float32),
+        "sample_rate": 16000,
+    })
+
+    assert second["reference_resolution_status"] == "resolved"
+    assert second["execution_outcome"]["succeeded"] is True
+    assert second["execution_outcome"]["intent"] == "snooze_reminder"
+    assert second["execution_outcome"]["snooze_minutes"] == 10
+    assert clarification_store.get("u-reference") is None
+    assert intent.calls == 1  # clarification turn does not reclassify the answer

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any, Literal
 
@@ -13,6 +14,16 @@ from pipeline.contracts import (
     ExecutionOutcome,
 )
 from storage.database import SQLiteDatabase
+
+
+@dataclass(frozen=True, slots=True)
+class PendingReminderReference:
+    """Bounded, user-scoped information for a pending reminder candidate."""
+
+    trace_id: str
+    timestamp: datetime
+    title: str | None
+    label: str
 
 
 TRACE_FIELDS = (
@@ -101,6 +112,104 @@ class DecisionTraceRepository:
                 values,
             )
 
+
+    def list_pending_reminder_references(
+        self,
+        user_id: str,
+        *,
+        response_window_minutes: int,
+        limit: int = 10,
+    ) -> list[PendingReminderReference]:
+        """Return active pending reminders for a user without mutating storage.
+
+        Only rows strictly inside the configured response window are returned.
+        Malformed or future-dated reminder timestamps fail closed with ``ValueError``
+        so the caller cannot accidentally select an invalid reminder.
+        ``limit`` bounds in-memory clarification state.
+        """
+        if not user_id:
+            raise ValueError("user_id is required")
+        if response_window_minutes <= 0:
+            raise ValueError("response_window_minutes must be positive")
+        if limit <= 0:
+            raise ValueError("limit must be positive")
+
+        now = datetime.now(timezone.utc)
+        with self._database.connection() as conn:
+            rows = conn.execute(
+                """
+                SELECT trace_id, timestamp, retrieved_context_ids
+                  FROM decision_trace
+                 WHERE user_id = ?
+                   AND reminder_outcome = 'pending'
+                 ORDER BY timestamp DESC
+                 LIMIT ?
+                """,
+                (user_id, limit),
+            ).fetchall()
+
+            task_titles: dict[str, str] = {}
+            task_ids: set[str] = set()
+            parsed_rows: list[tuple[Any, datetime, list[str]]] = []
+            for row in rows:
+                raw_timestamp = str(row["timestamp"])
+                try:
+                    dispatched_at = datetime.fromisoformat(raw_timestamp.replace("Z", "+00:00"))
+                except ValueError as exc:
+                    raise ValueError(
+                        f"invalid reminder timestamp for trace {row['trace_id']!r}: {raw_timestamp!r}"
+                    ) from exc
+                if dispatched_at.tzinfo is None:
+                    dispatched_at = dispatched_at.replace(tzinfo=timezone.utc)
+                if dispatched_at > now:
+                    raise ValueError(
+                        f"future reminder timestamp for trace {row['trace_id']!r}: {raw_timestamp!r}"
+                    )
+
+                raw_ids = row["retrieved_context_ids"]
+                if raw_ids is None:
+                    context_ids: list[str] = []
+                else:
+                    try:
+                        parsed = json.loads(raw_ids)
+                    except (TypeError, json.JSONDecodeError) as exc:
+                        raise ValueError(
+                            f"invalid retrieved_context_ids for trace {row['trace_id']!r}"
+                        ) from exc
+                    if not isinstance(parsed, list) or any(not isinstance(item, str) for item in parsed):
+                        raise ValueError(
+                            f"invalid retrieved_context_ids for trace {row['trace_id']!r}"
+                        )
+                    context_ids = parsed
+
+                parsed_rows.append((row, dispatched_at, context_ids))
+                task_ids.update(context_ids)
+
+            if task_ids:
+                placeholders = ", ".join("?" for _ in task_ids)
+                task_rows = conn.execute(
+                    f"SELECT task_id, title FROM tasks WHERE user_id = ? AND task_id IN ({placeholders})",
+                    (user_id, *sorted(task_ids)),
+                ).fetchall()
+                task_titles = {str(row["task_id"]): str(row["title"]) for row in task_rows}
+
+        candidates: list[PendingReminderReference] = []
+        window = timedelta(minutes=response_window_minutes)
+        for row, dispatched_at, context_ids in parsed_rows:
+            elapsed = now - dispatched_at
+            if elapsed >= window:
+                continue
+            title = next((task_titles[item] for item in context_ids if item in task_titles), None)
+            label = title or f"Reminder at {dispatched_at.strftime('%Y-%m-%d %H:%M UTC')}"
+            candidates.append(
+                PendingReminderReference(
+                    trace_id=str(row["trace_id"]),
+                    timestamp=dispatched_at,
+                    title=title,
+                    label=label,
+                )
+            )
+        return candidates
 
     def suppress_pending_reminder_traces(self, user_id: str) -> int:
         """Suppress other pending reminder traces when policy requires it."""
@@ -215,19 +324,10 @@ class DecisionTraceRepository:
                     ),
                 )
 
-            try:
-                dispatched_at = datetime.fromisoformat(row["timestamp"])
-            except (TypeError, ValueError) as exc:
-                raise ValueError(
-                    f"reminder trace {trace_id!r} has an invalid dispatch timestamp"
-                ) from exc
+            dispatched_at = datetime.fromisoformat(row["timestamp"])
             if dispatched_at.tzinfo is None:
                 dispatched_at = dispatched_at.replace(tzinfo=timezone.utc)
-            if dispatched_at > now:
-                raise ValueError(
-                    f"reminder trace {trace_id!r} has a future dispatch timestamp"
-                )
-            if now - dispatched_at >= timedelta(minutes=response_window_minutes):
+            if now - dispatched_at > timedelta(minutes=response_window_minutes):
                 return ExecutionOutcome(
                     succeeded=False,
                     intent=intent,

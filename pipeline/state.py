@@ -90,6 +90,15 @@ class DialogueState(TypedDict, total=False):
     # Contains the explicit success/failure outcome of the action.
     execution_outcome: dict[str, Any]
 
+    # Transient reminder-reference resolution status for the execution boundary.
+    # Values are internal graph state only; they are not persisted to decision_trace.
+    reference_resolution_status: str
+
+    # Marks a turn that is answering a previously issued reminder-reference
+    # clarification question. The pending continuation itself lives in the
+    # process-local ReferenceClarificationStore, not in this state.
+    reference_clarification_active: bool
+
     # Final user-facing response text after execution outcome, safety checks,
     # and policy processing have been applied.
     final_response: str

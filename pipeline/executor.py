@@ -71,13 +71,20 @@ class ActionExecutor:
         if not isinstance(slots, dict):
             return self._failure(intent, "invalid_slots", "slots must be an object")
 
-        if intent == "add_task":
-            return self._execute_add_task(user_id, slots)
-        if intent == "reschedule_task":
-            return self._execute_reschedule_task(user_id, slots, state)
-        if intent == "snooze_reminder":
-            return self._execute_reminder(user_id, slots, "snoozed")
-        return self._execute_reminder(user_id, slots, "accepted")
+        try:
+            if intent == "add_task":
+                return self._execute_add_task(user_id, slots)
+            if intent == "reschedule_task":
+                return self._execute_reschedule_task(user_id, slots, state)
+            if intent == "snooze_reminder":
+                return self._execute_reminder(user_id, slots, "snoozed", state)
+            return self._execute_reminder(user_id, slots, "accepted", state)
+        except Exception as exc:  # noqa: BLE001 - execution boundary converts runtime failures
+            return self._failure(
+                intent,
+                "execution_error",
+                f"{type(exc).__name__}: {exc}",
+            )
 
     def _execute_add_task(
         self, user_id: str, raw_slots: dict[str, Any]
@@ -171,15 +178,29 @@ class ActionExecutor:
         user_id: str,
         raw_slots: dict[str, Any],
         outcome: str,
+        state: DialogueState,
     ) -> ExecutionOutcome:
+        intent = "snooze_reminder" if outcome == "snoozed" else "dismiss_reminder"
+        if state.get("reference_resolution_status") == "not_found":
+            if outcome == "snoozed":
+                value = raw_slots.get("snooze_minutes")
+                if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+                    return self._failure(
+                        intent,
+                        "invalid_slots",
+                        "snooze_reminder requires positive integer snooze_minutes",
+                    )
+            return self._failure(
+                intent,
+                "reminder_not_found",
+                "no active pending reminder matches the current user reference",
+            )
+
         model_type = SnoozeReminderSlots if outcome == "snoozed" else DismissReminderSlots
         try:
             slots = model_type.model_validate(raw_slots)
         except ValidationError as exc:
-            intent = "snooze_reminder" if outcome == "snoozed" else "dismiss_reminder"
             return self._failure(intent, "invalid_slots", _validation_detail(exc))
-
-        intent = "snooze_reminder" if outcome == "snoozed" else "dismiss_reminder"
         snooze_minutes = slots.snooze_minutes if outcome == "snoozed" else None
         return self._store.update_reminder_outcome(
             user_id=user_id,
