@@ -8,6 +8,7 @@ from typing import Any, Callable
 
 from langgraph.graph import END, START, StateGraph
 
+from pipeline.executor import ActionExecutor, EXECUTABLE_INTENTS
 from pipeline.nodes.affect import make_affect_node
 from pipeline.nodes.context import make_context_node
 from pipeline.nodes.intent import make_intent_node
@@ -47,6 +48,26 @@ def timed(name: str, node: Callable[[DialogueState], DialogueState]):
     return wrapped
 
 
+
+def make_executor_node(executor: ActionExecutor):
+    """Create the graph node that records the executor's authoritative outcome."""
+
+    def executor_node(state: DialogueState) -> DialogueState:
+        outcome = executor.execute(state)
+        return {"execution_outcome": outcome.model_dump(mode="json")}
+
+    return executor_node
+
+
+def _route_after_context(state: DialogueState) -> str:
+    """Route only executable, sufficiently confident turns through the executor."""
+    if state.get("proposed_action") == "clarify":
+        return "node3_llm"
+    if state.get("intent") in EXECUTABLE_INTENTS:
+        return "executor"
+    return "node3_llm"
+
+
 def build_dialogue_graph(
     *,
     stt,
@@ -59,6 +80,7 @@ def build_dialogue_graph(
     deadline_proximity_hours: int,
     grace_window_minutes: int,
     default_lead_time: float,
+    executor: ActionExecutor | None = None,
 ):
     """Build the dialogue graph and connect its dependency-injected nodes."""
 
@@ -75,6 +97,9 @@ def build_dialogue_graph(
         "node2_context",
         make_context_node(store, context_top_k, deadline_proximity_hours),
     )
+    if executor is None:
+        raise ValueError("build_dialogue_graph requires an ActionExecutor")
+    builder.add_node("executor", make_executor_node(executor))
     builder.add_node("node3_llm", make_llm_node(llm))
     builder.add_node("affect", timed(
         "affect", make_affect_node(affect_detector)))
@@ -95,7 +120,12 @@ def build_dialogue_graph(
     # Main dialogue path.
     builder.add_edge("node1_stt", "node1_intent")
     builder.add_edge("node1_intent", "node2_context")
-    builder.add_edge("node2_context", "node3_llm")
+    builder.add_conditional_edges(
+        "node2_context",
+        _route_after_context,
+        {"executor": "executor", "node3_llm": "node3_llm"},
+    )
+    builder.add_edge("executor", "node3_llm")
 
     # Node 4 is the synchronization point for Node 3 + parallel affect.
     builder.add_edge(["node3_llm", "affect"], "node4_policy")

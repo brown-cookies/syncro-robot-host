@@ -6,7 +6,19 @@ import numpy as np
 
 from pipeline.graph import build_dialogue_graph
 from storage.sqlite_store import SQLiteStore
+from pipeline.executor import ActionExecutor
 
+
+def make_test_executor(store):
+    return ActionExecutor(
+        store,
+        reminder_response_window_minutes=10,
+        adaptive_lead_time_enabled=True,
+        alpha=0.3,
+        lead_time_min=5,
+        lead_time_max=60,
+        default_lead_time=15,
+    )
 
 class FakeSTT:
     def transcribe(self, audio, sample_rate):
@@ -54,6 +66,7 @@ def test_graph_runs_all_four_nodes_and_assembles_pending_trace(tmp_path):
         stt=FakeSTT(), intent_classifier=FakeIntent(), llm=FakeLLM(), store=store, affect_detector=FakeAffect(),
         confidence_threshold=0.60, context_top_k=5, deadline_proximity_hours=2,
         grace_window_minutes=15, default_lead_time=15,
+        executor=make_test_executor(store),
     )
     result = graph.invoke({
         "session_id": "s1", "user_id": "u1",
@@ -105,6 +118,7 @@ def test_graph_records_stage_timings_for_both_parallel_branches(tmp_path):
         stt=FakeSTT(), intent_classifier=FakeIntent(), llm=FakeLLM(), store=store,
         affect_detector=FakeAffect(), confidence_threshold=0.60, context_top_k=5,
         deadline_proximity_hours=2, grace_window_minutes=15, default_lead_time=15,
+        executor=make_test_executor(store),
     )
     result = graph.invoke({
         "session_id": "s-timings", "user_id": "u-timings",
@@ -130,6 +144,7 @@ def test_graph_records_affect_degradation_reason_for_fallback(tmp_path):
         stt=FakeSTT(), intent_classifier=FakeIntent(), llm=FakeLLM(), store=store,
         affect_detector=FailingAffect(), confidence_threshold=0.60, context_top_k=5,
         deadline_proximity_hours=2, grace_window_minutes=15, default_lead_time=15,
+        executor=make_test_executor(store),
     )
     result = graph.invoke({
         "session_id": "s-fallback", "user_id": "u-fallback",
@@ -141,3 +156,117 @@ def test_graph_records_affect_degradation_reason_for_fallback(tmp_path):
     assert pending_trace["affect_level"] == "Low"
     assert pending_trace["degradation_reason"] == "affect_detector_failure"
     assert store.list_decision_traces("u-fallback") == []
+
+
+class RecordingExecutor:
+    def __init__(self, delegate):
+        self.delegate = delegate
+        self.calls = []
+
+    def execute(self, state):
+        self.calls.append(dict(state))
+        return self.delegate.execute(state)
+
+
+def _phase3_executor(store):
+    from pipeline.executor import ActionExecutor
+
+    return ActionExecutor(
+        store,
+        reminder_response_window_minutes=10,
+        adaptive_lead_time_enabled=True,
+        alpha=0.3,
+        lead_time_min=5,
+        lead_time_max=60,
+        default_lead_time=15,
+    )
+
+
+def test_graph_routes_executable_intent_through_executor_before_llm(tmp_path):
+    store = SQLiteStore(str(tmp_path / "executor-order.db"))
+    store.ensure_user("u-exec")
+    recorder = RecordingExecutor(_phase3_executor(store))
+
+    class ActionSTT(FakeSTT):
+        def transcribe(self, audio, sample_rate):
+            return "add a task"
+
+    class ActionIntent(FakeIntent):
+        def classify(self, transcript):
+            return "add_task", 0.95, {"title": "write report"}
+
+    class OrderLLM(FakeLLM):
+        def __init__(self):
+            self.observed = None
+
+        def generate(self, prompt):
+            self.observed = prompt
+            return '{"response_text":"I can help with that.","proposed_action":"respond"}'
+
+    llm = OrderLLM()
+    graph = build_dialogue_graph(
+        stt=ActionSTT(),
+        intent_classifier=ActionIntent(),
+        llm=llm,
+        store=store,
+        affect_detector=FakeAffect(),
+        confidence_threshold=0.60,
+        context_top_k=5,
+        deadline_proximity_hours=2,
+        grace_window_minutes=15,
+        default_lead_time=15,
+        executor=recorder,
+    )
+
+    result = graph.invoke({
+        "session_id": "s-exec",
+        "user_id": "u-exec",
+        "audio": np.zeros(160, dtype=np.float32),
+        "sample_rate": 16000,
+    })
+
+    assert recorder.calls
+    assert result["execution_outcome"]["succeeded"] is True
+    retrieved_context = llm.observed.split("Retrieved context:", 1)[1]
+    assert '"tasks": []' in retrieved_context
+    with store.database.connection() as conn:
+        row = conn.execute(
+            "SELECT title FROM tasks WHERE user_id = ?", ("u-exec",)
+        ).fetchone()
+    assert row[0] == "write report"
+
+
+def test_graph_bypasses_executor_for_low_confidence_clarification(tmp_path):
+    store = SQLiteStore(str(tmp_path / "clarify.db"))
+    store.ensure_user("u-clarify")
+    recorder = RecordingExecutor(_phase3_executor(store))
+
+    class UnclearIntent(FakeIntent):
+        def classify(self, transcript):
+            return "add_task", 0.20, {"title": "should not execute"}
+
+    graph = build_dialogue_graph(
+        stt=FakeSTT(),
+        intent_classifier=UnclearIntent(),
+        llm=FakeLLM(),
+        store=store,
+        affect_detector=FakeAffect(),
+        confidence_threshold=0.60,
+        context_top_k=5,
+        deadline_proximity_hours=2,
+        grace_window_minutes=15,
+        default_lead_time=15,
+        executor=recorder,
+    )
+
+    result = graph.invoke({
+        "session_id": "s-clarify",
+        "user_id": "u-clarify",
+        "audio": np.zeros(160, dtype=np.float32),
+        "sample_rate": 16000,
+    })
+
+    assert recorder.calls == []
+    assert "execution_outcome" not in result
+    assert result["proposed_action"] == "clarify"
+    assert result["policy_rule"] == "n/a"

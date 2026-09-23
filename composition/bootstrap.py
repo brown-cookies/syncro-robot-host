@@ -172,6 +172,18 @@ def build_host_components(
                 "AFFECT_DETECTOR_BACKEND must be 'development' or 'classifier'"
             )
 
+    from pipeline.executor import ActionExecutor
+
+    executor = ActionExecutor(
+        store,
+        reminder_response_window_minutes=settings.reminder_response_window_minutes,
+        adaptive_lead_time_enabled=settings.adaptive_lead_time_enabled,
+        alpha=settings.alpha,
+        lead_time_min=settings.lead_time_min,
+        lead_time_max=settings.lead_time_max,
+        default_lead_time=settings.lead_time_default,
+    )
+
     graph = build_dialogue_graph(
         stt=stt,
         intent_classifier=intent_classifier,
@@ -183,6 +195,7 @@ def build_host_components(
         deadline_proximity_hours=settings.deadline_proximity_hours,
         grace_window_minutes=settings.grace_window_minutes,
         default_lead_time=settings.lead_time_default,
+        executor=executor,
     )
 
     # F3: the runner is part of the composition root so every caller

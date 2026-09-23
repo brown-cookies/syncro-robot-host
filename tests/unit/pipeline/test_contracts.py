@@ -1,11 +1,23 @@
 from __future__ import annotations
+from typing import get_args
 
 from datetime import datetime, timezone
 from uuid import uuid4
 
 import pytest
+from pydantic import ValidationError
 
-from pipeline.contracts import DegradedTraceRecord, DecisionTraceRecord, ResponsePayload
+from pipeline.contracts import (
+    ALLOWED_INTENTS,
+    AddTaskSlots,
+    DegradedTraceRecord,
+    DecisionTraceRecord,
+    DismissReminderSlots,
+    ExecutionOutcome,
+    RescheduleTaskSlots,
+    ResponsePayload,
+    SnoozeReminderSlots,
+)
 
 
 def base_trace(**overrides):
@@ -69,7 +81,8 @@ def test_non_policy_trace_requires_na_for_both_fields():
 def test_invalid_policy_enum_is_rejected():
     """Verify that invalid policy enum is rejected."""
     with pytest.raises(ValueError):
-        DecisionTraceRecord(**base_trace(policy_rule="R9", deadline_proximity="imminent"))
+        DecisionTraceRecord(**base_trace(policy_rule="R9",
+                            deadline_proximity="imminent"))
 
 
 def test_policy_trace_accepts_each_spec_rule():
@@ -87,7 +100,8 @@ def test_policy_trace_accepts_each_spec_rule():
                 intent="dismiss_reminder",
                 policy_rule=rule,
                 deadline_proximity=proximity,
-                action_taken="deliver" if rule in {"R1", "R3", "R5"} else "defer",
+                action_taken="deliver" if rule in {
+                    "R1", "R3", "R5"} else "defer",
                 reminder_outcome="pending",
             )
         )
@@ -137,3 +151,141 @@ def test_degraded_trace_allows_standalone_event_without_session_id():
 def test_normal_decision_trace_still_rejects_missing_interaction_fields():
     with pytest.raises(ValueError):
         DecisionTraceRecord(**base_trace(intent=None))
+
+
+# --- Phase 17 Phase 1: ExecutableIntent / slots / ExecutionOutcome ---------
+
+
+from pipeline.contracts import ExecutableIntent  # noqa: E402  (grouped with the above)
+
+
+def test_executable_intents_are_closed_and_a_subset_of_allowed_intents():
+    """ExecutableIntent is a strict, closed subset of the classifier-level
+    ALLOWED_INTENTS -- request_summary/request_break/ask_status never reach
+    the executor."""
+    executable = set(get_args(ExecutableIntent))
+    assert executable == {
+        "add_task", "reschedule_task", "snooze_reminder", "dismiss_reminder",
+    }
+    assert executable <= ALLOWED_INTENTS
+    assert executable != ALLOWED_INTENTS
+
+
+def test_add_task_slots_requires_title_and_defaults_priority():
+    slots = AddTaskSlots(title="Buy milk")
+    assert slots.priority == "normal"
+    assert slots.deadline is None
+    with pytest.raises(ValidationError):
+        AddTaskSlots(title="")
+
+
+def test_reschedule_task_slots_requires_explicit_task_id_no_fallback():
+    """No "most recent task" default exists -- task_id is a required field
+    with no default, so a caller that can't name a task cannot construct
+    valid slots at all."""
+    slots = RescheduleTaskSlots(
+        task_id="task-1", new_deadline=datetime.now(timezone.utc)
+    )
+    assert slots.task_id == "task-1"
+    with pytest.raises(ValidationError):
+        RescheduleTaskSlots(new_deadline=datetime.now(
+            timezone.utc))  # type: ignore
+
+
+def test_snooze_reminder_slots_rejects_non_positive_minutes():
+    SnoozeReminderSlots(reference_trace_id="trace-1", snooze_minutes=5)
+    with pytest.raises(ValidationError):
+        SnoozeReminderSlots(reference_trace_id="trace-1", snooze_minutes=0)
+    with pytest.raises(ValidationError):
+        SnoozeReminderSlots(reference_trace_id="trace-1", snooze_minutes=-5)
+
+
+def test_reminder_slots_reject_missing_reference():
+    """No "most recent pending row for user" fallback -- the reference is a
+    required field, not something the slot model can default its way out
+    of."""
+    with pytest.raises(ValidationError):
+        SnoozeReminderSlots(snooze_minutes=5)  # type: ignore
+    with pytest.raises(ValidationError):
+        DismissReminderSlots()  # type: ignore
+    DismissReminderSlots(reference_trace_id="trace-1")
+
+
+def test_execution_outcome_succeeded_requires_target_id_and_no_error_code():
+    ExecutionOutcome(
+        succeeded=True,
+        intent="dismiss_reminder",
+        target_id="trace-1",
+        detail="reminder dismissed",
+    )
+    with pytest.raises(ValidationError, match="must carry a target_id"):
+        ExecutionOutcome(succeeded=True, intent="dismiss_reminder", detail="x")
+    with pytest.raises(ValidationError, match="must not carry an error_code"):
+        ExecutionOutcome(
+            succeeded=True,
+            intent="dismiss_reminder",
+            target_id="trace-1",
+            error_code="reminder_not_found",
+            detail="x",
+        )
+
+
+def test_execution_outcome_failed_requires_error_code_and_no_target_id():
+    ExecutionOutcome(
+        succeeded=False,
+        intent="dismiss_reminder",
+        error_code="reminder_not_found",
+        detail="no pending reminder for that reference",
+    )
+    with pytest.raises(ValidationError, match="must carry an error_code"):
+        ExecutionOutcome(
+            succeeded=False, intent="dismiss_reminder", detail="x")
+    with pytest.raises(ValidationError, match="must not carry a target_id"):
+        ExecutionOutcome(
+            succeeded=False,
+            intent="dismiss_reminder",
+            target_id="trace-1",
+            error_code="reminder_not_found",
+            detail="x",
+        )
+
+
+def test_execution_outcome_snooze_minutes_reaches_the_outcome():
+    """snooze_minutes must survive on a succeeded snooze_reminder outcome so
+    Phase 2's EMA update isn't discarded (plan Phase 2 test requirement)."""
+    outcome = ExecutionOutcome(
+        succeeded=True,
+        intent="snooze_reminder",
+        target_id="trace-1",
+        snooze_minutes=10,
+        detail="snoozed for 10 minutes",
+    )
+    assert outcome.snooze_minutes == 10
+    with pytest.raises(ValidationError, match="must carry snooze_minutes"):
+        ExecutionOutcome(
+            succeeded=True,
+            intent="snooze_reminder",
+            target_id="trace-1",
+            detail="x",
+        )
+
+
+def test_execution_outcome_snooze_minutes_rejected_off_snooze_intent():
+    with pytest.raises(ValidationError, match="only valid for a snooze_reminder"):
+        ExecutionOutcome(
+            succeeded=True,
+            intent="dismiss_reminder",
+            target_id="trace-1",
+            snooze_minutes=5,
+            detail="x",
+        )
+
+
+def test_execution_outcome_rejects_unknown_error_code():
+    with pytest.raises(ValidationError):
+        ExecutionOutcome(
+            succeeded=False,
+            intent="add_task",
+            error_code="not_a_real_code",  # type: ignore
+            detail="x",
+        )
