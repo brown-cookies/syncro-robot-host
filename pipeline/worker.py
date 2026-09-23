@@ -94,11 +94,12 @@ class InteractionWorker:
         """The `InteractionRunner` this worker drains its queue into.
 
         Exposed read-only, alongside `queue_depth`, so a caller outside the
-        worker -- the transport layer's session-timeout reaper (WP-105) --
-        can reach `InteractionRunner.persist_session_timeout_trace` for a
-        session that timed out before `end_audio` ever submitted it to this
-        queue. Every other interaction with the runner still goes through
-        `submit()`.
+        worker -- the transport layer, for both its session-timeout reaper
+        and its queue-overflow handling (WP-105) -- can reach
+        `InteractionRunner.persist_transport_degraded_trace` for a
+        transport-originated failure that never reaches `submit()`, or
+        that this queue rejected outright. Every other interaction with
+        the runner still goes through `submit()`.
         """
         return self._runner
 

@@ -228,23 +228,28 @@ class InteractionRunner:
                 trace_required=disposition.trace_required,
             ) from exc
 
-    def persist_session_timeout_trace(self, *, session: SessionContext) -> None:
-        """Persist a degraded trace for a session the transport layer
-        reclaimed via its inactivity timeout (SPEC 7.4), before `end_audio`
-        ever submitted it to this runner.
+    def persist_transport_degraded_trace(
+        self, *, session: SessionContext, wire_code: str, degradation_reason: str
+    ) -> None:
+        """Persist a degraded trace for a failure the transport layer
+        decided on its own, before the interaction ever reached `run()`.
 
-        This is the transport layer's entry point into the same F1/F4
-        degraded-trace path `run()`'s exception handler uses internally.
-        There is no `InteractionError` to classify here -- the interaction
-        never started -- only the disposition to persist, so this builds
-        one directly rather than routing through `_classify_failure`.
+        There is no `InteractionError` to classify here -- nothing crossed
+        the interaction boundary -- only the disposition to persist, built
+        directly rather than routed through `_classify_failure`. Shared
+        entry point for every transport-originated degradation:
+        `api/ws/stream.py`'s session-timeout reaper
+        (`degradation_reason="session_timeout"`) and its
+        `WorkerQueueFullError` handling
+        (`degradation_reason="queue_overflow"`) both call this rather than
+        each carrying its own near-duplicate wrapper.
         """
         self._persist_degraded_trace(
             session=session,
             disposition=FailureDisposition(
                 stage="transport",
-                wire_code="session_timeout",
-                degradation_reason="session_timeout",
+                wire_code=wire_code,
+                degradation_reason=degradation_reason,
                 trace_required=True,
             ),
         )

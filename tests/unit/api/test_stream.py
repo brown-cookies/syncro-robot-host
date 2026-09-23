@@ -113,7 +113,16 @@ class FakeStore:
 class AlwaysFullWorker:
     """Stands in for a saturated `InteractionWorker` without needing a real
     thread/queue -- exercises exactly the `WorkerQueueFullError` branch
-    `pipeline/worker.py`'s own docstring says Phase 14 must catch."""
+    `pipeline/worker.py`'s own docstring says Phase 14 must catch.
+
+    `runner` is optional: most callers (e.g. an auth-failure test that
+    never reaches the queue-overflow branch at all) don't need one, but
+    the queue-overflow test does, since that branch now calls
+    `.runner.persist_transport_degraded_trace(...)`.
+    """
+
+    def __init__(self, runner: InteractionRunner | None = None) -> None:
+        self.runner = runner
 
     def submit(self, *, session, audio, sample_rate):
         raise WorkerQueueFullError("queue is full")
@@ -305,8 +314,12 @@ def test_pipeline_failure_maps_to_a_wire_error_and_persists_a_degraded_trace():
 
 
 def test_queue_overflow_reports_queue_overflow_and_still_releases_the_session():
+    store = FakeStore()
+    runner = InteractionRunner(graph=FakeGraph(), store=store, tts=FakeTTS(), resampler=to_pcm16_16k)
     deps = stream.StreamDeps(
-        worker=AlwaysFullWorker(), session_registry=SessionRegistry(), audio_sample_rate_hz=16_000
+        worker=AlwaysFullWorker(runner=runner),
+        session_registry=SessionRegistry(),
+        audio_sample_rate_hz=16_000,
     )
     app = build_test_app_with_deps(deps)
 
@@ -325,6 +338,10 @@ def test_queue_overflow_reports_queue_overflow_and_still_releases_the_session():
                 {"type": "start_audio", "session_id": "s1", "user_id": "u1", "wake_word_detected_at": 2}
             )
             assert ws.receive_json()["type"] == "ready"
+
+    assert store.saved_degraded_traces
+    assert store.saved_degraded_traces[0]["degradation_reason"] == "queue_overflow"
+    assert store.saved_degraded_traces[0]["session_id"] == "s1"
 
 
 # --- session-timeout reaper ---------------------------------------------

@@ -252,7 +252,9 @@ class _StreamSession:
             wake_word_detected_at=in_flight.wake_word_detected_at,
             clock_offset_ms=self._connection.clock_offset_ms,
         )
-        self._deps.worker.runner.persist_session_timeout_trace(session=session)
+        self._deps.worker.runner.persist_transport_degraded_trace(
+            session=session, wire_code="session_timeout", degradation_reason="session_timeout"
+        )
         self._release_session()
         return True
 
@@ -430,6 +432,9 @@ class _StreamSession:
             )
         except WorkerQueueFullError:
             await self._send_error(session_id=session.session_id, error_code="queue_overflow")
+            self._deps.worker.runner.persist_transport_degraded_trace(
+                session=session, wire_code="queue_overflow", degradation_reason="queue_overflow"
+            )
             self._release_session()
             return
 
