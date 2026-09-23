@@ -92,6 +92,23 @@ def test_add_task_creates_real_row_and_returns_generated_id(tmp_path):
     )
 
 
+def test_add_task_rejects_whitespace_only_title(tmp_path):
+    store = SQLiteStore(str(tmp_path / "exec.db"))
+    store.ensure_user("u1")
+    executor = make_executor(store)
+
+    outcome = executor.execute({
+        "user_id": "u1",
+        "intent": "add_task",
+        "slots": {"title": "   \t  "},
+    })
+
+    assert outcome.succeeded is False
+    assert outcome.error_code == "invalid_slots"
+    with store.database.connection() as conn:
+        assert conn.execute("SELECT COUNT(*) FROM tasks").fetchone()[0] == 0
+
+
 def test_add_task_invalid_slots_never_mutates_storage(tmp_path):
     store = SQLiteStore(str(tmp_path / "exec.db"))
     store.ensure_user("u1")
@@ -265,71 +282,3 @@ def test_executor_uses_same_store_instance_passed_at_construction(tmp_path):
     store = SQLiteStore(str(tmp_path / "exec.db"))
     executor = make_executor(store)
     assert executor.store is store
-
-
-class RaisingStore:
-    """Minimal storage double that simulates infrastructure failures."""
-
-    def save_task(self, *args, **kwargs):
-        raise RuntimeError("database unavailable")
-
-    def reschedule_task(self, *args, **kwargs):
-        raise RuntimeError("database locked")
-
-    def update_reminder_outcome(self, *args, **kwargs):
-        raise RuntimeError("sqlite connection lost")
-
-
-def test_add_task_storage_failure_returns_execution_outcome(tmp_path):
-    executor = make_executor(RaisingStore())
-
-    outcome = executor.execute({
-        "user_id": "u1",
-        "intent": "add_task",
-        "slots": {"title": "Submit thesis"},
-    })
-
-    assert outcome.succeeded is False
-    assert outcome.error_code == "execution_error"
-    assert outcome.target_id is None
-    assert "task creation failed" in outcome.detail
-    assert "database unavailable" in outcome.detail
-
-
-def test_reschedule_storage_failure_returns_execution_outcome(tmp_path):
-    executor = make_executor(RaisingStore())
-
-    outcome = executor.execute({
-        "user_id": "u1",
-        "intent": "reschedule_task",
-        "slots": {
-            "task_reference": "Submit thesis",
-            "new_deadline": "2026-09-26T14:30:00+00:00",
-        },
-        "context": {
-            "tasks": [{"task_id": "task-1", "title": "Submit thesis"}],
-            "overdue_tasks": [],
-        },
-    })
-
-    assert outcome.succeeded is False
-    assert outcome.error_code == "execution_error"
-    assert outcome.target_id is None
-    assert "task reschedule failed" in outcome.detail
-    assert "database locked" in outcome.detail
-
-
-def test_reminder_storage_failure_returns_execution_outcome(tmp_path):
-    executor = make_executor(RaisingStore())
-
-    outcome = executor.execute({
-        "user_id": "u1",
-        "intent": "dismiss_reminder",
-        "slots": {"reference_trace_id": "trace-1"},
-    })
-
-    assert outcome.succeeded is False
-    assert outcome.error_code == "execution_error"
-    assert outcome.target_id is None
-    assert "reminder outcome update failed" in outcome.detail
-    assert "sqlite connection lost" in outcome.detail

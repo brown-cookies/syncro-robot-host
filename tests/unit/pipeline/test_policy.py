@@ -101,3 +101,18 @@ def test_all_five_rules_are_reachable_through_the_node():
             "draft_response": "Draft.",
         })
         assert result["policy_rule"] == rule
+
+
+def test_non_policy_intents_are_documentation_metadata():
+    from pipeline.nodes.policy import NON_POLICY_INTENTS, POLICY_GOVERNED_INTENTS
+
+    assert NON_POLICY_INTENTS == frozenset({
+        "ask_status",
+        "request_summary",
+        "request_break",
+        "add_task",
+        "reschedule_task",
+        "snooze_reminder",
+        "dismiss_reminder",
+    })
+    assert POLICY_GOVERNED_INTENTS == frozenset()

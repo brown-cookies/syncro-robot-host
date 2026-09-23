@@ -13,11 +13,10 @@ POLICY_RULES: dict[tuple[str, str], str] = {
     ("High", "imminent"): "R5",
 }
 
-# Section 8.3 explicitly excludes conversational and immediate-action turns
-# from the R1-R5 reminder-delivery policy domain. Phase 17 keeps executable
-# action intents out of this policy node: their authoritative mutation has
-# already happened (or failed) in the executor, while R1-R5 remain available
-# for the future scheduler-owned reminder-delivery domain.
+# Documentation metadata only: Section 8.3 explicitly excludes
+# conversational and immediate-action turns from the R1-R5 reminder-delivery
+# policy domain. This set is intentionally not used to decide policy routing;
+# POLICY_GOVERNED_INTENTS is the executable policy-domain gate.
 NON_POLICY_INTENTS = frozenset({
     "ask_status",
     "request_summary",
