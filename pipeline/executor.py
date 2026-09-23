@@ -89,13 +89,18 @@ class ActionExecutor:
                 "add_task", "invalid_slots", _validation_detail(exc)
             )
 
-        task_id = self._store.save_task(
-            user_id,
-            slots.title,
-            deadline=slots.deadline,
-            notes=slots.notes,
-            priority=slots.priority,
-        )
+        try:
+            task_id = self._store.save_task(
+                user_id,
+                slots.title,
+                deadline=slots.deadline,
+                notes=slots.notes,
+                priority=slots.priority,
+            )
+        except Exception as exc:
+            return self._execution_failure(
+                "add_task", "task creation", exc
+            )
         return ExecutionOutcome(
             succeeded=True,
             intent="add_task",
@@ -149,9 +154,14 @@ class ActionExecutor:
                 "reschedule_task", "invalid_slots", _validation_detail(exc)
             )
 
-        updated = self._store.reschedule_task(
-            user_id, slots.task_id, slots.new_deadline
-        )
+        try:
+            updated = self._store.reschedule_task(
+                user_id, slots.task_id, slots.new_deadline
+            )
+        except Exception as exc:
+            return self._execution_failure(
+                "reschedule_task", "task reschedule", exc
+            )
         if not updated:
             return self._failure(
                 "reschedule_task",
@@ -181,18 +191,23 @@ class ActionExecutor:
 
         intent = "snooze_reminder" if outcome == "snoozed" else "dismiss_reminder"
         snooze_minutes = slots.snooze_minutes if outcome == "snoozed" else None
-        return self._store.update_reminder_outcome(
-            user_id=user_id,
-            trace_id=slots.reference_trace_id,
-            outcome=outcome,
-            snooze_minutes=snooze_minutes,
-            response_window_minutes=self._reminder_response_window_minutes,
-            adaptive_lead_time_enabled=self._adaptive_lead_time_enabled,
-            alpha=self._alpha,
-            lead_time_min=self._lead_time_min,
-            lead_time_max=self._lead_time_max,
-            default_lead_time=self._default_lead_time,
-        )
+        try:
+            return self._store.update_reminder_outcome(
+                user_id=user_id,
+                trace_id=slots.reference_trace_id,
+                outcome=outcome,
+                snooze_minutes=snooze_minutes,
+                response_window_minutes=self._reminder_response_window_minutes,
+                adaptive_lead_time_enabled=self._adaptive_lead_time_enabled,
+                alpha=self._alpha,
+                lead_time_min=self._lead_time_min,
+                lead_time_max=self._lead_time_max,
+                default_lead_time=self._default_lead_time,
+            )
+        except Exception as exc:
+            return self._execution_failure(
+                intent, "reminder outcome update", exc
+            )
 
     @staticmethod
     def _matching_task_ids(reference: str, context: dict[str, Any]) -> list[str]:
@@ -236,6 +251,27 @@ class ActionExecutor:
             error_code=error_code,
             detail=detail,
         )
+
+    @classmethod
+    def _execution_failure(
+        cls, intent: str, operation: str, exc: Exception
+    ) -> ExecutionOutcome:
+        """Convert an unexpected storage/runtime failure into a structured outcome.
+
+        Business-level failures continue to use their specific error codes.
+        Unexpected persistence/infrastructure failures use the single
+        ``execution_error`` code and retain the exception type/message in
+        ``detail`` so the caller can distinguish an infrastructure failure
+        from a normal rejected action without letting the exception escape
+        the execution boundary.
+        """
+        message = str(exc).strip()
+        detail = (
+            f"{operation} failed: {type(exc).__name__}: {message}"
+            if message
+            else f"{operation} failed: {type(exc).__name__}"
+        )
+        return cls._failure(intent, "execution_error", detail)
 
 
 def _normalize_reference(value: str) -> str:

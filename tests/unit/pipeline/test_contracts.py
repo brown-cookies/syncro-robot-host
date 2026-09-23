@@ -281,6 +281,18 @@ def test_execution_outcome_snooze_minutes_rejected_off_snooze_intent():
         )
 
 
+def test_execution_outcome_accepts_structured_execution_error():
+    outcome = ExecutionOutcome(
+        succeeded=False,
+        intent="add_task",
+        error_code="execution_error",
+        detail="task creation failed: RuntimeError: database unavailable",
+    )
+    assert outcome.succeeded is False
+    assert outcome.error_code == "execution_error"
+    assert "database unavailable" in outcome.detail
+
+
 def test_execution_outcome_rejects_unknown_error_code():
     with pytest.raises(ValidationError):
         ExecutionOutcome(

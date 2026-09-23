@@ -158,6 +158,7 @@ ExecutionErrorCode = Literal[
     "reminder_not_found",
     "reminder_not_pending",
     "invalid_slots",
+    "execution_error",
 ]
 
 
