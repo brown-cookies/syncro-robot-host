@@ -1,663 +1,486 @@
-# SYNCRO Host
+# SYNCRO Host — System Architecture
 
-Host-side runtime for the SYNCRO robot stack. This repository contains the **WP-102 host pipeline**, the **WP-103 dialogue-graph scaffold**, the **WP-104 acoustic-affect ML pipeline/runtime boundary**, and the **Architecture Fixing sprint** that followed the WP-103/104 arch review, including WP-105's `/v1/stream` transport scaffold.
+This document is the technical design for how SYNCRO Host's pieces connect
+and why. Where `techdocs/SPEC.md` states WHAT the system must do and
+`techdocs/work-packages/WP-*.md` state what each work package built and its
+current status, this document states HOW the pieces fit together
+system-wide, independent of which work package built which piece. It is
+addressed to an engineer extending or debugging the host and is written to
+be usable with no prior knowledge of this repository beyond the modules it
+transcribes.
 
-All of the arch review's blocking findings (F1-F6) are closed, and its
-structural findings (S1-S9, I1) are committed and tested: graph-state
-reducers (F5), the `HostComponents` composition-root dataclass (S2), SQLite
-WAL (S3), host-side audio resampling (S5), `InteractionRunner` owning
-trace-finalization (F1), the failure-boundary mapping (F4), the
-degraded-trace contract (F2), the intent/reasoning timeout split (F6), the
-`InteractionWorker` background thread (S1), the `Connection` auth/clock-sync
-seam (S6), and the `/v1/stream` scaffold are all in. Two things are still
-open, deliberately:
+Every mandatory statement in this document ("must", "never", "always")
+resolves to a numbered invariant (`INV-n`, section 10) or a labelled locked
+decision (`LD-n`, section 2); prose elsewhere cites the identifier that
+carries the reason rather than asserting new mandatory language on its own.
 
-* **D4** — the intent classifier and the reasoning LLM still share one
-  Ollama model (`LLM_MODEL`); the review's cheapest-first F6 mitigations
-  (independent timeouts, `num_predict`, `keep_alive`) are in, but splitting
-  them into separate intent/reasoning models is deferred past this sprint.
-* **WP-105 full-behavior transport work**, out of scope for the `/v1/stream`
-  scaffold and enumerated in `api/ws/stream.py`'s module docstring: real
-  device-token authentication (`default_dev_authenticate` accepts every
-  connection), the 30s session-inactivity reaper, real playback-rate
-  pacing on the downlink, and writing `condition_report`'s
-  `degradation_reason` onto a decision-trace row (logged only today).
+## Table of Contents
 
-See `techdocs/ARCHITECTUREREVIEW12926.md` for the review and its full
-finding list, and this document's later sections for how each piece fits
-together.
+1. Purpose, Relationship to Other Documents, Targeted System
+2. Locked Decisions (LD-1..LD-n)
+3. Execution Model Primer
+4. Dependency Interface Reference
+   - 4.1 adapters/contracts.py
+   - 4.2 adapters/stt/whisper_adapter.py
+   - 4.3 adapters/llm/ollama_adapter.py
+   - 4.4 adapters/tts/piper_adapter.py
+   - 4.5 adapters/affect/
+   - 4.6 pipeline/graph.py
+   - 4.7 pipeline/interaction.py
+   - 4.8 pipeline/worker.py
+   - 4.9 composition/bootstrap.py
+   - 4.10 Exception Surface Summary
+   - 4.11 Data Handoff Rules
+5. State Model
+6. Resource Lifecycle
+7. Control Flow
+8. Error Handling Matrix
+9. Performance Budget
+10. Invariants (INV-1..INV-n)
+11. Requirement Traceability
+12. Notes on Warranted Code Changes
 
-## What is implemented
+## 1. Purpose, Relationship to Other Documents, Targeted System
 
-### WP-102
+This document designs the system-wide structure that every work package
+builds inside. Where a work-package doc states what was built, when, and
+its acceptance status, this document states the shape that all of them
+share: the composition root, the adapter boundary, the graph, the
+synchronous-vs-queued execution split, and the failure-classification
+contract. A statement here should still be true even if every work package
+were renamed tomorrow; anything that is only true "as of WP-10X" belongs in
+that work package's own document instead.
 
-The host-only path is:
+Targeted system: the FastAPI + LangGraph host process described in
+`techdocs/SPEC.md`, running against Ollama (LLM), faster-whisper (STT),
+Piper (TTS), and a locally persisted SQLite database. See `SETUP.md` for
+the concrete versions of these external dependencies.
 
-```text
-USB microphone
-    ↓
-audio capture
-    ↓
-faster-whisper (STT)
-    ↓
-Ollama (LLM)
-    ↓
-Piper (TTS)
-    ↓
-host speakers
-```
+## 2. Locked Decisions
 
-### WP-103 scaffold
+The following are decided, not open questions an implementer may revisit:
 
-WP-103 adds the dialogue graph and its policy/storage boundaries:
+- **LD-1.** There is exactly one composition root, `composition/bootstrap.py`.
+  No other module constructs a concrete adapter and wires it into the graph.
+- **LD-2.** External technologies are accessed only through the Protocol
+  contracts in `adapters/contracts.py` (STT, LLM, TTS, IntentClassifier).
+  Pipeline nodes and policy code depend on these contracts, never on a
+  concrete vendor SDK.
+- **LD-3.** `pipeline/interaction.py`'s `InteractionRunner` owns the
+  graph → TTS → resample → trace sequence as one unit. No other code path
+  calls `graph.invoke()` and `tts.synthesize()` separately outside of tests.
+- **LD-4.** The WebSocket transport (`api/ws/stream.py`) never runs an
+  interaction synchronously on the event-loop thread. It submits to
+  `InteractionWorker`, which processes one interaction at a time on a single
+  dedicated background thread.
+- **LD-5.** `InteractionWorker`'s queue is bounded and rejects new work
+  (`WorkerQueueFullError`) rather than blocking the caller when full (S1).
+  An unbounded queue is not an acceptable substitute.
+- **LD-6.** No mutation executor is connected to the graph anywhere in the
+  system. The reasoning node may only draft a reply describing a mutation;
+  it cannot cause one to occur.
+- **LD-7.** The intent classifier and the reasoning LLM currently share one
+  Ollama model (`LLM_MODEL`); they have independent timeouts (D5, section 9)
+  but are not yet split into separate models. This is deferred (D4), not
+  unimplemented by oversight.
+- **LD-8.** WP-105's `default_dev_authenticate` accepts every WebSocket
+  connection; real device-token authentication is intentionally deferred
+  (BL-03) on the grounds that a controlled bench network does not require it
+  for the prototype defense. This is a stated scope boundary, not scaffold
+  debt to close reflexively.
 
-```text
-                         ┌───────────────┐
-                         │  START AUDIO  │
-                         └───────┬───────┘
-                                 │
-                 ┌───────────────┴───────────────┐
-                 ↓                               ↓
-        ┌─────────────────┐             ┌─────────────────┐
-        │  Node 1: STT    │             │ Node 4: Affect  │
-        │ faster-whisper  │             │ WP-103 scaffold │
-        └────────┬────────┘             │ returns "Low"   │
-                 ↓                      └────────┬────────┘
-        ┌─────────────────┐                       │
-        │ Node 2: Intent  │                       │
-        │ / Context       │                       │
-        └────────┬────────┘                       │
-                 ↓                                │
-        ┌─────────────────┐                       │
-        │ Node 3: Ollama  │                       │
-        │ draft response  │                       │
-        └────────┬────────┘                       │
-                 └──────────────┬─────────────────┘
-                                ↓
-                      ┌──────────────────┐
-                      │ Policy / Join    │
-                      │ deterministic    │
-                      └────────┬─────────┘
-                               ↓
-                        Decision trace
-```
+## 3. Execution Model Primer
 
-`composition/bootstrap.py` is the **composition root**. It creates concrete adapters and storage dependencies and injects them into the graph. The graph itself should remain technology-neutral so tests can replace hardware, STT, LLM, TTS, and affect components with fakes.
+The host process runs interactions through one of two regimes, and every
+entry point uses exactly one of them:
 
-The affect runtime exposes a stable contract-boundary detector. WP-104 supplies the production classifier:
+- **Synchronous, script-driven.** `scripts/run_wp102.py` and
+  `scripts/run_wp103.py` call `composition/bootstrap.py` directly, obtain a
+  `HostComponents.runner`, and call `runner.run(...)` inline. There is no
+  event loop to protect, so nothing is gained by queuing; the call blocks
+  until the interaction completes.
+- **Queued, API-driven.** `api/ws/stream.py` never calls `runner.run(...)`
+  directly. It calls `HostComponents.worker.submit(...)`
+  (`InteractionWorker`), which enqueues the work and returns a `Future`
+  immediately. A single dedicated background thread drains the queue and
+  calls `runner.run(...)` on the caller's behalf (LD-4). This exists because
+  an interaction can take multiple seconds (STT + LLM + TTS), and the
+  WebSocket event loop must keep servicing other connections — including a
+  client's clock-sync handshake or a graceful disconnect — while that
+  happens.
+
+Both regimes converge on the same `InteractionRunner.run(...)` call (LD-3);
+they differ only in whether that call happens inline or is handed to the
+worker thread. Adding a third entry point means choosing one of these two
+regimes, not inventing a third execution style.
+
+## 4. Dependency Interface Reference
+
+Every subsection names its repository-relative source path first, then
+transcribes constants and signatures from the current source with
+parameter names, order, defaults and return types unchanged.
+
+### 4.1 adapters/contracts.py
 
 ```python
-ClassifierAffectDetector(model_path).detect(audio, sample_rate)  # -> "Low" | "Moderate" | "High"
+class STT(Protocol):
+    def transcribe(self, audio: np.ndarray, sample_rate: int) -> str: ...
+
+class LLM(Protocol):
+    def generate(self, prompt: str) -> str: ...
+
+class TTS(Protocol):
+    def synthesize(self, text: str) -> tuple[np.ndarray, int]: ...
+
+class IntentClassifier(Protocol):
+    def classify(self, transcript: str) -> tuple[str, float, dict[str, object]]: ...
 ```
 
-The WP-104 affect model, feature extraction, training, evaluation, and macro-F1 evidence are documented under `techdocs/MLSPEC.md` and implemented under `ml/affect/`, with runtime loading through `adapters/affect/`. A clean clone defaults to the deterministic development affect detector; the persisted classifier is selected when explicitly configured and successfully loaded.
-
-## Project layout
-
-```text
-api/                 FastAPI application and HTTP/WebSocket surfaces
-  ws/stream.py        /v1/stream WebSocket route (WP-105 transport scaffold)
-  ws/connection.py     Connection: auth + clock-sync seam (S6)
-adapters/            External technology adapters
-  affect/             WP-104 affect runtime adapter
-  llm/               Ollama adapter
-  stt/               faster-whisper adapter
-  tts/               Piper adapter
-audio/               Host microphone, playback, and audio contracts
-composition/         Composition root / dependency wiring
-config/              Typed environment-backed settings
-pipeline/            LangGraph state, graph, nodes, and orchestration
-  interaction.py      InteractionRunner (F1/F3/F4) — wired into build_host_components() and api/ws/stream.py
-  worker.py           InteractionWorker: bounded queue + background thread (S1)
-storage/             SQLite schema, context retrieval, and decision traces
-ml/affect/           WP-104 feature extraction, training, tuning, and evaluation
-datasets/            Committed WP-104 manifests and feature tables
-evidences/           Live-run stage-timing logs and WP-104 ML acceptance evidence
-scripts/             Manual operational runners and WP-103 seeding
-techdocs/            SPEC / ARCH / roadmap and supporting documents
-tests/               Unit, contract, architecture, and integration tests
-models/              Local model files; keep binary artifacts out of Git
-  affect/             WP-104 artifact instructions and generated classifier metadata
-```
-
-## Requirements
-
-Recommended environment for the current repository:
-
-* Python 3.11+
-* A working microphone and speaker/audio output for the live host run
-* Ollama running locally for the LLM stage
-* A Piper voice model installed locally
-* Internet access on the first faster-whisper model load so the selected Whisper model can be downloaded/cached
-
-The exact Python package versions are pinned in `requirements.txt`.
-
-WP-104 training also relies on the committed feature tables in `datasets/features/` and their committed `.alignment.json` sidecars. These sidecars bind each feature table to the exact manifest fingerprint used during extraction.
-
-## 1. Create the Python environment
-
-PowerShell:
-
-```powershell
-py -3 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-```
-
-Linux/macOS:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-```
-
-Check the installation:
-
-```bash
-python --version
-python -m pytest -q
-```
-
-The tests should be run before a live demo. Environment-dependent LangGraph integration tests may be skipped when their runtime dependency is unavailable.
-
-## 2. Configure local settings
-
-Copy the environment template:
-
-PowerShell:
-
-```powershell
-Copy-Item .env.example .env
-```
-
-Linux/macOS:
-
-```bash
-cp .env.example .env
-```
-
-Important settings:
-
-```dotenv
-OLLAMA_URL=http://localhost:11434
-LLM_MODEL=llama3.1:8b-instruct-q4_K_M
-STT_MODEL_SIZE=small
-STT_COMPUTE_TYPE=int8
-STT_DEVICE=cpu
-PIPER_MODEL_PATH=./models/en_US-lessac-medium
-DB_PATH=./syncro.db
-INTENT_CONFIDENCE_THRESHOLD=0.60
-AFFECT_DETECTOR_BACKEND=development
-AFFECT_CLASSIFIER_PATH=./models/affect/affect_svc_v1.joblib
-INTENT_TIMEOUT_S=5
-REASONING_TIMEOUT_S=6
-NON_LLM_TIMEOUT_MARGIN_S=10
-INTENT_NUM_PREDICT=40
-OLLAMA_KEEP_ALIVE=10m
-SESSION_TIMEOUT_SECONDS=30
-```
-
-`.env` is local configuration and must not be committed.
-
-**Fixed (D5/F6):** the intent classifier and the reasoning LLM call are
-two sequential calls per turn. They used to share one `OLLAMA_TIMEOUT_S`,
-which only guaranteed each call individually stayed under
-`SESSION_TIMEOUT_SECONDS` -- not their sum. They now have independent
-timeouts, `INTENT_TIMEOUT_S` and `REASONING_TIMEOUT_S`, and
-`Settings.__post_init__` rejects any configuration where
-`INTENT_TIMEOUT_S + REASONING_TIMEOUT_S + NON_LLM_TIMEOUT_MARGIN_S` is not
-under `SESSION_TIMEOUT_SECONDS`. The full model-split question (D4) is still
-deferred past this sprint.
-
-## 3. Install and prepare Ollama
-
-Install Ollama using the normal installer for your operating system, then start the Ollama service.
-
-Verify that the local API is reachable:
-
-```bash
-curl http://localhost:11434/api/tags
-```
-
-On Windows PowerShell you can use:
-
-```powershell
-Invoke-RestMethod http://localhost:11434/api/tags
-```
-
-Pull the model configured by this repository:
-
-```bash
-ollama pull llama3.1:8b-instruct-q4_K_M
-```
-
-Then confirm it is present:
-
-```bash
-ollama list
-```
-
-If you use another Ollama model, set `LLM_MODEL` in `.env` to the exact installed model name.
-
-## 4. Prepare the faster-whisper model
-
-The STT adapter uses `faster-whisper`. With the default configuration, the first run loads the `small` model with CPU `int8` compute:
-
-```dotenv
-STT_MODEL_SIZE=small
-STT_DEVICE=cpu
-STT_COMPUTE_TYPE=int8
-```
-
-The model is downloaded/cached by the `faster-whisper`/CTranslate2 stack when it is first constructed. No model file needs to be committed to this repository.
-
-For a different model size, change `STT_MODEL_SIZE` in `.env`, for example:
-
-```dotenv
-STT_MODEL_SIZE=base
-```
-
-For GPU execution, use a CUDA-compatible environment and set the corresponding `STT_DEVICE` and `STT_COMPUTE_TYPE` values supported by the installed `faster-whisper`/CTranslate2 build. Keep the WP-103 tests model-free by using their injected fakes.
-
-## 5. Install the Piper voice model
-
-WP-102/WP-103 expect the Piper voice directory configured by:
-
-```dotenv
-PIPER_MODEL_PATH=./models/en_US-lessac-medium
-```
-
-Create that directory and place the matching Piper voice model files in it. The directory must contain the `.onnx` voice model and its companion `.json` configuration used by Piper.
-
-After installation, verify that the path in `.env` points to the directory containing the voice files. The application loads the voice during startup, so a missing or invalid model fails fast with a clear adapter error.
-
-Do not commit large model files to Git. Keep them under the ignored local `models/` directory.
-
-## 6. Prepare the WP-103 SQLite database
-
-The runner now creates the demo user itself, so a completely fresh database is supported.
-
-For repeatable policy/context testing, you can also seed the deterministic WP-103 dataset:
-
-```bash
-python -m scripts.seed_wp103
-```
-
-This creates the demo user and sample tasks/routine events. By default the seeder resets the WP-103 demo rows first.
-
-To preserve the existing WP-103 demo rows:
-
-```bash
-python -m scripts.seed_wp103 --no-reset
-```
-
-The live runner does **not** call the resetting seeder automatically.
-
-## 6a. Prepare WP-104 affect runtime
-
-A clean checkout does not require a trained binary to start. The default is:
-
-```dotenv
-AFFECT_DETECTOR_BACKEND=development
-```
-
-This returns the deterministic `Low` fallback. To use the trained classifier after generating the artifact locally, set:
-
-```dotenv
-AFFECT_DETECTOR_BACKEND=classifier
-AFFECT_CLASSIFIER_PATH=./models/affect/affect_svc_v1.joblib
-```
-
-If the classifier cannot be loaded, the graph falls back to `Low` for that turn instead of aborting the dialogue.
-
-## 6b. WP-104 command guide
-
-All commands in this section are run from the repository root after activating the Python virtual environment. The commands use the repository's committed scripts directly; there is no separate experiment notebook or undocumented generation step.
-
-### WP-104 workflow order
-
-Use this order when rebuilding the affect dataset and experiments from raw audio:
-
-```bash
-# 1. Build canonical RAVDESS/TESS manifests
-python -m scripts.build_affect_manifests \
-  --ravdess-root datasets/raw/ravdess \
-  --tess-root datasets/raw/tess \
-  --output-dir datasets/affect/manifests
-
-# 2. Verify the manifests and dataset structure
-python -m scripts.verify_affect_manifests \
-  --ravdess-manifest datasets/affect/manifests/ravdess.csv \
-  --tess-manifest datasets/affect/manifests/tess.csv \
-  --ravdess-root datasets/raw/ravdess \
-  --tess-root datasets/raw/tess
-
-# 3. Extract the committed 88-feature eGeMAPSv02 feature tables
-python -m ml.affect.extract_features \
-  --ravdess-root datasets/raw/ravdess \
-  --tess-root datasets/raw/tess \
-  --manifest-dir datasets/affect/manifests \
-  --output-dir datasets/features
-
-# 4. Compare the frozen SVC against the prespecified shallow MLP
-python -m ml.affect.compare \
-  --ravdess-features datasets/features/ravdess.csv \
-  --ravdess-manifest datasets/affect/manifests/ravdess.csv \
-  --n-splits 6 \
-  --output evidences/ml/experiment/svc_vs_mlp_comparison.json
-
-# 5. Train the frozen WP-104 SVC baseline and write acceptance evidence
-# (run after step 4 so the method note can report the real, measured MLP
-# comparison result instead of a placeholder "not run" status)
-python -m ml.affect.train \
-  --ravdess-features datasets/features/ravdess.csv \
-  --ravdess-manifest datasets/affect/manifests/ravdess.csv \
-  --tess-features datasets/features/tess.csv \
-  --tess-manifest datasets/affect/manifests/tess.csv \
-  --output models/affect/affect_svc_v1.joblib \
-  --evidence-dir evidences/ml/experiment \
-  --n-splits 6
-
-# 6. Reproduce the fine-tuning/search evidence
-python -m ml.affect.tune \
-  --ravdess-features datasets/features/ravdess.csv \
-  --ravdess-manifest datasets/affect/manifests/ravdess.csv \
-  --tess-features datasets/features/tess.csv \
-  --tess-manifest datasets/affect/manifests/tess.csv \
-  --output-dir evidences/ml/finetune \
-  --n-splits 6 \
-  --inner-splits 3
-
-# 7. Verify the shipped artifact loads, predicts, and record the check
-python -m ml.affect.verify_runtime \
-  --model models/affect/affect_svc_v1.joblib \
-  --metrics evidences/ml/experiment/metrics.json \
-  --output evidences/ml/experiment/runtime_verification.json
-```
-
-The repository also supports rebuilding only the already-committed experiment results. In that case, start at step 4 because `datasets/affect/manifests/` and `datasets/features/` are already present.
-
-### 6c. Manifest commands
-
-Build both canonical manifests from the two downloaded corpora:
-
-```bash
-python -m scripts.build_affect_manifests \
-  --ravdess-root datasets/raw/ravdess \
-  --tess-root datasets/raw/tess \
-  --output-dir datasets/affect/manifests
-```
-
-Verify them without rebuilding anything:
-
-```bash
-python -m scripts.verify_affect_manifests
-```
-
-To also verify that the manifest audio paths exist under the raw corpus directories:
-
-```bash
-python -m scripts.verify_affect_manifests \
-  --ravdess-root datasets/raw/ravdess \
-  --tess-root datasets/raw/tess
-```
-
-### 6d. Feature extraction
-
-Extract RAVDESS and TESS features using the canonical manifests:
-
-```bash
-python -m ml.affect.extract_features \
-  --ravdess-root datasets/raw/ravdess \
-  --tess-root datasets/raw/tess \
-  --manifest-dir datasets/affect/manifests \
-  --output-dir datasets/features \
-  --progress-every 25
-```
-
-This writes the feature tables plus their alignment sidecars. The sidecars bind each feature table to the manifest fingerprint used for extraction.
-
-### 6e. Frozen baseline training and acceptance evidence
-
-Train the fixed SVC baseline:
-
-```bash
-python -m ml.affect.train \
-  --ravdess-features datasets/features/ravdess.csv \
-  --ravdess-manifest datasets/affect/manifests/ravdess.csv \
-  --tess-features datasets/features/tess.csv \
-  --tess-manifest datasets/affect/manifests/tess.csv \
-  --output models/affect/affect_svc_v1.joblib \
-  --evidence-dir evidences/ml/experiment \
-  --n-splits 6
-```
-
-The frozen acceptance baseline is **0.632258 macro-F1** on RAVDESS, below the **0.70** gate, so the acceptance result is **NO-GO**. This model remains a prototype affect signal and is not a clinical stress detector.
-
-Run [6f](#6f-svc-versus-mlp-comparison) first if you want `evidences/ml/experiment/method_note.md` to report the real, measured MLP comparison result. `ml.affect.train` looks for `evidences/ml/experiment/svc_vs_mlp_comparison.json` (overridable with `--mlp-comparison`) and reports its actual `not run` status only when that file is absent; it is never hardcoded.
-
-### 6f. SVC versus MLP comparison
-
-Run the fixed SVC/MLP comparison using the same speaker-disjoint folds:
-
-```bash
-python -m ml.affect.compare \
-  --ravdess-features datasets/features/ravdess.csv \
-  --ravdess-manifest datasets/affect/manifests/ravdess.csv \
-  --n-splits 6 \
-  --output evidences/ml/experiment/svc_vs_mlp_comparison.json
-```
-
-This writes the comparison JSON, including both macro-F1 values, the delta, the selected winner, and confusion matrices. It does not modify the shipped classifier.
-
-### 6g. Reproducible fine-tuning
-
-Fine-tuning is a separate research experiment and must not silently replace the frozen acceptance baseline.
-
-Run the committed producer:
-
-```bash
-python -m ml.affect.tune \
-  --ravdess-features datasets/features/ravdess.csv \
-  --ravdess-manifest datasets/affect/manifests/ravdess.csv \
-  --tess-features datasets/features/tess.csv \
-  --tess-manifest datasets/affect/manifests/tess.csv \
-  --output-dir evidences/ml/finetune \
-  --n-splits 6 \
-  --inner-splits 3
-```
-
-The command produces all currently tracked fine-tuning evidence from committed code:
-
-| Artifact                     | Producer         | Purpose                                                 |
-| ---------------------------- | ---------------- | ------------------------------------------------------- |
-| `svc_finetune_current.json`  | `ml.affect.tune` | Fixed-fold OVR + SelectKBest search                     |
-| `svc_ovr_nested_tuning.json` | `ml.affect.tune` | Nested speaker-disjoint model selection                 |
-| `tess_holdout.json`          | `ml.affect.tune` | RAVDESS → TESS cross-corpus holdout                     |
-| `fine_tuning_summary.md`     | `ml.affect.tune` | Human-readable summary generated from the fresh results |
-
-Recorded research results are approximately:
-
-```text
-Frozen SVC acceptance baseline:       0.632258
-OVR + SelectKBest research candidate: 0.651618
-Nested OVR research estimate:         0.650564
-TESS cross-corpus holdout:             0.240470
-Deployment gate:                      0.700000
-Acceptance status:                    NO-GO
-```
-
-The **0.651618** and **0.650564** values are research candidates, not replacement baseline values. The baseline remains **0.632258**.
-
-The fine-tuning evidence records runtime provenance, including Python/NumPy/scikit-learn versions, the required scikit-learn pin, random state, and SHA-256/fingerprint information for the input feature tables and manifests. This makes the evidence traceable to exact inputs rather than treating committed JSON files as the source of truth.
-
-### 6h. Full WP-104 tests
-
-Run the whole test suite:
-
-```bash
-python -m pytest -q
-```
-
-Run only the WP-104 unit tests:
-
-```bash
-python -m pytest -q tests/unit/ml_affect
-```
-
-Run only the reproducibility tests:
-
-```bash
-python -m pytest -q tests/unit/ml_affect/test_tune.py
-```
-
-For a clean verification before merge, use:
-
-```bash
-python -m pytest -q tests/unit/ml_affect tests/integration/test_ml_affect_integration.py
-```
-
-### 6i. Runtime verification
-
-`evidences/ml/experiment/runtime_verification.json` confirms the shipped artifact loads, predicts a valid affect label, and folds in the accepted RAVDESS/TESS metrics. It has a committed producer, `ml.affect.verify_runtime`, so it can never silently drift to a hand-typed scikit-learn version:
-
-```bash
-python -m ml.affect.verify_runtime \
-  --model models/affect/affect_svc_v1.joblib \
-  --metrics evidences/ml/experiment/metrics.json \
-  --output evidences/ml/experiment/runtime_verification.json
-```
-
-The `verification_sklearn_version` field always reflects the scikit-learn version installed when this command is run; it should match the pinned `required_sklearn_version` (`1.9.0`) on a clean-pull reproduction.
-
-### 6j. Useful inspection commands
-
-See the command-line options for any executable module:
-
-```bash
-python -m ml.affect.train --help
-python -m ml.affect.compare --help
-python -m ml.affect.tune --help
-python -m ml.affect.verify_runtime --help
-python -m ml.affect.extract_features --help
-python -m scripts.build_affect_manifests --help
-python -m scripts.verify_affect_manifests --help
-python -m scripts.seed_wp103 --help
-```
-
-The other repository modules under `ml/affect/` (`dataset.py`, `features.py`, `label_mapping.py`, `model.py`, `evaluate.py`, and `artifacts.py`) are library modules used by these command-line entry points; they are not standalone CLI scripts.
-
-## 6k. WP-103 operational scripts
-
-The repository's `scripts/` directory contains the operational runners for WP-102 and WP-103 in addition to the WP-104 dataset helpers.
-
-### Run the WP-102 host-only pipeline
-
-```bash
-python -m scripts.run_wp102
-```
-
-This requires the configured Ollama, faster-whisper, Piper, microphone, and speaker/audio output.
-
-### Seed the deterministic WP-103 SQLite dataset
-
-Reset the demo rows first:
-
-```bash
-python -m scripts.seed_wp103
-```
-
-Preserve existing demo rows:
-
-```bash
-python -m scripts.seed_wp103 --no-reset
-```
-
-Use a specific SQLite database:
-
-```bash
-python -m scripts.seed_wp103 --db ./syncro.db
-```
-
-### Run the live WP-103 dialogue graph
-
-```bash
-python -m scripts.run_wp103
-```
-
-The runner creates/uses the `wp103-demo-user`, simulates the edge-owned wake-word event, captures microphone audio, executes the graph, speaks the final response, and prints the decision-trace ID.
-
-## 7. Run WP-103
-
-Start Ollama first, make sure your Piper model path is valid, and connect the microphone/speaker you want to use.
-
-Then run:
-
-```bash
-python -m scripts.run_wp103
-```
-
-The runner:
-
-1. builds the real WP-103 graph from the composition root;
-2. ensures `wp103-demo-user` exists in SQLite;
-3. simulates the edge-owned wake-word event (`syncro`);
-4. records a fixed-duration microphone sample;
-5. runs the graph;
-6. prints per-stage timing and the final response;
-7. writes the resulting decision trace to SQLite.
-
-The wake-word stage is intentionally simulated in this host runner because wake-word ownership is outside the WP-103 host graph boundary.
-
-## 8. How the architecture is used
-
-For normal application execution, use the composition root and the
-`InteractionRunner` it builds — never call `graph.invoke()` and
-`tts.synthesize()` separately outside of tests:
+These four Protocols are the entire surface pipeline nodes are allowed to
+depend on (LD-2). A concrete adapter satisfies one of these structurally
+(no explicit inheritance required); the composition root is the only place
+that imports a concrete adapter class.
+
+### 4.2 adapters/stt/whisper_adapter.py
 
 ```python
-from time import monotonic
+class STTAdapterError(RuntimeError): ...
 
-from composition.bootstrap import build_host_components
-from config.settings import get_settings
-from pipeline.interaction import SessionContext
+class WhisperSTTAdapter:
+    def __init__(self, settings: Settings | None = None) -> None: ...
+    def transcribe(self, audio: np.ndarray, sample_rate: int) -> str: ...
+```
 
-settings = get_settings()
-components = build_host_components(settings)
+`__init__` resolves `settings` via `get_settings()` if not supplied, lazily
+imports `faster_whisper.WhisperModel` (raising `STTAdapterError` if the
+package is missing), and constructs the model with `settings.stt_model_size`,
+`settings.stt_device`, and `settings.stt_compute_type`; a construction
+failure is wrapped in `STTAdapterError` rather than propagated raw.
+`transcribe` requires `float32` PCM at exactly `settings.audio_sample_rate_hz`
+— a dtype or rate mismatch raises `STTAdapterError` before any model call is
+made, not a silent resample or truncation.
 
-session = SessionContext(
-    session_id="demo-session",
-    user_id="demo-user",
-    started_monotonic=monotonic(),
-)
-result = components.runner.run(
-    session=session, audio=audio, sample_rate=settings.audio_sample_rate_hz
+### 4.3 adapters/llm/ollama_adapter.py
+
+```python
+class LLMAdapterError(RuntimeError): ...
+
+class OllamaLLMAdapter:
+    def __init__(self, settings: Settings | None = None) -> None: ...
+    def generate(self, prompt: str) -> str: ...
+```
+
+`generate` posts to `{ollama_url}/api/generate` with `stream=False`,
+`keep_alive` from settings, and `options.num_ctx` from settings, using
+`settings.reasoning_timeout_s` as the request timeout — this is the
+"reasoning" half of the two sequential per-turn Ollama calls (LD-7, section
+9) and does not share a timeout with the intent classifier. A request
+failure, an unparseable response, or an empty response string all raise
+`LLMAdapterError`; none of the three is silently converted into a fallback
+reply.
+
+### 4.4 adapters/tts/piper_adapter.py
+
+```python
+class TTSAdapterError(RuntimeError): ...
+
+class PiperTTSAdapter:
+    def __init__(self, settings: Settings | None = None) -> None: ...
+    def synthesize(self, text: str) -> tuple[np.ndarray, int]: ...
+```
+
+`__init__` lazily imports `piper.PiperVoice` and loads
+`settings.piper_model_path` directly as the model path argument; both the
+import and the load are wrapped in `TTSAdapterError`. `synthesize` refuses
+empty/whitespace-only text (raises `TTSAdapterError`) rather than
+synthesizing silence, and returns `float32` PCM in `[-1.0, 1.0]` at the
+sample rate Piper's own WAV output reports — the caller resamples if a
+different rate is required (section 4.11).
+
+### 4.5 adapters/affect/
+
+```python
+class DevelopmentAffectDetector:
+    def detect(self, audio: Any, sample_rate: int) -> str: ...  # always "Low"
+
+class ClassifierAffectDetector:
+    def __init__(self, model_path: str | Path) -> None: ...
+    def detect(self, audio: Any, sample_rate: int) -> str: ...  # -> "Low" | "Moderate" | "High"
+```
+
+Both raise `ValueError` for `audio is None` or `sample_rate <= 0` before
+doing any work. `DevelopmentAffectDetector.detect` is otherwise
+unconditional and deterministic — it is a stable, permanent fallback, not
+scaffolding to delete once a classifier exists. `ClassifierAffectDetector`
+extracts features via `ml.affect.features.extract_features` (a runtime
+dependency on the `opensmile` package and `OPENSMILE_EXECUTABLE` binary,
+not just a training-time one — see `techdocs/work-packages/WP-104.md`),
+predicts with the loaded artifact, and raises `RuntimeError` if the
+prediction falls outside `{"Low", "Moderate", "High"}`. The composition
+root, not this class, is responsible for falling back to the development
+detector when construction fails (section 6).
+
+### 4.6 pipeline/graph.py
+
+```python
+def build_dialogue_graph(
+    *,
+    stt, intent_classifier, llm, store, affect_detector,
+    confidence_threshold: float,
+    context_top_k: int,
+    deadline_proximity_hours: int,
+    grace_window_minutes: int,
+    default_lead_time: float,
+):
+    ...  # -> compiled LangGraph graph
+
+def invoke_dialogue(
+    graph, *, session_id: str, user_id: str, audio: Any, sample_rate: int,
+) -> DialogueGraphResult:
+    ...
+```
+
+`build_dialogue_graph` wires seven nodes (`node1_stt`, `node1_intent`,
+`node2_context`, `node3_llm`, `affect`, `node4_policy`, `output`) with two
+parallel branches off `START` — the STT→intent→context→LLM chain, and the
+independent `affect` branch on the same raw audio — that both feed
+`node4_policy` as a synchronization point before `output`. `node1_stt` and
+`affect` are wrapped in `timed(...)` so their durations land in the
+reducer-backed `stage_timings_s` key (F5) rather than a plain dict key that
+a parallel branch could overwrite. Every dependency (`stt`,
+`intent_classifier`, `llm`, `store`, `affect_detector`) is injected as a
+parameter — this function never imports a concrete adapter itself (LD-2).
+
+### 4.7 pipeline/interaction.py
+
+```python
+@dataclass(frozen=True, slots=True)
+class SessionContext:
+    session_id: str
+    user_id: str
+    started_monotonic: float
+    wake_word_detected_at: int | None = None  # edge-clock epoch ms, SPEC 7.3
+    clock_offset_ms: float | None = None
+
+@dataclass(frozen=True, slots=True)
+class InteractionResult:
+    session_id: str
+    trace_id: str
+    response_payload: dict[str, Any]
+    tts_audio: np.ndarray          # 16 kHz int16 mono, after resampling (S5)
+    tts_sample_rate: int
+    stage_timings_s: dict[str, float]
+    latency_ms: float
+    latency_basis: str
+
+@dataclass(frozen=True, slots=True)
+class FailureDisposition:
+    stage: str
+    wire_code: str
+    degradation_reason: str | None
+    trace_required: bool
+
+class InteractionError(RuntimeError):
+    def __init__(
+        self, stage: str, cause: BaseException, *,
+        wire_code: str, degradation_reason: str | None, trace_required: bool,
+    ) -> None: ...
+
+class InteractionRunner:
+    def __init__(
+        self, *, graph: Any, store: Any, tts: Any,
+        resampler: Callable[[np.ndarray, int], np.ndarray],
+        clock: Callable[[], float] = monotonic,
+        clock_ms: Callable[[], float] | None = None,
+    ) -> None: ...
+    def run(self, *, session: SessionContext, audio: np.ndarray, sample_rate: int) -> InteractionResult: ...
+    def persist_session_timeout_trace(self, *, session: SessionContext) -> None: ...
+```
+
+`wake_word_detected_at` and `clock_offset_ms` on `SessionContext` are
+forward-looking: no caller in this codebase supplies non-`None` values for
+either today (WP-107's wake-word integration and WP-105's clock-sync
+handshake are both still ahead), so `InteractionRunner.run` always resolves
+`latency_basis` to `"host_observed_only"` in practice; the
+`"wake_word_to_tts"` branch exists and is unit-tested, but translating the
+edge's clock into this runner's `clock()` domain is WP-105/WP-107's
+responsibility, not this document's.
+
+`graph` must expose the same `.invoke(dict) -> dict` shape used by
+`pipeline.graph.invoke_dialogue` (a fake satisfying this shape is
+sufficient for tests). `resampler` matches `audio.resample.to_pcm16_16k`'s
+signature. `clock` is injectable so tests can control elapsed-time readings
+deterministically without real sleeps.
+
+The central failure-classification table (F4) lives in this module:
+
+```python
+_FAILURE_MAP: tuple[tuple[type[Exception], str, str, str | None, bool], ...] = (
+    (STTAdapterError, "stt", "malformed_audio", "pipeline_failure", True),
+    (IntentClassifierError, "intent", "pipeline_failure", "pipeline_failure", True),
+    (LLMAdapterError, "llm", "pipeline_failure", "pipeline_failure", True),
+    (TTSAdapterError, "tts", "pipeline_failure", "pipeline_failure", True),
+    (ValueError, "pipeline", "pipeline_failure", "pipeline_failure", True),
+    (RuntimeError, "pipeline", "pipeline_failure", "pipeline_failure", True),
 )
 ```
 
-`components.runner` (`pipeline/interaction.py`'s `InteractionRunner`) owns
-the graph → TTS → resample → trace sequence as one unit — this is exactly
-the "second, drifting copy of the sequence" problem it was built to
-eliminate (see its module docstring), and `build_host_components()` now
-populates `HostComponents.runner` (and `.worker`) rather than leaving them
-unset. `scripts/run_wp103.py` calls the runner directly; `api/ws/stream.py`
-calls it indirectly through `components.worker` (`InteractionWorker`, S1),
-which runs it on a single background thread so a blocking interaction never
-stalls the WebSocket event loop. Calling `graph.invoke()` and
-`tts.synthesize()` separately, as earlier versions of this document showed,
-is the pattern to avoid in new code.
+Transport code (`api/ws/stream.py`) consumes the stable `wire_code` this
+table produces; it never imports an adapter-specific exception class
+directly (section 8 restates this as an invariant).
 
-The important dependency direction is:
+### 4.8 pipeline/worker.py
+
+```python
+class WorkerQueueFullError(RuntimeError): ...
+class WorkerStoppedError(RuntimeError): ...
+
+class InteractionWorker:
+    def __init__(self, *, runner: InteractionRunner, maxsize: int) -> None: ...
+    def start(self) -> None: ...
+    def submit(self, *, session: SessionContext, audio: np.ndarray, sample_rate: int) -> "Future[InteractionResult]": ...
+    def stop(self, *, timeout: float | None = None) -> None: ...
+```
+
+`start()` is idempotent-guarded: a second call raises rather than silently
+spawning a second thread, since two threads would violate the
+single-threaded-library contract this class exists to guarantee. `submit`
+never blocks: a full queue raises `WorkerQueueFullError` immediately rather
+than waiting for room (LD-5) — this is the entire reason S1 asks for a
+bounded queue over an unbounded one, since an unbounded queue would let the
+caller block indefinitely instead of failing fast. `stop()` appends a
+sentinel to the same FIFO queue as real work, so every item queued before
+`stop()` is called still runs before the thread exits; submissions made
+after `stop()` raise `WorkerStoppedError` immediately.
+
+### 4.9 composition/bootstrap.py
+
+```python
+@dataclass(frozen=True, slots=True)
+class HostComponents:
+    graph: Any
+    store: SQLiteStore
+    audio_input: Any
+    audio_output: Any
+    tts: Any
+    affect_detector: ClassifierAffectDetector | DevelopmentAffectDetector
+    runner: InteractionRunner
+    worker: InteractionWorker
+
+def build_host_components(
+    settings: Settings | None = None, *, affect_detector=None,
+) -> HostComponents: ...
+```
+
+`HostComponents` replaced a positional tuple return (S2) specifically
+because every component the sprint added — the runner, the worker, session
+tracking, authentication — used to change that tuple's arity and break
+every caller and every test that unpacked it by position. Adding a field
+here is additive and non-breaking for callers that access fields by name;
+this is the reason new cross-cutting state should be added as a
+`HostComponents` field rather than threaded through as an extra parameter
+elsewhere.
+
+`build_host_components` is the only place in the repository allowed to
+construct a concrete `WhisperSTTAdapter`, `OllamaLLMAdapter`,
+`PiperTTSAdapter`, `ClassifierAffectDetector`, or `DevelopmentAffectDetector`
+(LD-1). Its affect-backend selection is the one place the
+classifier-to-development fallback is decided (section 6), not inside
+`ClassifierAffectDetector` itself.
+
+### 4.10 Exception Surface Summary
+
+| Entry point                          | Exception              | When                                                        |
+| -------------------------------------- | ------------------------ | -------------------------------------------------------------- |
+| `WhisperSTTAdapter.__init__`         | `STTAdapterError`      | `faster-whisper` missing, or model construction fails.       |
+| `WhisperSTTAdapter.transcribe`       | `STTAdapterError`      | Wrong dtype, wrong sample rate, or transcription failure.     |
+| `OllamaLLMAdapter.generate`          | `LLMAdapterError`      | Request failure, unparseable response, or empty response.     |
+| `PiperTTSAdapter.__init__`           | `TTSAdapterError`      | `piper-tts` missing, or voice model fails to load.            |
+| `PiperTTSAdapter.synthesize`         | `TTSAdapterError`      | Empty/whitespace text, or synthesis failure.                  |
+| `ClassifierAffectDetector.detect`    | `ValueError`            | `audio is None` or `sample_rate <= 0`.                        |
+| `ClassifierAffectDetector.detect`    | `RuntimeError`          | Feature extraction fails, inference fails, or an invalid label is produced. |
+| `InteractionRunner.run`              | `InteractionError`      | Any adapter/pipeline failure crossing the interaction boundary (F4 mapping, section 4.7). |
+| `InteractionWorker.submit`           | `WorkerQueueFullError` | The bounded queue is already full.                             |
+| `InteractionWorker.submit`           | `WorkerStoppedError`   | Called after `stop()`.                                         |
+| `InteractionWorker.start`            | `RuntimeError`          | Called more than once.                                         |
+
+`InteractionRunner.run` is the single boundary where every adapter-specific
+exception is normalized into `InteractionError` with a stable `wire_code`
+(section 4.7); transport code downstream never needs to know which adapter
+failed, only the wire code and whether a trace is required.
+
+### 4.11 Data Handoff Rules
+
+Audio crossing the STT boundary must already be `float32` PCM at
+`settings.audio_sample_rate_hz`; `WhisperSTTAdapter.transcribe` does not
+resample or convert dtype itself (section 4.2) — that conversion is the
+caller's responsibility, upstream of the adapter. TTS output crossing back
+out of `PiperTTSAdapter.synthesize` is `float32` PCM at whatever sample rate
+Piper's own WAV output reports, not a fixed constant; `InteractionRunner`
+resamples this to 16 kHz int16 mono (S5) before it becomes
+`InteractionResult.tts_audio` — the resample step is `InteractionRunner`'s
+job specifically so that no caller of the runner needs to know Piper's
+native output rate. The value returned by `pipeline.graph.invoke_dialogue`
+is consumed only by `InteractionRunner.run`, which is the only code path
+permitted to turn a raw graph result into a `InteractionResult` (LD-3);
+nothing downstream of the runner reads the graph's raw dict.
+
+## 5. State Model
+
+| State                          | Owner                                   | Lifetime                                    | Mutator                                             |
+| --------------------------------- | ------------------------------------------ | ---------------------------------------------- | ------------------------------------------------------ |
+| `HostComponents`                | `composition/bootstrap.py`               | Process lifetime, built once at startup        | Only `build_host_components`; frozen thereafter        |
+| Compiled dialogue graph          | `HostComponents.graph`                   | Process lifetime                                | Immutable once compiled by `build_dialogue_graph`       |
+| `SessionContext`                | Caller (script or WebSocket route)       | One interaction                                 | Constructed once, frozen, passed to `runner.run`        |
+| `stage_timings_s` (graph state) | LangGraph reducer, per invocation         | One graph invocation                            | `timed(...)`-wrapped nodes only, via the reducer (F5)   |
+| `InteractionWorker`'s queue     | `InteractionWorker`                       | Process lifetime, bounded by `maxsize`          | `submit()` enqueues; `_run()` dequeues on the worker thread |
+| Decision trace row               | `storage/decision_trace.py` via `store`  | Persisted (SQLite)                              | `InteractionRunner.run` and `.persist_session_timeout_trace` |
+| WebSocket session (`SessionRegistry`) | `api/ws/session_registry.py`         | One WebSocket connection, host-wide tracked      | `api/ws/connection.py`'s `Connection` seam              |
+
+The composition root's output (`HostComponents`) is the single object that
+threads every other piece of state together; a new cross-cutting concern
+should be added as a field on it (section 4.9), not as a new global or a
+parameter threaded through every call site.
+
+## 6. Resource Lifecycle
+
+**Composition happens once.** `build_host_components` runs once at process
+startup (per script invocation, or once for the FastAPI app's lifetime) and
+constructs every adapter, the graph, the runner, and the worker. Nothing in
+steady-state request handling re-runs composition.
+
+**Affect-backend fallback is a composition-time decision.** When
+`AFFECT_DETECTOR_BACKEND=classifier` and the artifact fails to load
+(`FileNotFoundError` or `RuntimeError`), `build_host_components` catches
+that failure, logs a warning naming the configured path, and falls back to
+`DevelopmentAffectDetector` — this happens once, at startup, not per-turn.
+A per-turn fallback to `Low` (documented in `ClassifierAffectDetector`,
+section 4.5, and in `techdocs/work-packages/WP-104.md`) is a distinct,
+narrower behavior: it covers a classifier that loaded successfully at
+startup but fails on a specific turn's inference, not a classifier that
+never loaded at all.
+
+**The worker thread is started once and stopped once.** `InteractionWorker.start()`
+being idempotent-guarded (section 4.8) is deliberate: nothing in the
+request-handling path should ever need to start a second worker thread, and
+a caller that tries is very likely wiring a second, competing composition
+root rather than reusing the one from startup.
+
+**LLM warm-up happens before the graph is usable.** `build_host_components`
+calls `_warm_up_llm(settings)` before constructing the graph, using a
+separate `llm_warmup_timeout_s` (deliberately larger than
+`reasoning_timeout_s` — section 9) because Ollama's cold-start model load
+can cost multiple seconds to tens of seconds, a cost that per-turn inference
+timeouts are not meant to absorb.
+
+## 7. Control Flow
 
 ```text
 scripts / API
       ↓
-composition/bootstrap.py
+composition/bootstrap.py   (build once, LD-1)
       ↓
-pipeline graph + injected contracts
+pipeline graph + injected contracts   (technology-neutral, LD-2)
       ↓
 adapters / audio / storage
       ↓
@@ -665,105 +488,228 @@ external systems
 (Ollama, Whisper, Piper, SQLite, microphone, speakers)
 ```
 
-### Why this boundary exists
+**Synchronous path** (scripts): build components once, then call
+`components.runner.run(session=..., audio=..., sample_rate=...)` directly
+and block until `InteractionResult` returns.
 
-* **Pipeline nodes** contain workflow logic, not vendor setup.
-* **Adapters** translate external technologies into small application contracts.
-* **Composition** decides which concrete implementations are used.
-* **Tests** can inject fakes without a microphone, Ollama, Piper, or downloaded models.
-* **Storage** owns persistence rather than leaking SQLite operations into graph nodes.
+**Queued path** (`api/ws/stream.py`): build components once at app startup;
+per interaction, call `components.worker.submit(session=..., audio=...,
+sample_rate=...)`, which returns a `Future[InteractionResult]` immediately;
+await that future rather than calling the runner inline (LD-4).
 
-This is the expected way to extend the host: add or replace an adapter at the boundary and wire it through the composition root rather than importing the concrete technology directly into the graph.
+**Inside `InteractionRunner.run`**, in order: invoke the compiled graph
+(`pipeline.graph.invoke_dialogue`'s shape); resample the resulting TTS audio
+to 16 kHz int16 mono (S5); persist the decision trace; classify any raised
+exception through the F4 `_FAILURE_MAP` (section 4.7) into a stable
+`InteractionError` before it can reach a caller; return `InteractionResult`.
+This is exactly the "second, drifting copy of the sequence" problem LD-3
+exists to eliminate — code that called `graph.invoke()` and
+`tts.synthesize()` separately, as earlier revisions of the host did, is the
+pattern to avoid in any new entry point.
 
-### Known limitations of the unexecuted-mutation guard
+## 8. Error Handling Matrix
 
-No mutation executor is connected to the graph. Node 3 drafts a reply and nothing can actually add a task, dismiss a reminder, snooze one, or reschedule anything. `_reject_unexecuted_mutation_claim` in `pipeline/nodes/llm.py` therefore exists to stop a drafted reply asserting that a mutation already happened: if it did, the user would hear a spoken confirmation for something that never occurred, and would not retry.
+| ID | Failure | Detected where | Downstream contract | Trace behavior |
+| ---- | --------- | ----------------- | ---------------------- | ----------------- |
+| ERR-1 | STT adapter cannot transcribe (bad dtype, wrong rate, or backend failure). | `WhisperSTTAdapter.transcribe` raises `STTAdapterError`. | `InteractionRunner` maps to `wire_code="malformed_audio"`, `stage="stt"` (F4). | `trace_required=True`; degraded trace written. |
+| ERR-2 | Intent classification fails. | `IntentClassifierError`. | `wire_code="pipeline_failure"`, `stage="intent"`. | `trace_required=True`. |
+| ERR-3 | LLM request fails, or Ollama returns an unusable payload. | `LLMAdapterError`. | `wire_code="pipeline_failure"`, `stage="llm"`. | `trace_required=True`. |
+| ERR-4 | TTS synthesis fails. | `TTSAdapterError`. | `wire_code="pipeline_failure"`, `stage="tts"`. | `trace_required=True`. |
+| ERR-5 | Affect classifier fails at inference time on a loaded model. | `RuntimeError` from `ClassifierAffectDetector.detect`. | Degrades that turn's affect level to `"Low"` rather than aborting the interaction (per-turn fallback, distinct from ERR-6). | Interaction continues; not itself trace-required. |
+| ERR-6 | Affect classifier artifact never loads at startup. | `FileNotFoundError`/`RuntimeError` from `ClassifierAffectDetector.__init__`, caught in `build_host_components`. | Composition falls back to `DevelopmentAffectDetector` for the process lifetime (section 6). | Logged once at startup; no per-turn trace impact. |
+| ERR-7 | Worker queue is full. | `InteractionWorker.submit` raises `WorkerQueueFullError`. | Caller (the WebSocket route) must reject the new work rather than block the event loop (LD-4, LD-5). | No trace — the interaction never started. |
+| ERR-8 | Submission arrives after `stop()`. | `WorkerStoppedError`. | Caller must treat this as a shutdown-in-progress condition. | No trace. |
+| ERR-9 | Session exceeds the WP-105 inactivity timeout mid-utterance. | `_StreamSession.run_reaper` is planned by WP-105 but is not implemented yet. | Session reclamation is still an open WP-105 item; an abandoned session is not reclaimed by an inactivity reaper today. `condition_report`'s `degradation_reason` is also logged only, not yet written to a decision-trace row. | No reaper trace exists today; condition-report degradation remains logged, not persisted to trace. |
 
-The guard is a lexical rule, not a parser, so it is deliberately imperfect in two known ways. Both are documented here rather than fixed, because closing either would break a more common case:
+Any exception not explicitly named above but matching `ValueError` or
+`RuntimeError` still resolves through the F4 map's catch-all rows (section
+4.7) to `stage="pipeline"`, `wire_code="pipeline_failure"`,
+`trace_required=True` — there is no exception type that reaches
+`InteractionRunner.run` and produces an unclassified failure.
 
-* **Cross-clause negation is not tracked.** A reply that denies and then claims in the same sentence passes through unguarded, for example `"You told me not to, but this was added anyway."` Catching it would require distinguishing a negator that governs the verb from one that does not, which the current clause-scope model cannot do without also re-breaking `"I have not, however, dismissed that reminder."`
+## 9. Performance Budget
 
-* **Comma-coordinated denials are over-caught.** A denial whose subject is a comma-separated list, for example `"None of the milk, eggs, or bread was added."`, is replaced by the generic reply `"I have not added that yet, but I can add it to your list if you would like."` This is over-caution rather than a false statement - both sentences tell the user nothing was added - but it loses which items were meant. It does not affect object-position lists, parentheticals, or comma-free lists.
+The D5 timeout invariant, enforced by `config/settings.py`'s
+`__post_init__` (not merely documented — a violated invariant raises at
+settings load, before the process can serve a single request):
 
-Two smaller gaps are known and accepted for the same reason: a completed verb followed by a bare noun with no colon (`"Added task buy milk."`), and mutation verbs outside the per-intent word lists (`"Bumped the call to 6pm."`).
-
-When changing this guard, test both directions. Claims that must be caught and ordinary wording that must pass through untouched are held together in `tests/unit/pipeline/test_llm.py`, and the two parametrised tests there pick up new rows automatically. Widening the rule to catch one more phrasing has twice introduced a false positive on a commoner one, so treat a reported example as a sample of a class rather than as the thing to patch.
-
-## 9. Testing the WP-103 scaffold
-
-Run all tests:
-
-```bash
-python -m pytest -q
+```text
+intent_timeout_s + reasoning_timeout_s + non_llm_timeout_margin_s < session_timeout_seconds
 ```
 
-Run the WP-103 integration tests specifically:
+Default values: `intent_timeout_s=5`, `reasoning_timeout_s=6`,
+`non_llm_timeout_margin_s=10`, `session_timeout_seconds=30` — a budget of
+21 seconds against a 30-second ceiling. The intent classifier and the
+reasoning LLM are two sequential Ollama calls per turn (LD-7); they used to
+share one timeout, which meant a slow reasoning call could starve the
+budget the intent classifier needed, or vice versa. Splitting them (F6) lets
+each call be bounded independently while the sum invariant guarantees the
+whole turn fits inside the 30-second session ceiling that the WP-105
+inactivity reaper is required to enforce once implemented.
 
-```bash
-python -m pytest -q tests/integration/test_dialogue_graph_integration.py tests/unit/pipeline/test_graph.py
-```
+`llm_warmup_timeout_s` (default 120s) is deliberately separate from both
+per-turn timeouts (section 6): it bounds Ollama's cold-start model load at
+composition time, a multi-second-to-tens-of-seconds cost that per-turn
+inference timeouts are not meant to absorb and that the D5 invariant does
+not govern.
 
-The graph tests may inject a fake affect detector where the test is intended to isolate graph behavior. Runtime composition uses the WP-104 classifier artifact directly.
+## 10. Invariants
 
-## 10. Model boundaries: WP-103 vs WP-104
+Every invariant below is presented in exactly three labelled parts — Rule,
+Reason, Failure mode if violated.
 
-WP-103 uses these external model boundaries:
+**INV-1. Composition root exclusivity.**
+Rule: only `composition/bootstrap.py` constructs concrete adapter instances
+(`WhisperSTTAdapter`, `OllamaLLMAdapter`, `PiperTTSAdapter`,
+`ClassifierAffectDetector`, `DevelopmentAffectDetector`) and wires them into
+the graph.
+Reason: pipeline nodes and policy code depend only on the Protocol contracts
+in `adapters/contracts.py` (LD-2) so tests can inject fakes without any real
+hardware or external service; a second construction site defeats that
+isolation for whatever it constructs.
+Failure mode if violated: a test or a new entry point that constructs its
+own adapter bypasses the affect-backend fallback logic (section 6), the LLM
+warm-up (section 6), and any future cross-cutting concern added to
+`build_host_components` — it silently diverges from every other caller's
+behavior.
 
-| Component | WP-103 behavior                                          | Production owner       |
-| --------- | -------------------------------------------------------- | ---------------------- |
-| STT       | `faster-whisper`                                         | Existing host pipeline |
-| LLM       | Ollama + configured local model                          | Existing host pipeline |
-| TTS       | Piper + configured local voice                           | Existing host pipeline |
-| Affect    | `ClassifierAffectDetector` → `Low` / `Moderate` / `High` | **WP-104**             |
+**INV-2. `InteractionRunner` owns the full sequence.**
+Rule: no code outside `InteractionRunner.run` calls `graph.invoke()` (or
+`invoke_dialogue`) and then separately calls `tts.synthesize()`, resamples,
+or writes a decision trace.
+Reason: this is precisely the "second, drifting copy of the sequence"
+problem `InteractionRunner` was built to eliminate (section 7); a second
+copy of the sequence can silently omit the resample step (S5) or the trace
+write while still appearing to work in the common case.
+Failure mode if violated: an entry point that reassembles the sequence
+itself will pass tests that don't exercise the resample or trace-write path,
+then produce audio at the wrong sample rate or an interaction with no
+decision trace in production, with no test catching it beforehand.
 
-WP-104 owns the affect model file, openSMILE feature extraction, scikit-learn classifier, training/evaluation data, and acceptance evidence described in `techdocs/MLSPEC.md`.
+**INV-3. The event loop never blocks on an interaction.**
+Rule: `api/ws/stream.py` never calls `InteractionRunner.run` directly; it
+always goes through `InteractionWorker.submit`.
+Reason: an interaction can take multiple seconds; the WebSocket event loop
+must keep servicing other connections' clock-sync handshakes and
+disconnects during that time (LD-4).
+Failure mode if violated: one slow interaction (a slow Ollama response, a
+Whisper cold load) stalls every other concurrent WebSocket session on the
+same process, turning one user's slow turn into an outage for everyone
+connected.
 
-WP-104 now supplies the implementation behind the affect adapter contract together with the model/evaluation evidence required by the roadmap.
+**INV-4. The worker queue fails fast, never blocks.**
+Rule: `InteractionWorker.submit` raises `WorkerQueueFullError` immediately
+when the bounded queue is full; it never waits for room (LD-5).
+Reason: a caller on the event loop thread must not be stalled by a
+saturated worker — an unbounded or blocking queue would reintroduce exactly
+the stall INV-3 exists to prevent, just one layer down.
+Failure mode if violated: under load, the WebSocket route blocks inside
+`submit()` waiting for queue space, which blocks the event loop exactly as
+if `InteractionRunner.run` had been called directly — INV-3 is satisfied in
+name only.
 
-## 11. Common startup problems
+**INV-5. Every adapter failure is normalized before crossing the interaction
+boundary.**
+Rule: transport code (`api/ws/stream.py`) reads only `InteractionError`'s
+`wire_code`, `degradation_reason`, and `trace_required` fields; it never
+imports or checks for an adapter-specific exception type
+(`STTAdapterError`, `LLMAdapterError`, `TTSAdapterError`, etc.).
+Reason: the F4 mapping in `pipeline/interaction.py` (section 4.7) exists
+precisely so transport code has one stable contract regardless of which
+adapter or how many adapters exist; adapters are expected to change and be
+replaced (INV-1).
+Failure mode if violated: transport code that special-cases
+`LLMAdapterError` today breaks silently — not with a type error, but with a
+missed branch — the day an adapter is replaced with one that raises a
+different exception type carrying the same F4 classification.
 
-### `Ollama request failed`
+**INV-6. No mutation executor means no claimed mutation.**
+Rule: the reasoning node's drafted reply must never assert that a mutation
+(adding a task, dismissing a reminder, rescheduling something) has already
+happened, because no mutation executor exists anywhere in the system to
+make one happen (LD-6). `_reject_unexecuted_mutation_claim` in
+`pipeline/nodes/llm.py` enforces this.
+Reason: if a drafted reply claimed a mutation occurred and none did, the
+user would hear a spoken confirmation for something that never happened,
+and would have no reason to retry.
+Failure mode if violated: silently correct-sounding responses that describe
+actions the system cannot take, discovered only when a user later finds the
+task was never added — a failure mode with no error, no trace anomaly, and
+no test failure to point at it.
 
-Check that Ollama is running and that the configured model exists:
+The guard behind INV-6 is a lexical rule, not a parser, and is deliberately
+imperfect in two known ways, documented here rather than fixed because
+closing either would break a more common case:
 
-```bash
-ollama list
-```
+- **Cross-clause negation is not tracked.** A reply that denies and then
+  claims in the same sentence passes through unguarded, e.g. "You told me
+  not to, but this was added anyway." Catching it would require
+  distinguishing a negator that governs the verb from one that does not,
+  which the current clause-scope model cannot do without re-breaking "I
+  have not, however, dismissed that reminder."
+- **Comma-coordinated denials are over-caught.** A denial whose subject is a
+  comma-separated list, e.g. "None of the milk, eggs, or bread was added.",
+  is replaced by the generic reply "I have not added that yet, but I can
+  add it to your list if you would like." This is over-caution rather than
+  a false statement, but loses which items were meant. It does not affect
+  object-position lists, parentheticals, or comma-free lists.
 
-Also verify `OLLAMA_URL` and `LLM_MODEL` in `.env`.
+Two smaller gaps are known and accepted for the same reason: a completed
+verb followed by a bare noun with no colon ("Added task buy milk."), and
+mutation verbs outside the per-intent word lists ("Bumped the call to
+6pm."). When changing this guard, test both directions — claims that must
+be caught and ordinary wording that must pass through untouched are held
+together in `tests/unit/pipeline/test_llm.py`, whose two parametrised tests
+pick up new rows automatically. Widening the rule to catch one more
+phrasing has twice introduced a false positive on a commoner one; treat a
+reported example as a sample of a class rather than as the thing to patch.
 
-### `Piper failed to load voice model`
+**INV-7. The D5 timeout sum invariant is enforced at settings load, not
+just documented.**
+Rule: `intent_timeout_s + reasoning_timeout_s + non_llm_timeout_margin_s`
+must be strictly less than `session_timeout_seconds`; `config/settings.py`
+raises at load time if this does not hold.
+Reason: a per-turn budget that exceeds the session timeout would allow
+the WP-105 inactivity reaper, once implemented, to reclaim a session
+mid-turn on every interaction rather than only as a rare edge case
+(section 9).
+Failure mode if violated: were this only documented and not enforced, a
+future settings change (raising `reasoning_timeout_s` without checking the
+sum) would ship silently and only surface as sessions timing out under
+normal load, far from the settings change that caused it.
 
-Check `PIPER_MODEL_PATH` and confirm the directory contains the matching `.onnx` and `.json` voice files.
+## 11. Requirement Traceability
 
-### `faster-whisper` model download/load failure
+| Concern | Design section(s) |
+| --------- | -------------------- |
+| Composition root / dependency injection (S2) | Section 4.9; INV-1 |
+| Technology-neutral pipeline nodes | Section 4.1, 4.6; INV-1 |
+| Interaction sequence ownership (F1) | Section 4.7, 7; INV-2 |
+| Failure-boundary mapping (F4) | Section 4.7, 8; INV-5 |
+| Degraded-trace contract (F2) | Section 8 (ERR-1–ERR-4) |
+| Intent/reasoning timeout split (F6) / D5 invariant | Section 9; INV-7 |
+| Graph-state reducers (F5) | Section 4.6 |
+| Host-side audio resampling (S5) | Section 4.11; INV-2 |
+| `InteractionWorker` background thread (S1) | Section 4.8; INV-3, INV-4 |
+| `Connection` auth/clock-sync seam (S6) | `techdocs/work-packages/WP-105.md` (system-wide seam, WP-105-specific implementation) |
+| No mutation executor connected | Section 10 (INV-6) |
+| D4 (intent/reasoning model split deferred) | Section 2 (LD-7) |
+| BL-03 (WP-105 device auth deferred) | Section 2 (LD-8) |
 
-Check network access for the first model load, available disk space, and that `STT_MODEL_SIZE`, `STT_DEVICE`, and `STT_COMPUTE_TYPE` are compatible with the installed runtime.
+See `techdocs/ARCHITECTUREREVIEW12926.md` for the review and its full
+finding list, and each `techdocs/work-packages/WP-*.md` for which work
+package closed which finding and when.
 
-### Microphone or speaker failure
+## 12. Notes on Warranted Code Changes
 
-Set the device fields in `.env` when the default operating-system audio device is not the one you want:
-
-```dotenv
-AUDIO_INPUT_DEVICE=
-AUDIO_OUTPUT_DEVICE=
-```
-
-The adapter reports the device/open failure at runtime rather than silently falling back.
-
-### SQLite / trace failure on a fresh database
-
-Use the current `scripts.run_wp103` runner. It creates the required demo user before writing the decision trace. Do not use the destructive reset seeder as a prerequisite for every live run.
-
-## 12. Evidence and operational artifacts
-
-Generated databases, local model files, caches, recordings, and other runtime artifacts should remain local unless they are explicitly required as evidence for an acceptance criterion.
-
-Keep acceptance evidence small and reproducible. For WP-103, useful evidence includes:
-
-* passing WP-103 graph/integration test output;
-* a successful fresh-database live run;
-* stage-level timings from `run_wp103.py`;
-* the resulting decision trace row(s).
-
-See `techdocs/SPEC.md`, `techdocs/ARCH.md`, and `techdocs/roadmap.md` for the normative architecture and acceptance requirements.
+No code was changed in the course of writing this document. Every
+signature, constant, and behavioral note in section 4 was transcribed from
+the current source in `adapters/contracts.py`, `adapters/stt/whisper_adapter.py`,
+`adapters/llm/ollama_adapter.py`, `adapters/tts/piper_adapter.py`,
+`adapters/affect/`, `pipeline/graph.py`, `pipeline/interaction.py`,
+`pipeline/worker.py`, and `composition/bootstrap.py` as read during
+authoring, not recalled from memory. The discrepancies found during this
+reorganization are documentation/source-alignment issues: the
+`PIPER_MODEL_PATH` extension mismatch, the stale F6 status previously in
+`techdocs/ARCH.md`, and the WP-105 reaper being documented as implemented
+when it is actually deferred.
