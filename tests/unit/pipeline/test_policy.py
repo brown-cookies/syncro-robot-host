@@ -98,3 +98,56 @@ def test_r5_delivers_triggering_reminder():
     assert result["action_taken"] == "deliver"
     assert result["reminder_outcome"] == "pending"
     assert store.calls == ["u1"]
+
+
+import pytest
+
+from pipeline.nodes.policy import clamp_lead_time
+
+
+@pytest.mark.parametrize("raw, expected", [
+    (5, 5), (15, 15), (60, 60),   # in range: unchanged
+    (0, 5), (-10, 5), (4.9, 5),   # below range: clamp up
+    (61, 60), (999, 60),          # above range: clamp down
+])
+def test_lead_time_is_clamped_to_spec_range(raw, expected):
+    """Verify that lead time is clamped to the 5-60 minute SPEC range."""
+    assert clamp_lead_time(raw) == expected
+
+
+@pytest.mark.parametrize("stored, expected", [(3, 5.0), (15, 15.0), (90, 60.0)])
+def test_policy_node_traces_the_bounded_lead_time(stored, expected):
+    """The value in the node result (which becomes the trace) is the bounded one."""
+    class Store:
+        def get_lead_time(self, user_id, default):
+            """Return an out-of-range stored value on purpose."""
+            return stored
+
+    node = make_policy_node(15, 15, store=Store())
+    result = node({
+        "intent": "snooze_reminder",
+        "user_id": "u1",
+        "affect_level": "Moderate",
+        "deadline_proximity": "not_imminent",
+        "draft_response": "Please handle the slides.",
+    })
+    assert result["lead_time_min"] == expected
+
+
+def test_all_five_rules_are_reachable_through_the_node():
+    """Item 1 verification: each of R1-R5 can be provoked via the node."""
+    cases = {
+        ("Low", "not_imminent"): "R1",
+        ("Moderate", "not_imminent"): "R2",
+        ("Moderate", "imminent"): "R3",
+        ("High", "not_imminent"): "R4",
+        ("High", "imminent"): "R5",
+    }
+    node = make_policy_node(15, 15)
+    for (affect, prox), rule in cases.items():
+        result = node({
+            "intent": "snooze_reminder", "user_id": "u1",
+            "affect_level": affect, "deadline_proximity": prox,
+            "draft_response": "Draft.",
+        })
+        assert result["policy_rule"] == rule

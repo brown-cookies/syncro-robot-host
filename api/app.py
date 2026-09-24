@@ -8,7 +8,7 @@ from typing import AsyncIterator
 
 from fastapi import FastAPI
 
-from api.http import health
+from api.http import health, tasks
 from api.ws import stream
 from api.ws.session_registry import SessionRegistry
 from composition.bootstrap import build_host_components
@@ -20,6 +20,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = get_settings()
     components = build_host_components(settings)
     components.worker.start()
+    ingest_deps = tasks.IngestDeps(
+        store=components.store,
+        source_tokens=tasks.parse_source_tokens(settings.ingest_source_tokens),
+    )
+    app.state.ingest_deps = ingest_deps
 
     app.state.host_components = components
     app.state.stream_deps = stream.StreamDeps(
@@ -36,4 +41,5 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(title="SYNCRO Host", lifespan=lifespan)
 
 app.include_router(health.router)
+app.include_router(tasks.router)
 app.include_router(stream.router)

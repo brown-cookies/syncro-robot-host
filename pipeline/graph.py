@@ -59,6 +59,8 @@ def build_dialogue_graph(
     deadline_proximity_hours: int,
     grace_window_minutes: int,
     default_lead_time: float,
+    lead_time_min: float = 5.0,
+    lead_time_max: float = 60.0,
 ):
     """Build the dialogue graph and connect its dependency-injected nodes."""
 
@@ -67,26 +69,31 @@ def build_dialogue_graph(
     # superstep off START; both are wrapped with timed() so their durations land
     # in the reducer-backed stage_timings_s key rather than a plain key (F5).
     builder.add_node("node1_stt", timed("stt", make_stt_node(stt)))
+    # Step 4 (latency): every remaining stage is wrapped with timed() so the
+    # measurement table can split the total into wake->intent, intent->policy
+    # and policy->TTS. Measurement only; no behavior change.
     builder.add_node(
         "node1_intent",
-        make_intent_node(intent_classifier, confidence_threshold),
+        timed("intent", make_intent_node(intent_classifier, confidence_threshold)),
     )
     builder.add_node(
         "node2_context",
-        make_context_node(store, context_top_k, deadline_proximity_hours),
+        timed("context", make_context_node(store, context_top_k, deadline_proximity_hours)),
     )
-    builder.add_node("node3_llm", make_llm_node(llm))
+    builder.add_node("node3_llm", timed("llm", make_llm_node(llm)))
     builder.add_node("affect", timed(
         "affect", make_affect_node(affect_detector)))
     builder.add_node(
         "node4_policy",
-        make_policy_node(
+        timed("policy", make_policy_node(
             grace_window_minutes=grace_window_minutes,
             default_lead_time=default_lead_time,
             store=store,
-        ),
+            lead_time_min=lead_time_min,
+            lead_time_max=lead_time_max,
+        )),
     )
-    builder.add_node("output", make_output_node())
+    builder.add_node("output", timed("output", make_output_node()))
 
     # Same raw audio -> transcription branch + acoustic affect branch.
     builder.add_edge(START, "node1_stt")

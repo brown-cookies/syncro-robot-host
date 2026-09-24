@@ -90,6 +90,14 @@ class Settings:
 
     # TTS
     piper_model_path: str = "./models/en_US-lessac-medium"
+    # Scope-freeze Item 2: synthesis longer than this triggers the host half of
+    # the fallback channel (text-only response, degradation_reason=tts_timeout).
+    tts_timeout_s: float = 2.0
+
+    # Task ingress (SPEC 6.1a / NFR-14): per-connector bearer tokens, as
+    # comma-separated "source:token" pairs. Empty means every ingest call is
+    # rejected (fail closed). Tokens must be at least 16 characters.
+    ingest_source_tokens: str = ""
 
     # Audio
     audio_sample_rate_hz: int = 16000
@@ -187,6 +195,10 @@ class Settings:
             # TTS
             piper_model_path=os.getenv(
                 "PIPER_MODEL_PATH", defaults.piper_model_path
+            ),
+            tts_timeout_s=_float_env("TTS_TIMEOUT_S", defaults.tts_timeout_s),
+            ingest_source_tokens=os.getenv(
+                "INGEST_SOURCE_TOKENS", defaults.ingest_source_tokens
             ),
             # Audio
             audio_sample_rate_hz=_int_env(

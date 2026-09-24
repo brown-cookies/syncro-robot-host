@@ -21,6 +21,7 @@ classification and boundary behavior.
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from time import monotonic, time
@@ -72,6 +73,10 @@ class InteractionResult:
     stage_timings_s: dict[str, float]
     latency_ms: float
     latency_basis: str
+    # Set when the interaction completed but degraded (e.g. "tts_timeout").
+    # In that case `tts_audio` is empty and the edge falls back to the text
+    # in `response_payload["tts_text"]` (scope-freeze Item 2, host half).
+    degradation_reason: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -143,6 +148,8 @@ class InteractionRunner:
         resampler: Callable[[np.ndarray, int], np.ndarray],
         clock: Callable[[], float] = monotonic,
         clock_ms: Callable[[], float] | None = None,
+        tts_timeout_s: float | None = None,
+        console: Callable[[str], None] = print,
     ) -> None:
         self._graph = graph
         self._store = store
@@ -150,6 +157,27 @@ class InteractionRunner:
         self._resampler = resampler
         self._clock = clock
         self._clock_ms = clock_ms or (lambda: time() * 1000.0)
+        self._tts_timeout_s = tts_timeout_s
+        self._console = console
+
+    def _synthesize(self, text: str) -> tuple[np.ndarray, int] | None:
+        """Synthesize `text`, or return None if it exceeds the TTS timeout.
+
+        With no timeout configured this is a plain call. With one, synthesis
+        runs on a throwaway worker thread; a stuck call cannot be killed, so on
+        timeout its result is abandoned (the thread ends when the engine does).
+        Adapter errors propagate unchanged to the F4 failure mapping.
+        """
+        if self._tts_timeout_s is None:
+            return self._tts.synthesize(text)
+        pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="tts")
+        future = pool.submit(self._tts.synthesize, text)
+        try:
+            return future.result(timeout=self._tts_timeout_s)
+        except FutureTimeoutError:
+            return None
+        finally:
+            pool.shutdown(wait=False)
 
     def run(self, *, session: SessionContext, audio: np.ndarray, sample_rate: int) -> InteractionResult:
         """Run one full interaction and return its result.
@@ -179,11 +207,24 @@ class InteractionRunner:
                 )
 
             tts_started = self._clock()
-            tts_audio_raw, tts_native_rate = self._tts.synthesize(response_payload["tts_text"])
+            synthesized = self._synthesize(response_payload["tts_text"])
             tts_completed = self._clock()
             tts_completed_ms = self._clock_ms()
 
-            tts_audio = self._resampler(tts_audio_raw, tts_native_rate)
+            degradation_reason: str | None = None
+            if synthesized is None:
+                # Item 2: forced/real TTS timeout. The interaction itself
+                # completed (policy decided), so keep the full trace and mark
+                # it degraded; the edge gets text and no audio.
+                degradation_reason = "tts_timeout"
+                tts_audio = np.zeros(0, dtype=np.int16)
+                self._console(
+                    "[interaction] TTS timed out — fallback channel activated "
+                    f"(session={session.session_id}, timeout={self._tts_timeout_s}s)"
+                )
+            else:
+                tts_audio_raw, tts_native_rate = synthesized
+                tts_audio = self._resampler(tts_audio_raw, tts_native_rate)
 
             latency_ms, latency_basis = self._compute_latency(
                 session,
@@ -194,6 +235,8 @@ class InteractionRunner:
             pending_trace = dict(pending_trace_raw)
             pending_trace["latency_ms"] = latency_ms
             pending_trace["latency_basis"] = latency_basis
+            if degradation_reason is not None:
+                pending_trace["degradation_reason"] = degradation_reason
             trace = DecisionTraceRecord(**pending_trace)
             self._store.ensure_user(trace.user_id)
             self._store.save_decision_trace(trace.model_dump(mode="json"))
@@ -213,6 +256,7 @@ class InteractionRunner:
                 stage_timings_s=stage_timings_s,
                 latency_ms=latency_ms,
                 latency_basis=latency_basis,
+                degradation_reason=degradation_reason,
             )
         except InteractionError:
             raise

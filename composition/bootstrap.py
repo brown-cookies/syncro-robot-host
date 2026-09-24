@@ -183,6 +183,8 @@ def build_host_components(
         deadline_proximity_hours=settings.deadline_proximity_hours,
         grace_window_minutes=settings.grace_window_minutes,
         default_lead_time=settings.lead_time_default,
+        lead_time_min=settings.lead_time_min,
+        lead_time_max=settings.lead_time_max,
     )
 
     # F3: the runner is part of the composition root so every caller
@@ -198,6 +200,7 @@ def build_host_components(
         store=store,
         tts=tts,
         resampler=to_pcm16_16k,
+        tts_timeout_s=settings.tts_timeout_s,
     )
 
     # S1: the worker is constructed here so it shares the composition root's

@@ -7,6 +7,7 @@ from typing import Any
 from storage.context import ContextRepository, ContextResult
 from storage.database import SQLiteDatabase
 from storage.decision_trace import DecisionTraceRepository
+from storage.ingress import IngressRepository
 from storage.schema import initialize_schema
 
 
@@ -20,6 +21,7 @@ class SQLiteStore:
             initialize_schema(conn)
         self.context = ContextRepository(self.database)
         self.decision_trace = DecisionTraceRepository(self.database)
+        self.ingress = IngressRepository(self.database)
 
     @property
     def path(self) -> str:
@@ -78,6 +80,18 @@ class SQLiteStore:
                 (user_id,),
             ).fetchone()
         return float(row["current_L"]) if row is not None else float(default)
+
+    def ingest_task(self, **fields: Any) -> tuple[dict[str, Any], bool]:
+        """Idempotently insert an externally ingested task (SPEC 6.1a)."""
+        return self.ingress.ingest_task(**fields)
+
+    def list_tasks(self, user_id: str | None = None) -> list[dict[str, Any]]:
+        """List tasks for the console table (all tasks when no user given)."""
+        return self.ingress.list_tasks(user_id)
+
+    def list_ingress_events(self) -> list[dict[str, Any]]:
+        """List the ingest audit log."""
+        return self.ingress.list_events()
 
     def list_decision_traces(self, user_id: str) -> list[dict[str, Any]]:
         """List stored decision traces for the requested user."""
