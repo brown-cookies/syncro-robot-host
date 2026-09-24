@@ -384,6 +384,39 @@ def test_session_timeout_reclaims_an_abandoned_session_and_persists_a_degraded_t
     assert not store.saved_traces
 
 
+def test_session_timeout_reaper_ignores_session_after_worker_handoff():
+    store = FakeStore()
+
+    class SlowGraph(FakeGraph):
+        def invoke(self, state):
+            time.sleep(0.5)
+            return super().invoke(state)
+
+    app, worker = build_test_app(
+        SlowGraph(), FakeTTS(), store, session_timeout_seconds=0.15
+    )
+    try:
+        with TestClient(app) as client:
+            with client.websocket_connect("/v1/stream") as ws:
+                ws.send_json(
+                    {"type": "start_audio", "session_id": "s1", "user_id": "u1", "wake_word_detected_at": 1}
+                )
+                assert ws.receive_json()["type"] == "ready"
+
+                ws.send_json({"type": "end_audio", "session_id": "s1", "frame_count": 0})
+
+                # Worker processing intentionally exceeds the inactivity
+                # timeout. The reaper must not reclaim a session already
+                # handed off to the worker.
+                assert ws.receive_json()["type"] == "response"
+    finally:
+        worker.stop(timeout=2.0)
+
+    assert len(store.saved_traces) == 1
+    assert store.saved_traces[0]["session_id"] == "s1"
+    assert not store.saved_degraded_traces
+
+
 def test_audio_frame_activity_resets_the_inactivity_timeout():
     store = FakeStore()
     app, worker = build_test_app(FakeGraph(), FakeTTS(), store, session_timeout_seconds=0.3)

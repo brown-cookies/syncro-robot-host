@@ -154,6 +154,7 @@ class _InFlightSession:
     last_activity_monotonic: float
     audio_buffer: bytearray = field(default_factory=bytearray)
     frame_count: int = 0
+    submitted: bool = False
 
 
 class _StreamSession:
@@ -217,34 +218,19 @@ class _StreamSession:
 
         Per SPEC 7.4 this only watches the pre-`end_audio` window -- "no
         `audio_frame` or `end_audio` received" -- not overall interaction
-        processing time: `_handle_end_audio` always releases the session
-        (`self._in_flight = None`, via `_release_session`) before or as
-        soon as it hands the utterance to the worker, on every path
-        (success, `InteractionError`, `WorkerQueueFullError`), so this
-        check and worker processing never overlap for the same session.
-        Total processing time is bounded separately, by
-        `INTENT_TIMEOUT_S + REASONING_TIMEOUT_S + NON_LLM_TIMEOUT_MARGIN_S
-        < SESSION_TIMEOUT_SECONDS` (`config/settings.py`'s own
-        `__post_init__` check) -- there is no second timeout to invent
-        here.
+        processing time. Once `_handle_end_audio` is about to hand the
+        utterance to the worker it marks the session `submitted`, and this
+        reaper skips submitted sessions until the worker path releases them.
+        This prevents queue wait, interaction processing, or TTS downlink
+        from being mistaken for client inactivity.
         """
-        idle = self._seconds_since_activity()
-        if idle is None or idle < self._deps.session_timeout_seconds:
-            return False
         in_flight = self._in_flight
-        assert in_flight is not None  # narrowed by the `idle is None` check above
-        await self._send_error(session_id=in_flight.session_id, error_code="session_timeout")
-        if self._in_flight is not in_flight:
-            # A legitimate end_audio (or error/collision) completed on the
-            # main receive loop while the line above was awaiting the
-            # socket write -- the only yield point in this method. The
-            # stray error message just sent is an unavoidable cost of that
-            # race (any timeout mechanism has it: a check and a real
-            # message can always land on either side of one instant), but
-            # this session_id already belongs to someone else's outcome
-            # now -- don't also persist a bogus trace or touch state that
-            # isn't ours to release.
+        if in_flight is None or in_flight.submitted:
             return False
+        idle = monotonic() - in_flight.last_activity_monotonic
+        if idle < self._deps.session_timeout_seconds:
+            return False
+
         session = SessionContext(
             session_id=in_flight.session_id,
             user_id=in_flight.user_id,
@@ -252,10 +238,14 @@ class _StreamSession:
             wake_word_detected_at=in_flight.wake_word_detected_at,
             clock_offset_ms=self._connection.clock_offset_ms,
         )
+        # Snapshot and release before the first await. Once released, a
+        # subsequent start_audio may legitimately reuse this session_id;
+        # the timeout trace still belongs to the snapshot above.
+        self._release_session()
         self._deps.worker.runner.persist_transport_degraded_trace(
             session=session, wire_code="session_timeout", degradation_reason="session_timeout"
         )
-        self._release_session()
+        await self._send_error(session_id=session.session_id, error_code="session_timeout")
         return True
 
     async def run_reaper(self) -> None:
@@ -426,6 +416,7 @@ class _StreamSession:
             clock_offset_ms=self._connection.clock_offset_ms,
         )
 
+        in_flight.submitted = True
         try:
             future = self._deps.worker.submit(
                 session=session, audio=audio, sample_rate=self._deps.audio_sample_rate_hz
