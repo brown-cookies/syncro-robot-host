@@ -1,4 +1,4 @@
-"""Console task table (scope-freeze Item 3): print tasks and the ingest audit log.
+"""Console task table: print tasks and the ingest audit log.
 
 Run against the real database after a `curl` to the running host:
     python -m scripts.show_tasks            # uses DB_PATH / ./syncro.db

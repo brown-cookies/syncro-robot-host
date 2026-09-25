@@ -36,6 +36,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         yield
     finally:
         components.worker.stop(timeout=settings.session_timeout_seconds)
+        components.runner.close()
 
 
 app = FastAPI(title="SYNCRO Host", lifespan=lifespan)

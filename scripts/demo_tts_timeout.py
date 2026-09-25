@@ -1,4 +1,4 @@
-"""Rehearsal demo (scope-freeze Item 2): forced TTS timeout -> fallback channel.
+"""Rehearsal demo: forced TTS timeout -> fallback channel.
 
 Uses a stub TTS that hangs, a canned graph result, and a temporary real SQLite
 store, so it needs no Piper, Ollama, or microphone and behaves identically on
@@ -77,6 +77,7 @@ def main() -> None:
             )
         finally:
             tts.release.set()
+            runner.close()
 
         row = store.list_decision_traces(USER_ID)[-1]
         print(f"[result] degradation_reason={result.degradation_reason} "

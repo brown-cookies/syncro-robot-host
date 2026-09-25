@@ -90,7 +90,7 @@ class Settings:
 
     # TTS
     piper_model_path: str = "./models/en_US-lessac-medium"
-    # Scope-freeze Item 2: synthesis longer than this triggers the host half of
+    # Synthesis longer than this triggers the host half of
     # the fallback channel (text-only response, degradation_reason=tts_timeout).
     tts_timeout_s: float = 2.0
 

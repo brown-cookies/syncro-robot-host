@@ -1,4 +1,4 @@
-"""Scope-freeze Item 2: TTS timeout -> host half of the fallback channel.
+"""TTS timeout -> host half of the fallback channel.
 
 A forced timeout (a stub TTS that blocks until released) makes the behavior
 deterministic without a slow real engine: the runner must finish the
@@ -114,6 +114,67 @@ def test_forced_tts_timeout_degrades_traces_and_prints_fallback_line():
     assert store.saved[0]["policy_rule"] == "R5"
     assert any("TTS timed out" in line and "fallback channel activated" in line
                for line in console)
+
+
+def test_timed_out_tts_never_runs_concurrently_with_next_interaction():
+    """A timed-out Piper call remains the runner's only in-flight synthesis."""
+    started = threading.Event()
+    release = threading.Event()
+
+    class _TrackingTTS:
+        def __init__(self):
+            self.active = 0
+            self.max_active = 0
+            self.calls = []
+            self._lock = threading.Lock()
+
+        def synthesize(self, text):
+            with self._lock:
+                self.active += 1
+                self.max_active = max(self.max_active, self.active)
+                self.calls.append(text)
+            started.set()
+            try:
+                release.wait(timeout=5)
+                return np.zeros(2_205, dtype=np.float32), 22_050
+            finally:
+                with self._lock:
+                    self.active -= 1
+
+    tts, store, console = _TrackingTTS(), _Store(), []
+    runner = _runner(tts, store, console, timeout=0.05)
+    first_done = threading.Event()
+    first_result = []
+    first_error = []
+
+    def first_interaction():
+        try:
+            first_result.append(_run(runner))
+        except BaseException as exc:  # keep worker-thread failures observable
+            first_error.append(exc)
+        finally:
+            first_done.set()
+
+    thread = threading.Thread(target=first_interaction)
+    thread.start()
+    assert started.wait(timeout=1)
+    # The first interaction must return on timeout while its Piper call remains active.
+    assert first_done.wait(timeout=1)
+    assert not first_error
+    assert first_result and first_result[0].degradation_reason == "tts_timeout"
+    assert tts.active == 1
+
+    second = _run(runner)
+    assert second.degradation_reason == "tts_timeout"
+    assert len(tts.calls) == 1
+    assert tts.max_active == 1
+
+    release.set()
+    assert first_done.wait(timeout=2)
+    thread.join(timeout=1)
+    assert not first_error
+    assert first_result and first_result[0].degradation_reason == "tts_timeout"
+    runner.close()
 
 
 def test_tts_within_timeout_is_not_degraded_and_console_is_silent():

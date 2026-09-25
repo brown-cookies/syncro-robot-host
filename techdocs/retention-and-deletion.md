@@ -1,6 +1,6 @@
 # SYNCRO Retention and Deletion Schedule
 
-**Status:** Written for the 24 September 2026 scope freeze. This document defines the project data-retention requirement; it does **not** implement the deletion job. The six-month post-study analysis window is the project's proposed default and remains subject to adviser/ethics confirmation.
+**Status:** Written on 24 September 2026. This document defines the project data-retention requirement; it does **not** implement the deletion job. The six-month post-study analysis window is the project's proposed default and remains subject to adviser/ethics confirmation.
 
 ## 1. Data covered
 
@@ -31,7 +31,7 @@ Two triggers use the same participant-data deletion scope:
 
 ## 3. Operational rule
 
-    The retention schedule is a policy requirement, not a claim that the current prototype already performs automatic expiry. A host-side scheduled deletion job is **not implemented in this freeze**. Until that mechanism exists, no fieldwork data is authorized by this schedule to exceed the stated retention window, and any participant deletion request must be handled using the same defined per-table scope.
+    The retention schedule is a policy requirement, not a claim that the current prototype already performs automatic expiry. A host-side scheduled deletion job is **not implemented**. Until that mechanism exists, no fieldwork data is authorized by this schedule to exceed the stated retention window, and any participant deletion request must be handled using the same defined per-table scope.
 
 ## 4. Protection boundary
 

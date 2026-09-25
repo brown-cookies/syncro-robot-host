@@ -1,4 +1,4 @@
-"""Rehearsal demo (scope-freeze Item 3): authenticated task ingress, no models needed.
+"""Rehearsal demo: authenticated task ingress, no models needed.
 
 Builds only the ingest router over a temporary real SQLite store, then walks
 the four cases the acceptance item names and prints the console task table.

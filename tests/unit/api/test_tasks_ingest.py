@@ -1,4 +1,4 @@
-"""Scope-freeze Item 3: POST /v1/tasks/ingest (SPEC 6.1a, verification 6a-6c).
+"""POST /v1/tasks/ingest (SPEC 6.1a, verification 6a-6c).
 
 Uses a fresh FastAPI app carrying only the tasks router and a real SQLite
 store in a temp directory, so no models, Ollama, or audio hardware are needed.
