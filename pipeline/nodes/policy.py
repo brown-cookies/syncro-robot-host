@@ -18,6 +18,21 @@ POLICY_RULES: dict[tuple[str, str], str] = {
 NON_POLICY_INTENTS = frozenset({"ask_status", "request_summary"})
 POLICY_GOVERNED_INTENTS = frozenset({"dismiss_reminder", "snooze_reminder"})
 
+# SPEC: lead time is bounded to [5, 60] minutes. The policy node is the single
+# enforcement point, so the value that reaches the decision trace is always
+# the bounded one, whatever the store or configuration supplied.
+LEAD_TIME_MIN_MINUTES = 5.0
+LEAD_TIME_MAX_MINUTES = 60.0
+
+
+def clamp_lead_time(
+    minutes: float,
+    lo: float = LEAD_TIME_MIN_MINUTES,
+    hi: float = LEAD_TIME_MAX_MINUTES,
+) -> float:
+    """Bound a lead-time value to the SPEC range."""
+    return float(min(max(float(minutes), lo), hi))
+
 
 def apply_policy(affect_level: str, deadline_proximity: str) -> str:
     """Apply the production policy mapping to the current dialogue state."""
@@ -32,7 +47,13 @@ def apply_policy(affect_level: str, deadline_proximity: str) -> str:
     return POLICY_RULES[(affect_level, deadline_proximity)]
 
 
-def make_policy_node(grace_window_minutes: int, default_lead_time: float, store=None):
+def make_policy_node(
+    grace_window_minutes: int,
+    default_lead_time: float,
+    store=None,
+    lead_time_min: float = LEAD_TIME_MIN_MINUTES,
+    lead_time_max: float = LEAD_TIME_MAX_MINUTES,
+):
     """Create the policy graph node with its injected policy logic."""
     def policy_node(state: DialogueState) -> DialogueState:
         """Apply policy decisions to the current dialogue state."""
@@ -81,11 +102,12 @@ def make_policy_node(grace_window_minutes: int, default_lead_time: float, store=
             final = draft
 
         user_id = state.get("user_id")
-        lead_time = (
+        raw_lead_time = (
             store.get_lead_time(user_id, default_lead_time)
             if store is not None and isinstance(user_id, str)
             else float(default_lead_time)
         )
+        lead_time = clamp_lead_time(raw_lead_time, lead_time_min, lead_time_max)
 
         return {
             "final_response": final,

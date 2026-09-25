@@ -156,6 +156,18 @@ CREATE TABLE IF NOT EXISTS deletion_receipts (
     tables_cleared TEXT NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
+
+-- SPEC 6.1a: every accepted ingest call (created or duplicate) is auditable
+-- with the connector's source id. Not user-scoped: ingested tasks are not tied
+-- to a study participant.
+CREATE TABLE IF NOT EXISTS ingress_event_log (
+    event_id TEXT PRIMARY KEY,
+    source TEXT NOT NULL,
+    external_id TEXT NOT NULL,
+    outcome TEXT NOT NULL CHECK (outcome IN ('created', 'duplicate')),
+    task_id TEXT,
+    logged_at TEXT NOT NULL
+);
 """.format(decision_trace_columns=_DECISION_TRACE_COLUMNS_SQL)
 
 

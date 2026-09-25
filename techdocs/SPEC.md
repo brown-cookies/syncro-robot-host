@@ -1444,6 +1444,10 @@ failed.
     no interaction data traverses any other network path.
   - **At rest:** encryption at rest on the host's data store (audio,
     transcripts, derived features, decision traces).
+  - **Retention schedule and implementation status:** see
+    `techdocs/RETENTION_AND_DELETION_SCHEDULE.md` for the full retention
+    schedule, data-category breakdown, and current implementation status of
+    the in-transit/at-rest protections above.
   - **NFR-11, the participant's right to deletion** (source paper's
     Ethical Considerations section), is fulfilled by `POST
     /v1/data-deletion-request` (Section 6.5, FR-H11a). This document had
@@ -1696,11 +1700,16 @@ invented (per project decision to keep these open):
   hardware, LLM, and STT are all now locked, so this is measurable and
   should be benchmarked (e.g. `nvidia-smi` during a live inference call)
   on a verified-idle GPU, rather than left as a projected figure (Section 4).
-- Concrete authentication mechanism (token vs. session vs. mTLS) for each of
-  the two auth scopes: participant-scoped (`POST /v1/tasks` and console
-  endpoints) and source-scoped (`POST /v1/tasks/ingest`) — unresolved. The
-  scopes themselves, and that they must not be interchangeable, are settled
-  (Section 14, NFR-14); only the concrete mechanism is open.
+- Concrete authentication mechanism (token vs. session vs. mTLS) for the
+  participant scope (`POST /v1/tasks` and console endpoints) — unresolved.
+  The scopes themselves, and that they must not be interchangeable, are
+  settled (Section 14, NFR-14). **Source scope — DECIDED (24 Sep 2026, scope
+  freeze):** `POST /v1/tasks/ingest` uses a static per-connector bearer token
+  read from the `INGEST_SOURCE_TOKENS` environment variable
+  (`source:token` pairs, tokens of at least 16 characters). No configured
+  tokens means every call is rejected with `401`; a token is valid only for
+  its own `source`; a participant token is never accepted. Every accepted
+  call is recorded in `ingress_event_log` (Section 6.1a).
 - Wake-word engine's native frame length, to confirm the uplink ring-buffer
   unit (provisionally 20 ms / 640 bytes, Section 8.2) is sized to it rather
   than to a round millisecond count — the format itself (16 kHz/16-bit/

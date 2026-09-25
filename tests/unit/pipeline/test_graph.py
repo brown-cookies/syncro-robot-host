@@ -117,6 +117,27 @@ def test_graph_records_stage_timings_for_both_parallel_branches(tmp_path):
     assert stage_timings["affect"] >= 0.0
 
 
+def test_graph_records_every_stage_timing_for_latency_table(tmp_path):
+    """Step 4: the latency table splits the total by stage, so every stage the
+    table reads (stt, intent, context, llm, affect, policy, output) must land
+    in stage_timings_s."""
+    store = SQLiteStore(str(tmp_path / "test.db"))
+    store.ensure_user("u-stages")
+    graph = build_dialogue_graph(
+        stt=FakeSTT(), intent_classifier=FakeIntent(), llm=FakeLLM(), store=store,
+        affect_detector=FakeAffect(), confidence_threshold=0.60, context_top_k=5,
+        deadline_proximity_hours=2, grace_window_minutes=15, default_lead_time=15,
+    )
+    result = graph.invoke({
+        "session_id": "s-stages", "user_id": "u-stages",
+        "audio": np.zeros(160, dtype=np.float32), "sample_rate": 16000,
+    })
+    stage_timings = result["stage_timings_s"]
+    for stage in ("stt", "intent", "context", "llm", "affect", "policy", "output"):
+        assert stage in stage_timings, stage
+        assert stage_timings[stage] >= 0.0
+
+
 def test_graph_records_affect_degradation_reason_for_fallback(tmp_path):
     """Verify that a fallback Low affect result is distinguishable in the pending trace.
 

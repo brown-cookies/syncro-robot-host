@@ -349,6 +349,89 @@ def test_latency_never_goes_negative():
     assert result.latency_ms == 0.0
 
 
+# --- Step 4: clock-domain regression ---------------------------------------
+#
+# Two clocks exist: `clock` (host monotonic, small arbitrary origin) and
+# `clock_ms` (host epoch ms, ~1.79e12 in 2026). The bug class is subtracting a
+# value from one domain from a value in the other, which yields a number that
+# is off by ~1e12 ms (or negative, then clamped to 0). These tests make the two
+# domains wildly different so any mixing produces an obviously bogus result.
+
+EPOCH_MS_2026 = 1_789_500_000_000.0
+
+
+class _AdvancingTTS(FakeTTS):
+    def __init__(self, clock, seconds):
+        super().__init__()
+        self._clock = clock
+        self._seconds = seconds
+
+    def synthesize(self, text):
+        self.calls.append(text)
+        self._clock.advance(self._seconds)
+        return self.audio, self.native_rate
+
+
+class _SteppedClock(FakeClock):
+    def advance(self, seconds: float) -> None:
+        self._next += seconds
+
+
+def test_host_observed_latency_uses_monotonic_domain_only_even_if_epoch_clock_is_huge():
+    """Basis host_observed_only must be exactly the monotonic delta.
+
+    Old (mixed-clock) logic, e.g. `epoch_ms - started_monotonic * 1000`,
+    returns ~1.79e12 here; this test fails on that and passes on the fix.
+    """
+    clock = _SteppedClock(start=5.0, step=0.0)
+    runner = InteractionRunner(
+        graph=FakeGraph(),
+        store=FakeStore(),
+        tts=_AdvancingTTS(clock, 0.75),
+        resampler=to_pcm16_16k,
+        clock=clock,
+        clock_ms=FakeEpochClock(start_ms=EPOCH_MS_2026),
+    )
+
+    result = runner.run(
+        session=make_session(started_monotonic=5.0),
+        audio=np.zeros(160, dtype=np.float32),
+        sample_rate=16_000,
+    )
+
+    assert result.latency_basis == "host_observed_only"
+    assert result.latency_ms == pytest.approx(750.0)
+    assert result.latency_ms < 1e6  # a mixed-domain value would be ~1.79e12
+
+
+def test_wake_word_latency_uses_epoch_domain_only_even_if_monotonic_clock_is_huge():
+    """Basis wake_word_to_tts must ignore the monotonic clock entirely.
+
+    Old logic that leaked `started_monotonic` / the monotonic clock into this
+    branch would produce a value dominated by the 1e6 s monotonic origin.
+    """
+    runner = InteractionRunner(
+        graph=FakeGraph(),
+        store=FakeStore(),
+        tts=FakeTTS(),
+        resampler=to_pcm16_16k,
+        clock=FakeClock(start=1_000_000.0),
+        clock_ms=FakeEpochClock(start_ms=EPOCH_MS_2026),
+    )
+    session = make_session(
+        started_monotonic=999_999.0,
+        wake_word_detected_at=int(EPOCH_MS_2026 - 2_500),
+        clock_offset_ms=100.0,
+    )
+
+    result = runner.run(session=session, audio=np.zeros(160, dtype=np.float32), sample_rate=16_000)
+
+    assert result.latency_basis == "wake_word_to_tts"
+    # host epoch is sampled at EPOCH_MS_2026 after synthesis; wake on host
+    # clock = (EPOCH_MS_2026 - 2500) + 100 -> 2400 ms.
+    assert result.latency_ms == pytest.approx(2_400.0)
+
+
 # --- pending_trace validation ------------------------------------------
 
 
