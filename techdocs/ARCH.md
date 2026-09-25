@@ -710,5 +710,5 @@ authoring, not recalled from memory. The discrepancies found during this
 reorganization are documentation/source-alignment issues: the
 `PIPER_MODEL_PATH` extension mismatch, the stale F6 status previously in
 `techdocs/ARCH.md`, and the WP-105 reaper being documented as implemented
-+when it was, at the time, still deferred (closed by a later fix; see
-+`techdocs/work-packages/WP-105.md`).
+when it was, at the time, still deferred (closed by a later fix; see
+`techdocs/work-packages/WP-105.md`).
