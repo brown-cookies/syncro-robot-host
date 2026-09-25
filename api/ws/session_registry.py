@@ -11,12 +11,13 @@ names this gap explicitly and defers it here.
 
 Scope note (per the Phase 14 plan): this is the registry's *shape* --
 enough bookkeeping to answer "is this session_id already in flight
-somewhere on this host" and reject or release it. It is deliberately
-**not** the full SPEC 7.4 session-expiry contract: reclaiming a session
-whose connection drops without `end_audio`/`error`, or whose 30s
-inactivity timeout (`session_timeout_seconds`) fires, is real behavior
-that a later phase must add (SPEC 7.4's "session expiry" bullet). Nothing
-here should be mistaken for that.
+somewhere on this host" and reject or release it. It deliberately does
+**not** itself watch the clock: reclaiming a session whose connection
+drops without `end_audio`/`error`, or whose 30s inactivity timeout
+(`session_timeout_seconds`) fires, is `api/ws/stream.py`'s job
+(`_StreamSession.handle_disconnect` and `.run_reaper`, respectively) --
+both call back into `end()` here once they've decided a session_id is
+free again. Nothing in this file decides that on its own.
 """
 
 from __future__ import annotations

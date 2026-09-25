@@ -31,6 +31,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         worker=components.worker,
         session_registry=SessionRegistry(),
         audio_sample_rate_hz=settings.audio_sample_rate_hz,
+        session_timeout_seconds=float(settings.session_timeout_seconds),
     )
     try:
         yield

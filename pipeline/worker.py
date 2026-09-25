@@ -90,6 +90,20 @@ class InteractionWorker:
         self._accepting = True
 
     @property
+    def runner(self) -> InteractionRunner:
+        """The `InteractionRunner` this worker drains its queue into.
+
+        Exposed read-only, alongside `queue_depth`, so a caller outside the
+        worker -- the transport layer, for both its session-timeout reaper
+        and its queue-overflow handling (WP-105) -- can reach
+        `InteractionRunner.persist_transport_degraded_trace` for a
+        transport-originated failure that never reaches `submit()`, or
+        that this queue rejected outright. Every other interaction with
+        the runner still goes through `submit()`.
+        """
+        return self._runner
+
+    @property
     def queue_depth(self) -> int:
         """Number of items currently waiting (approximate; S1's "single
         integer to log"). Does not count an item currently being processed.
