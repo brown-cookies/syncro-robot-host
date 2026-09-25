@@ -135,7 +135,7 @@ def test_policy_node_traces_the_bounded_lead_time(stored, expected):
 
 
 def test_all_five_rules_are_reachable_through_the_node():
-    """Item 1 verification: each of R1-R5 can be provoked via the node."""
+    """Each of R1-R5 can be provoked via the node."""
     cases = {
         ("Low", "not_imminent"): "R1",
         ("Moderate", "not_imminent"): "R2",

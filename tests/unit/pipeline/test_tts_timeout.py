@@ -121,6 +121,9 @@ def test_timed_out_tts_never_runs_concurrently_with_next_interaction():
     started = threading.Event()
     release = threading.Event()
 
+    finished = threading.Event()
+    second_started = threading.Event()
+
     class _TrackingTTS:
         def __init__(self):
             self.active = 0
@@ -133,13 +136,21 @@ def test_timed_out_tts_never_runs_concurrently_with_next_interaction():
                 self.active += 1
                 self.max_active = max(self.max_active, self.active)
                 self.calls.append(text)
-            started.set()
+                call_number = len(self.calls)
+
+            if call_number == 1:
+                started.set()
+            else:
+                second_started.set()
+
             try:
                 release.wait(timeout=5)
                 return np.zeros(2_205, dtype=np.float32), 22_050
             finally:
                 with self._lock:
                     self.active -= 1
+                if call_number == 1:
+                    finished.set()
 
     tts, store, console = _TrackingTTS(), _Store(), []
     runner = _runner(tts, store, console, timeout=0.05)
@@ -170,11 +181,20 @@ def test_timed_out_tts_never_runs_concurrently_with_next_interaction():
     assert tts.max_active == 1
 
     release.set()
-    assert first_done.wait(timeout=2)
+    assert finished.wait(timeout=2)
+    # Give a stale queued synthesis a chance to start if the in-flight guard
+    # is removed. The correct implementation never starts a second call.
+    assert not second_started.wait(timeout=0.5)
+
     thread.join(timeout=1)
     assert not first_error
     assert first_result and first_result[0].degradation_reason == "tts_timeout"
+
     runner.close()
+    # This is intentionally checked again after the original synthesis has
+    # been released and the runner has been closed: no second job may have
+    # been queued behind the timed-out Piper call.
+    assert len(tts.calls) == 1
 
 
 def test_tts_within_timeout_is_not_degraded_and_console_is_silent():

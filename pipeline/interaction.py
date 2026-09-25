@@ -241,7 +241,7 @@ class InteractionRunner:
 
             degradation_reason: str | None = None
             if synthesized is None:
-                # Item 2: forced/real TTS timeout. The interaction itself
+                # The interaction itself
                 # completed (policy decided), so keep the full trace and mark
                 # it degraded; the edge gets text and no audio.
                 degradation_reason = "tts_timeout"
