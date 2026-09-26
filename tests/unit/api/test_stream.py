@@ -9,12 +9,12 @@ the codebase to prove those two phases and this one's message contracts
 cycle end to end.
 
 What these tests do *not* cover, matching this phase's own scope note:
-real device-token authentication, the 30s session-timeout reaper, and real
-downlink pacing.
+real device-token authentication and real downlink pacing.
 """
 
 from __future__ import annotations
 
+import time
 from datetime import datetime, timezone
 from uuid import uuid4
 
@@ -113,15 +113,29 @@ class FakeStore:
 class AlwaysFullWorker:
     """Stands in for a saturated `InteractionWorker` without needing a real
     thread/queue -- exercises exactly the `WorkerQueueFullError` branch
-    `pipeline/worker.py`'s own docstring says Phase 14 must catch."""
+    `pipeline/worker.py`'s own docstring says Phase 14 must catch.
+
+    `runner` is optional: most callers (e.g. an auth-failure test that
+    never reaches the queue-overflow branch at all) don't need one, but
+    the queue-overflow test does, since that branch now calls
+    `.runner.persist_transport_degraded_trace(...)`.
+    """
+
+    def __init__(self, runner: InteractionRunner | None = None) -> None:
+        self.runner = runner
 
     def submit(self, *, session, audio, sample_rate):
         raise WorkerQueueFullError("queue is full")
 
 
-def build_test_app(graph, tts, store) -> tuple[FastAPI, InteractionWorker]:
+def build_test_app(graph, tts, store, **deps_overrides) -> tuple[FastAPI, InteractionWorker]:
     """Assemble a minimal app exposing only `/v1/stream`, wired to a real
-    `InteractionRunner`/`InteractionWorker` over the supplied fakes."""
+    `InteractionRunner`/`InteractionWorker` over the supplied fakes.
+
+    `deps_overrides` reaches `StreamDeps` directly -- tests use this to
+    shorten `session_timeout_seconds` well below its 30s production
+    default, so reaper coverage below doesn't need a real 30s wait.
+    """
     runner = InteractionRunner(graph=graph, store=store, tts=tts, resampler=to_pcm16_16k)
     worker = InteractionWorker(runner=runner, maxsize=4)
     worker.start()
@@ -130,6 +144,7 @@ def build_test_app(graph, tts, store) -> tuple[FastAPI, InteractionWorker]:
         worker=worker,
         session_registry=SessionRegistry(),
         audio_sample_rate_hz=16_000,
+        **deps_overrides,
     )
     app = FastAPI()
     app.include_router(stream.router)
@@ -299,8 +314,12 @@ def test_pipeline_failure_maps_to_a_wire_error_and_persists_a_degraded_trace():
 
 
 def test_queue_overflow_reports_queue_overflow_and_still_releases_the_session():
+    store = FakeStore()
+    runner = InteractionRunner(graph=FakeGraph(), store=store, tts=FakeTTS(), resampler=to_pcm16_16k)
     deps = stream.StreamDeps(
-        worker=AlwaysFullWorker(), session_registry=SessionRegistry(), audio_sample_rate_hz=16_000
+        worker=AlwaysFullWorker(runner=runner),
+        session_registry=SessionRegistry(),
+        audio_sample_rate_hz=16_000,
     )
     app = build_test_app_with_deps(deps)
 
@@ -319,6 +338,110 @@ def test_queue_overflow_reports_queue_overflow_and_still_releases_the_session():
                 {"type": "start_audio", "session_id": "s1", "user_id": "u1", "wake_word_detected_at": 2}
             )
             assert ws.receive_json()["type"] == "ready"
+
+    assert store.saved_degraded_traces
+    assert store.saved_degraded_traces[0]["degradation_reason"] == "queue_overflow"
+    assert store.saved_degraded_traces[0]["session_id"] == "s1"
+
+
+# --- session-timeout reaper ---------------------------------------------
+
+
+def test_session_timeout_reclaims_an_abandoned_session_and_persists_a_degraded_trace():
+    store = FakeStore()
+    app, worker = build_test_app(FakeGraph(), FakeTTS(), store, session_timeout_seconds=0.15)
+    try:
+        with TestClient(app) as client:
+            with client.websocket_connect("/v1/stream") as ws:
+                ws.send_json(
+                    {"type": "start_audio", "session_id": "s1", "user_id": "u1", "wake_word_detected_at": 1}
+                )
+                assert ws.receive_json()["type"] == "ready"
+
+                # No audio_frame, no end_audio -- just wait past the
+                # (test-shortened) inactivity timeout. receive_json blocks
+                # until the reaper's background task sends this.
+                assert ws.receive_json() == {
+                    "type": "error",
+                    "session_id": "s1",
+                    "error_code": "session_timeout",
+                    "message": None,
+                }
+
+                # session_id is free again immediately, on the same
+                # connection, same as a clean end_audio completion.
+                ws.send_json(
+                    {"type": "start_audio", "session_id": "s1", "user_id": "u1", "wake_word_detected_at": 2}
+                )
+                assert ws.receive_json()["type"] == "ready"
+    finally:
+        worker.stop(timeout=2.0)
+
+    assert store.saved_degraded_traces
+    assert store.saved_degraded_traces[0]["degradation_reason"] == "session_timeout"
+    assert store.saved_degraded_traces[0]["session_id"] == "s1"
+    # Never reached end_audio, so this never went through save_decision_trace.
+    assert not store.saved_traces
+
+
+def test_session_timeout_reaper_ignores_session_after_worker_handoff():
+    store = FakeStore()
+
+    class SlowGraph(FakeGraph):
+        def invoke(self, state):
+            time.sleep(0.5)
+            return super().invoke(state)
+
+    app, worker = build_test_app(
+        SlowGraph(), FakeTTS(), store, session_timeout_seconds=0.15
+    )
+    try:
+        with TestClient(app) as client:
+            with client.websocket_connect("/v1/stream") as ws:
+                ws.send_json(
+                    {"type": "start_audio", "session_id": "s1", "user_id": "u1", "wake_word_detected_at": 1}
+                )
+                assert ws.receive_json()["type"] == "ready"
+
+                ws.send_json({"type": "end_audio", "session_id": "s1", "frame_count": 0})
+
+                # Worker processing intentionally exceeds the inactivity
+                # timeout. The reaper must not reclaim a session already
+                # handed off to the worker.
+                assert ws.receive_json()["type"] == "response"
+    finally:
+        worker.stop(timeout=2.0)
+
+    assert len(store.saved_traces) == 1
+    assert store.saved_traces[0]["session_id"] == "s1"
+    assert not store.saved_degraded_traces
+
+
+def test_audio_frame_activity_resets_the_inactivity_timeout():
+    store = FakeStore()
+    app, worker = build_test_app(FakeGraph(), FakeTTS(), store, session_timeout_seconds=0.3)
+    try:
+        with TestClient(app) as client:
+            with client.websocket_connect("/v1/stream") as ws:
+                ws.send_json(
+                    {"type": "start_audio", "session_id": "s1", "user_id": "u1", "wake_word_detected_at": 1}
+                )
+                assert ws.receive_json()["type"] == "ready"
+
+                # Two idle gaps shorter than the timeout, each one reset
+                # by a real audio_frame in between -- the reaper must not
+                # fire on either gap alone.
+                time.sleep(0.1)
+                ws.send_bytes(b"\x00\x00" * 160)
+                time.sleep(0.1)
+                ws.send_bytes(b"\x00\x00" * 160)
+
+                ws.send_json({"type": "end_audio", "session_id": "s1", "frame_count": 2})
+                assert ws.receive_json()["type"] == "response"
+    finally:
+        worker.stop(timeout=2.0)
+
+    assert not store.saved_degraded_traces, "activity should have prevented a timeout"
 
 
 # --- authentication -----------------------------------------------------

@@ -300,6 +300,32 @@ class InteractionRunner:
                 trace_required=disposition.trace_required,
             ) from exc
 
+    def persist_transport_degraded_trace(
+        self, *, session: SessionContext, wire_code: str, degradation_reason: str
+    ) -> None:
+        """Persist a degraded trace for a failure the transport layer
+        decided on its own, before the interaction ever reached `run()`.
+
+        There is no `InteractionError` to classify here -- nothing crossed
+        the interaction boundary -- only the disposition to persist, built
+        directly rather than routed through `_classify_failure`. Shared
+        entry point for every transport-originated degradation:
+        `api/ws/stream.py`'s session-timeout reaper
+        (`degradation_reason="session_timeout"`) and its
+        `WorkerQueueFullError` handling
+        (`degradation_reason="queue_overflow"`) both call this rather than
+        each carrying its own near-duplicate wrapper.
+        """
+        self._persist_degraded_trace(
+            session=session,
+            disposition=FailureDisposition(
+                stage="transport",
+                wire_code=wire_code,
+                degradation_reason=degradation_reason,
+                trace_required=True,
+            ),
+        )
+
     def _persist_degraded_trace(
         self, *, session: SessionContext, disposition: FailureDisposition
     ) -> None:
