@@ -147,6 +147,43 @@ def test_reschedule_task_resolves_exact_title_from_pre_mutation_context(tmp_path
     assert row[0] == "2026-09-26T14:30:00+00:00"
 
 
+def test_reschedule_task_rejects_raw_task_id_even_with_matching_reference(tmp_path):
+    """Open item 3: a raw `task_id` slot must never reach the store, even
+    when a valid `task_reference` is also present and would otherwise
+    resolve to a *different* task. Upstream slot data must not be able to
+    bypass semantic target resolution by supplying `task_id` directly."""
+    store = SQLiteStore(str(tmp_path / "exec.db"))
+    store.ensure_user("u1")
+    real_task_id = store.save_task("u1", "Team meeting")
+    other_task_id = store.save_task("u1", "Submit thesis")
+    executor = make_executor(store)
+
+    outcome = executor.execute({
+        "user_id": "u1",
+        "intent": "reschedule_task",
+        "slots": {
+            "task_id": other_task_id,
+            "task_reference": "Team meeting",
+            "new_deadline": "2026-09-26T14:30:00+00:00",
+        },
+        "context": {
+            "tasks": [
+                {"task_id": real_task_id, "title": "Team meeting"},
+                {"task_id": other_task_id, "title": "Submit thesis"},
+            ],
+            "overdue_tasks": [],
+        },
+    })
+
+    assert outcome.succeeded is False
+    assert outcome.error_code == "invalid_slots"
+    with store.database.connection() as conn:
+        for tid in (real_task_id, other_task_id):
+            assert conn.execute(
+                "SELECT deadline FROM tasks WHERE task_id = ?", (tid,)
+            ).fetchone()[0] is None
+
+
 def test_reschedule_task_not_found_does_not_touch_storage(tmp_path):
     store = SQLiteStore(str(tmp_path / "exec.db"))
     store.ensure_user("u1")

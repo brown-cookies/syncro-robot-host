@@ -118,34 +118,45 @@ class ActionExecutor:
         state: DialogueState,
     ) -> ExecutionOutcome:
         raw_reference = raw_slots.get("task_reference")
-        raw_task_id = raw_slots.get("task_id")
 
-        if isinstance(raw_task_id, str) and raw_task_id.strip() and raw_reference is None:
-            task_id = raw_task_id.strip()
-        else:
-            if not isinstance(raw_reference, str) or not raw_reference.strip():
-                return self._failure(
-                    "reschedule_task",
-                    "invalid_slots",
-                    "reschedule_task requires an explicit task_reference",
-                )
-            task_id = self._resolve_task_reference(
-                raw_reference,
-                state.get("context", {}),
+        # `task_id` is never an accepted upstream slot for this intent: the
+        # classifier only ever produces `task_reference` (free text), and the
+        # authoritative `task_id` is something only this executor may mint,
+        # by resolving that reference against Node 2's pre-mutation context.
+        # A raw `task_id` in the slots is therefore rejected outright rather
+        # than trusted or silently ignored -- accepting it would let upstream
+        # slot data bypass semantic target resolution entirely.
+        if "task_id" in raw_slots:
+            return self._failure(
+                "reschedule_task",
+                "invalid_slots",
+                "reschedule_task does not accept a raw task_id; "
+                "supply task_reference and let the executor resolve it",
             )
-            if task_id is None:
-                matches = self._matching_task_ids(raw_reference, state.get("context", {}))
-                if not matches:
-                    return self._failure(
-                        "reschedule_task",
-                        "task_not_found",
-                        f"no task matches reference {raw_reference!r}",
-                    )
+
+        if not isinstance(raw_reference, str) or not raw_reference.strip():
+            return self._failure(
+                "reschedule_task",
+                "invalid_slots",
+                "reschedule_task requires an explicit task_reference",
+            )
+        task_id = self._resolve_task_reference(
+            raw_reference,
+            state.get("context", {}),
+        )
+        if task_id is None:
+            matches = self._matching_task_ids(raw_reference, state.get("context", {}))
+            if not matches:
                 return self._failure(
                     "reschedule_task",
-                    "ambiguous_task",
-                    f"task reference {raw_reference!r} matches more than one task",
+                    "task_not_found",
+                    f"no task matches reference {raw_reference!r}",
                 )
+            return self._failure(
+                "reschedule_task",
+                "ambiguous_task",
+                f"task reference {raw_reference!r} matches more than one task",
+            )
 
         try:
             parsed_deadline = parse_deadline(raw_slots.get("new_deadline"))
