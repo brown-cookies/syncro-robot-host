@@ -517,8 +517,10 @@ pattern to avoid in any new entry point.
 | ERR-4 | TTS synthesis fails. | `TTSAdapterError`. | `wire_code="pipeline_failure"`, `stage="tts"`. | `trace_required=True`. |
 | ERR-5 | Affect classifier fails at inference time on a loaded model. | `RuntimeError` from `ClassifierAffectDetector.detect`. | Degrades that turn's affect level to `"Low"` rather than aborting the interaction (per-turn fallback, distinct from ERR-6). | Interaction continues; not itself trace-required. |
 | ERR-6 | Affect classifier artifact never loads at startup. | `FileNotFoundError`/`RuntimeError` from `ClassifierAffectDetector.__init__`, caught in `build_host_components`. | Composition falls back to `DevelopmentAffectDetector` for the process lifetime (section 6). | Logged once at startup; no per-turn trace impact. |
-| ERR-7 | Worker queue is full. | `InteractionWorker.submit` raises `WorkerQueueFullError`. | Caller (the WebSocket route) must reject the new work rather than block the event loop (LD-4, LD-5). | No trace — the interaction never started. |
+| ERR-7 | Worker queue is full. | `InteractionWorker.submit` raises `WorkerQueueFullError`. | Caller (the WebSocket route) rejects the new work rather than blocking the event loop (LD-4, LD-5): it sends `error(queue_overflow)` and releases the session. | Degraded trace written by `InteractionRunner.persist_transport_degraded_trace`, `degradation_reason="queue_overflow"`. |
 | ERR-8 | Submission arrives after `stop()`. | `WorkerStoppedError`. | Caller must treat this as a shutdown-in-progress condition. | No trace. |
+| ERR-9 | Session stays inactive past `session_timeout_seconds` (30 s) before its utterance is handed to the worker. | `_StreamSession.run_reaper` in `api/ws/stream.py`. A session already handed to the worker (`submitted=True`) is skipped. | The session is snapshotted and released before the first await; the client receives `error(session_timeout)`. `condition_report`'s `degradation_reason` is still logged only, not written to a trace row. | Degraded trace written by `InteractionRunner.persist_transport_degraded_trace`, `degradation_reason="session_timeout"`. |
+| ERR-10 | TTS synthesis exceeds `tts_timeout_s` (default 2.0 s). | `InteractionRunner._synthesize`. | The response is delivered as text only, with empty audio. The timed-out synthesis is not cancelled; later turns also fall back to text until it finishes. | Full trace written, with `degradation_reason="tts_timeout"`. |
 
 Any exception not explicitly named above but matching `ValueError` or
 `RuntimeError` still resolves through the F4 map's catch-all rows (section
@@ -684,7 +686,7 @@ normal load, far from the settings change that caused it.
 | Technology-neutral pipeline nodes | Section 4.1, 4.6; INV-1 |
 | Interaction sequence ownership (F1) | Section 4.7, 7; INV-2 |
 | Failure-boundary mapping (F4) | Section 4.7, 8; INV-5 |
-| Degraded-trace contract (F2) | Section 8 (ERR-1–ERR-4) |
+| Degraded-trace contract (F2) | Section 8 (ERR-1–ERR-4, ERR-7, ERR-9; ERR-10 sets `degradation_reason` on a full trace) |
 | Intent/reasoning timeout split (F6) / D5 invariant | Section 9; INV-7 |
 | Graph-state reducers (F5) | Section 4.6 |
 | Host-side audio resampling (S5) | Section 4.11; INV-2 |
