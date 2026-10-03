@@ -13,20 +13,10 @@ POLICY_RULES: dict[tuple[str, str], str] = {
     ("High", "imminent"): "R5",
 }
 
-# Documentation metadata only: Section 8.3 explicitly excludes
-# conversational and immediate-action turns from the R1-R5 reminder-delivery
-# policy domain. This set is intentionally not used to decide policy routing;
-# POLICY_GOVERNED_INTENTS is the executable policy-domain gate.
-NON_POLICY_INTENTS = frozenset({
-    "ask_status",
-    "request_summary",
-    "request_break",
-    "add_task",
-    "reschedule_task",
-    "snooze_reminder",
-    "dismiss_reminder",
-})
-POLICY_GOVERNED_INTENTS = frozenset()
+# Section 8.3 explicitly excludes these interactions from the R1-R5 policy
+# domain. Keeping this set centralized prevents fabricated policy decisions.
+NON_POLICY_INTENTS = frozenset({"ask_status", "request_summary"})
+POLICY_GOVERNED_INTENTS = frozenset({"dismiss_reminder", "snooze_reminder"})
 
 # SPEC: lead time is bounded to [5, 60] minutes. The policy node is the single
 # enforcement point, so the value that reaches the decision trace is always
@@ -69,11 +59,11 @@ def make_policy_node(
         """Apply policy decisions to the current dialogue state."""
         intent = state.get("intent")
         if intent is None:
-            raise RuntimeError("Node 4 policy requires intent in DialogueState.")
+            raise RuntimeError(
+                "Node 4 policy requires intent in DialogueState.")
 
-        # This node currently has no live conversational intents in the R1-R5
-        # policy domain. Immediate action intents are executor-owned; reminder
-        # delivery/defer remains scheduler-owned for the future policy tick.
+        # Clarification and summary/status interactions never enter the policy
+        # domain. This is required by SPEC §8.3 (policy_rule/deadline both n/a).
         governed = intent in POLICY_GOVERNED_INTENTS
         affect = state.get("affect_level")
         proximity = state.get("deadline_proximity", "n/a")
@@ -84,9 +74,11 @@ def make_policy_node(
         if not governed:
             proximity = "n/a"
 
-        draft = str(state.get("draft_response", state.get("final_response", ""))).strip()
+        draft = str(state.get("draft_response",
+                    state.get("final_response", ""))).strip()
         if not draft:
-            raise RuntimeError("Node 4 requires a non-empty Node 3 draft response.")
+            raise RuntimeError(
+                "Node 4 requires a non-empty Node 3 draft response.")
 
         action = "deliver"
         if rule == "R1":
@@ -118,7 +110,8 @@ def make_policy_node(
             if store is not None and isinstance(user_id, str)
             else float(default_lead_time)
         )
-        lead_time = clamp_lead_time(raw_lead_time, lead_time_min, lead_time_max)
+        lead_time = clamp_lead_time(
+            raw_lead_time, lead_time_min, lead_time_max)
 
         return {
             "final_response": final,
