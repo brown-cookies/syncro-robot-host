@@ -91,10 +91,13 @@ Never output motor commands or low-level hardware instructions.
             isinstance(execution_outcome, dict)
             and execution_outcome.get("succeeded") is True
         )
-        if not execution_succeeded:
-            # The lexical guard remains the backstop whenever execution is
-            # absent or failed. A confirmed success is allowed through because
-            # the executor, not the LLM, is the authority for completion.
+        if execution_succeeded:
+            executed_intent = execution_outcome.get("intent")
+            if isinstance(executed_intent, str):
+                response_text = _reject_unrelated_mutation_claim(
+                    executed_intent, response_text
+                )
+        else:
             response_text = _reject_unexecuted_mutation_claim(
                 intent, response_text
             )
@@ -366,6 +369,13 @@ _SAFE_REPLIES = {
     ),
 }
 
+_SAFE_SUCCESS_REPLIES = {
+    "add_task": "The task was added.",
+    "reschedule_task": "The task was rescheduled.",
+    "snooze_reminder": "The reminder was snoozed.",
+    "dismiss_reminder": "The reminder was dismissed.",
+}
+
 
 def _compile_mutation_rules() -> dict[str, tuple]:
     """Build the verb matcher and claim-signal matchers for each intent."""
@@ -385,6 +395,36 @@ def _compile_mutation_rules() -> dict[str, tuple]:
 
 
 _MUTATION_RULES = _compile_mutation_rules()
+
+
+def _reject_unrelated_mutation_claim(
+    executed_intent: str, response_text: str
+) -> str:
+    """Reject completed mutation claims unrelated to the executed mutation."""
+    if not isinstance(executed_intent, str) or not isinstance(response_text, str):
+        return response_text
+
+    normalized = response_text
+    for source, replacement in _ANALYSIS_FOLDS:
+        normalized = normalized.replace(source, replacement)
+    normalized = normalized.casefold()
+
+    for raw_sentence in _SENTENCE_SPLIT.split(normalized):
+        sentence = raw_sentence.strip()
+        if not sentence:
+            continue
+
+        for intent, rules in _MUTATION_RULES.items():
+            if intent == executed_intent:
+                continue
+            verb_pattern, claim_patterns = rules
+            if _claims_completed_mutation(
+                sentence, verb_pattern, claim_patterns
+            ):
+                return _SAFE_SUCCESS_REPLIES.get(
+                    executed_intent, "The requested action was completed."
+                )
+    return response_text
 
 
 def _reject_unexecuted_mutation_claim(intent: str, response_text: str) -> str:

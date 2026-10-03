@@ -1,13 +1,12 @@
 from __future__ import annotations
+from pipeline.executor import ActionExecutor
+from storage.sqlite_store import SQLiteStore
+from pipeline.graph import build_dialogue_graph
 
 import numpy as np
 import pytest
 
 pytest.importorskip("langgraph")
-
-from pipeline.graph import build_dialogue_graph
-from storage.sqlite_store import SQLiteStore
-from pipeline.executor import ActionExecutor
 
 
 def make_test_executor(store):
@@ -20,6 +19,7 @@ def make_test_executor(store):
         lead_time_max=60,
         default_lead_time=15,
     )
+
 
 class FakeSTT:
     def transcribe(self, audio, sample_rate):
@@ -88,7 +88,6 @@ def test_dialogue_graph_runs_full_processing_path_and_assembles_trace(tmp_path):
     assert store.list_decision_traces("u1") == []
 
 
-
 def _seed_pending_reminder(store, *, user_id="u1"):
     from datetime import datetime, timezone
     from uuid import uuid4
@@ -129,9 +128,10 @@ class OutcomeAwareLLM(FakeLLM):
 
 @pytest.mark.parametrize("intent,slots", [
     ("add_task", {"title": "phase17 integration task"}),
-    ("reschedule_task", {"task_reference": "phase17 existing task", "new_deadline": "2026-09-27T10:00:00+00:00"}),
+    ("reschedule_task", {"task_reference": "phase17 existing task",
+     "new_deadline": "2026-09-27T10:00:00+00:00"}),
 ])
-def test_phase17_executable_task_intents_reach_executor_then_llm(tmp_path, intent, slots):
+def test_executable_task_intents_reach_executor_then_llm(tmp_path, intent, slots):
     store = SQLiteStore(str(tmp_path / f"{intent}.db"))
     store.ensure_user("u1")
     if intent == "reschedule_task":
@@ -192,8 +192,8 @@ def test_phase17_reminder_action_intents_mutate_referenced_prior_trace(tmp_path,
     })
     assert result["execution_outcome"]["succeeded"] is True
     assert result["execution_outcome"]["target_id"] == trace_id
-    assert result["policy_rule"] == "n/a"
-    assert result["deadline_proximity"] == "n/a"
+    assert result["policy_rule"] == "R4"
+    assert result["deadline_proximity"] == "not_imminent"
     with store.database.connection() as conn:
         row = conn.execute(
             "SELECT reminder_outcome FROM decision_trace WHERE trace_id = ?",

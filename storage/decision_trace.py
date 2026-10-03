@@ -324,10 +324,25 @@ class DecisionTraceRepository:
                     ),
                 )
 
-            dispatched_at = datetime.fromisoformat(row["timestamp"])
+            raw_timestamp = str(row["timestamp"])
+            try:
+                dispatched_at = datetime.fromisoformat(
+                    raw_timestamp.replace("Z", "+00:00"))
+            except ValueError as exc:
+                raise ValueError(
+                    f"invalid dispatch timestamp for trace {trace_id!r}: "
+                    f"{raw_timestamp!r}"
+                ) from exc
             if dispatched_at.tzinfo is None:
                 dispatched_at = dispatched_at.replace(tzinfo=timezone.utc)
-            if now - dispatched_at > timedelta(minutes=response_window_minutes):
+            if dispatched_at > now:
+                raise ValueError(
+                    f"future dispatch timestamp for trace {trace_id!r}: "
+                    f"{raw_timestamp!r}"
+                )
+            # Same boundary as list_pending_reminder_references: a reminder
+            # exactly response_window_minutes old is already expired.
+            if now - dispatched_at >= timedelta(minutes=response_window_minutes):
                 return ExecutionOutcome(
                     succeeded=False,
                     intent=intent,

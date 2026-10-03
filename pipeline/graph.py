@@ -125,7 +125,7 @@ def build_dialogue_graph(
     if executor is None:
         raise ValueError("build_dialogue_graph requires an ActionExecutor")
     builder.add_node("executor", make_executor_node(executor))
-    builder.add_node("node3_llm", make_llm_node(llm))
+    builder.add_node("node3_llm", timed("llm", make_llm_node(llm)))
     builder.add_node("affect", timed(
         "affect", make_affect_node(affect_detector)))
     builder.add_node(

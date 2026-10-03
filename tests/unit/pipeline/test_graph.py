@@ -1,12 +1,10 @@
+from pipeline.executor import ActionExecutor
+from storage.sqlite_store import SQLiteStore
+from pipeline.graph import build_dialogue_graph
+import numpy as np
 import pytest
 
 pytest.importorskip("langgraph")
-
-import numpy as np
-
-from pipeline.graph import build_dialogue_graph
-from storage.sqlite_store import SQLiteStore
-from pipeline.executor import ActionExecutor
 
 
 def make_test_executor(store):
@@ -19,6 +17,7 @@ def make_test_executor(store):
         lead_time_max=60,
         default_lead_time=15,
     )
+
 
 class FakeSTT:
     def transcribe(self, audio, sample_rate):
@@ -138,9 +137,17 @@ def test_graph_records_every_stage_timing_for_latency_table(tmp_path):
     store = SQLiteStore(str(tmp_path / "test.db"))
     store.ensure_user("u-stages")
     graph = build_dialogue_graph(
-        stt=FakeSTT(), intent_classifier=FakeIntent(), llm=FakeLLM(), store=store,
-        affect_detector=FakeAffect(), confidence_threshold=0.60, context_top_k=5,
-        deadline_proximity_hours=2, grace_window_minutes=15, default_lead_time=15,
+        stt=FakeSTT(),
+        intent_classifier=FakeIntent(),
+        llm=FakeLLM(),
+        store=store,
+        affect_detector=FakeAffect(),
+        confidence_threshold=0.60,
+        context_top_k=5,
+        deadline_proximity_hours=2,
+        grace_window_minutes=15,
+        default_lead_time=15,
+        executor=make_test_executor(store)
     )
     result = graph.invoke({
         "session_id": "s-stages", "user_id": "u-stages",

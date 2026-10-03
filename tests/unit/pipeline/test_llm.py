@@ -292,6 +292,50 @@ def test_llm_failed_execution_allows_honest_failure_response():
     )
 
 
+def test_llm_successful_execution_rejects_different_mutation_claim():
+    llm = OutcomeLLM(
+        '{"response_text":"I dismissed the reminder for you.","proposed_action":"respond"}'
+    )
+    node = make_llm_node(llm)
+    result = node({
+        "intent": "add_task",
+        "intent_confidence": 0.98,
+        "transcript": "add my thesis task",
+        "slots": {"title": "my thesis task"},
+        "context": {"tasks": [], "overdue_tasks": []},
+        "execution_outcome": {
+            "succeeded": True,
+            "intent": "add_task",
+            "target_id": "task-123",
+            "detail": "task 'task-123' created",
+        },
+    })
+
+    assert result["draft_response"] == "The task was added."
+
+
+def test_llm_successful_execution_rejects_mixed_mutation_claim():
+    llm = OutcomeLLM(
+        '{"response_text":"I added the task and dismissed the reminder.","proposed_action":"respond"}'
+    )
+    node = make_llm_node(llm)
+    result = node({
+        "intent": "add_task",
+        "intent_confidence": 0.98,
+        "transcript": "add my thesis task",
+        "slots": {"title": "my thesis task"},
+        "context": {"tasks": [], "overdue_tasks": []},
+        "execution_outcome": {
+            "succeeded": True,
+            "intent": "add_task",
+            "target_id": "task-123",
+            "detail": "task 'task-123' created",
+        },
+    })
+
+    assert result["draft_response"] == "The task was added."
+
+
 def test_llm_successful_execution_allows_truthful_confirmation():
     llm = OutcomeLLM(
         '{"response_text":"I added the task for you.","proposed_action":"respond"}'
