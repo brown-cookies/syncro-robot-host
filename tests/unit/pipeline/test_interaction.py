@@ -163,6 +163,21 @@ def test_runner_executes_a_full_fake_interaction_without_transport_code():
 # --- runner executes graph and TTS ----------------------------------------
 
 
+def test_runner_passes_interaction_sequence_into_graph_state():
+    graph = FakeGraph()
+    runner = InteractionRunner(
+        graph=graph, store=FakeStore(), tts=FakeTTS(), resampler=to_pcm16_16k, clock=FakeClock()
+    )
+
+    runner.run(
+        session=make_session(interaction_sequence=7),
+        audio=np.zeros(160, dtype=np.float32),
+        sample_rate=16_000,
+    )
+
+    assert graph.received_state["interaction_sequence"] == 7
+
+
 def test_runner_invokes_the_graph_with_the_supplied_audio_and_ids():
     graph = FakeGraph()
     runner = InteractionRunner(

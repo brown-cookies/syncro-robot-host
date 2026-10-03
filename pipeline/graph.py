@@ -8,12 +8,15 @@ from typing import Any, Callable
 
 from langgraph.graph import END, START, StateGraph
 
+from pipeline.executor import ActionExecutor, EXECUTABLE_INTENTS
 from pipeline.nodes.affect import make_affect_node
 from pipeline.nodes.context import make_context_node
 from pipeline.nodes.intent import make_intent_node
 from pipeline.nodes.llm import make_llm_node
 from pipeline.nodes.output import make_output_node
 from pipeline.nodes.policy import make_policy_node
+from pipeline.nodes.reference_resolution import make_reference_resolution_node
+from pipeline.reference_resolution import ReferenceClarificationStore
 from pipeline.nodes.stt import make_stt_node
 from pipeline.state import DialogueState
 
@@ -47,6 +50,27 @@ def timed(name: str, node: Callable[[DialogueState], DialogueState]):
     return wrapped
 
 
+def make_executor_node(executor: ActionExecutor):
+    """Create the graph node that records the executor's authoritative outcome."""
+
+    def executor_node(state: DialogueState) -> DialogueState:
+        outcome = executor.execute(state)
+        return {"execution_outcome": outcome.model_dump(mode="json")}
+
+    return executor_node
+
+
+def _route_after_context(state: DialogueState) -> str:
+    """Route clarified executable actions through the executor; clarification stops first."""
+    if state.get("proposed_action") == "clarify":
+        return "node3_llm"
+    if state.get("reference_resolution_status") == "needs_clarification":
+        return "node3_llm"
+    if state.get("intent") in EXECUTABLE_INTENTS:
+        return "executor"
+    return "node3_llm"
+
+
 def build_dialogue_graph(
     *,
     stt,
@@ -61,10 +85,15 @@ def build_dialogue_graph(
     default_lead_time: float,
     lead_time_min: float = 5.0,
     lead_time_max: float = 60.0,
+    executor: ActionExecutor | None = None,
+    reference_clarification_store: ReferenceClarificationStore | None = None,
+    reminder_response_window_minutes: int = 10,
 ):
     """Build the dialogue graph and connect its dependency-injected nodes."""
 
     builder = StateGraph(DialogueState)
+    if reference_clarification_store is None:
+        reference_clarification_store = ReferenceClarificationStore()
     # node1_stt and affect are the two branches LangGraph runs in the same
     # superstep off START; both are wrapped with timed() so their durations land
     # in the reducer-backed stage_timings_s key rather than a plain key (F5).
@@ -74,12 +103,28 @@ def build_dialogue_graph(
     # and policy->TTS. Measurement only; no behavior change.
     builder.add_node(
         "node1_intent",
-        timed("intent", make_intent_node(intent_classifier, confidence_threshold)),
+        timed("intent", make_intent_node(
+            intent_classifier,
+            confidence_threshold,
+            reference_clarification_store=reference_clarification_store,
+        ))
     )
     builder.add_node(
         "node2_context",
-        timed("context", make_context_node(store, context_top_k, deadline_proximity_hours)),
+        timed("context", make_context_node(
+            store, context_top_k, deadline_proximity_hours)),
     )
+    builder.add_node(
+        "reference_resolution",
+        make_reference_resolution_node(
+            store,
+            reference_clarification_store,
+            reminder_response_window_minutes=reminder_response_window_minutes,
+        ),
+    )
+    if executor is None:
+        raise ValueError("build_dialogue_graph requires an ActionExecutor")
+    builder.add_node("executor", make_executor_node(executor))
     builder.add_node("node3_llm", timed("llm", make_llm_node(llm)))
     builder.add_node("affect", timed(
         "affect", make_affect_node(affect_detector)))
@@ -102,7 +147,13 @@ def build_dialogue_graph(
     # Main dialogue path.
     builder.add_edge("node1_stt", "node1_intent")
     builder.add_edge("node1_intent", "node2_context")
-    builder.add_edge("node2_context", "node3_llm")
+    builder.add_edge("node2_context", "reference_resolution")
+    builder.add_conditional_edges(
+        "reference_resolution",
+        _route_after_context,
+        {"executor": "executor", "node3_llm": "node3_llm"},
+    )
+    builder.add_edge("executor", "node3_llm")
 
     # Node 4 is the synchronization point for Node 3 + parallel affect.
     builder.add_edge(["node3_llm", "affect"], "node4_policy")
@@ -118,6 +169,7 @@ def invoke_dialogue(
     user_id: str,
     audio: Any,
     sample_rate: int,
+    interaction_sequence: int = 0,
 ) -> DialogueGraphResult:
     """Invoke the dialogue graph with the supplied request state."""
     started = monotonic()
@@ -125,6 +177,7 @@ def invoke_dialogue(
         {
             "session_id": session_id,
             "user_id": user_id,
+            "interaction_sequence": interaction_sequence,
             "audio": audio,
             "sample_rate": sample_rate,
             "started_monotonic": started,
