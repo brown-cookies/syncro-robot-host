@@ -145,6 +145,18 @@ input
 
 Only fields needed for debugging are recorded.
 
+**Variable tracing.** For debugger-style inspection, a component may emit `state_snapshot` at explicit points, naming the variables to watch (`snapshot`) or the keys whose values changed across a step (`diff`). Rules:
+
+```text
+severity is always DEBUG; the call is a no-op above DEBUG
+only explicitly named variables/keys are recorded, never whole state
+the source location (file:line function) is recorded as `callsite`
+string values are hash-only (length + hash) by type, regardless of variable name,
+  unless the caller marks the name as `plain` or full text is enabled (Section 7)
+credentials get no length or hash
+automatic tracing of arbitrary locals (e.g. sys.settrace) is not permitted
+```
+
 ---
 
 ### FR-O6 — Model Observability
@@ -301,6 +313,8 @@ action_completed      (reserved, see FR-O8)
 action_failed         (reserved, see FR-O8)
 
 degradation_applied
+
+state_snapshot         (FR-O5, DEBUG only)
 ```
 
 Existing host-defined network events remain unchanged.
@@ -394,7 +408,7 @@ Configuration is read through `Settings.from_env` and documented in `.env.exampl
 ```text
 LOG_LEVEL=INFO
 LOG_OUTPUT=console          console | file
-LOG_FILE_PATH=<optional>    required when LOG_OUTPUT=file
+LOG_FILE_PATH=./logs/syncro-events.jsonl    used when LOG_OUTPUT=file
 LOG_INCLUDE_TEXT=false
 ```
 
@@ -445,6 +459,7 @@ The implementation is verified by confirming that:
 16. Transcript and response text are absent from events by default, and present only with `LOG_LEVEL=DEBUG` and `LOG_INCLUDE_TEXT=true` together.
 17. `action_started`, `action_completed`, and `action_failed` are never emitted while no executor exists.
 18. For each stage, the event `duration_ms` equals the matching `stage_timings_s` value.
+19. `state_snapshot` events appear only at `LOG_LEVEL=DEBUG`, record only the named variables, and contain no raw string values unless marked `plain` or full text is enabled.
 
 ---
 
@@ -498,3 +513,6 @@ without relying on unrelated `print()` statements or a centralized observability
 4. Section 8 and FR-O10: config goes through `Settings.from_env` and `.env.example`; event timing wraps existing timing rather than replacing it.
 5. FR-O11 and Section 5: new `degradation_applied` event (WARNING), initially covering the affect fallback, plus the mutation-claim guard branch in FR-O7.
 6. Sequencing: implementation starts after PR #4 lands, since both touch every node file. The `observability/` package itself touches no node files and can begin earlier.
+7. `LOG_FILE_PATH` defaults to `./logs/syncro-events.jsonl` (git-ignored); console remains the default output.
+
+**Rev 3 (2026-10-05)** adds debugger-style variable tracing: new `state_snapshot` event and an FR-O5 amendment (explicit `snapshot` / `diff`, DEBUG only, strings hash-only by type, credentials never hashed, no automatic tracing).

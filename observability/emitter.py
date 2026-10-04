@@ -7,14 +7,16 @@ Contract: observability never decides or alters functional behavior, and
 
 from __future__ import annotations
 
+import os
+import sys
 import time
 import traceback
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import Any, Iterator, Sequence
+from typing import Any, Iterable, Iterator, Mapping, Sequence
 
 from observability.events import RESERVED_EVENT_TYPES, Event, EventType, Severity
-from observability.redaction import redact
+from observability.redaction import mask_text, redact
 from observability.sinks import Sink
 
 
@@ -31,6 +33,18 @@ class StageTimer:
     elapsed_s: float = 0.0
     started_event_id: str = ""
     output: dict[str, Any] = field(default_factory=dict)
+
+
+_MISSING = object()
+
+
+def _callsite(depth: int) -> str:
+    """'file.py:123 function' of the code that called the public API (debugger-style)."""
+    try:
+        frame = sys._getframe(depth)
+        return f"{os.path.basename(frame.f_code.co_filename)}:{frame.f_lineno} {frame.f_code.co_name}"
+    except Exception:  # noqa: BLE001
+        return ""
 
 
 def error_info(exc: BaseException, *, component: str, operation: str) -> dict[str, Any]:
@@ -153,7 +167,8 @@ class Emitter:
                 session_id=session_id,
                 duration_ms=timer.elapsed_s * 1000.0,
                 parent_event_id=timer.started_event_id or None,
-                error=error_info(exc, component=component, operation=component),
+                error=error_info(exc, component=component,
+                                 operation=component),
             )
             raise
         else:
@@ -168,12 +183,144 @@ class Emitter:
                 metadata=timer.output,
             )
 
+    def bind(self, *, trace_id: str, component: str, session_id: str | None = None) -> "Scope":
+        """Fix trace/component once so call sites stay one-liners."""
+        return Scope(self, trace_id, component, session_id)
+
+    def snapshot(
+        self,
+        label: str,
+        /,
+        *,
+        trace_id: str,
+        component: str,
+        session_id: str | None = None,
+        plain: Iterable[str] = (),
+        **variables: Any,
+    ) -> str:
+        """Watch: log the named variables at this point. DEBUG only.
+
+        Only what you pass is logged (never whole state). Strings are hash-only
+        unless named in ``plain`` or full text is enabled (LOG_INCLUDE_TEXT=true
+        with LOG_LEVEL=DEBUG). Don't name a variable ``label``, ``trace_id``,
+        ``component``, ``session_id`` or ``plain``.
+        """
+        return self._snapshot(
+            label, trace_id=trace_id, component=component, session_id=session_id,
+            plain=plain, variables=variables, site=_callsite(2),
+        )
+
+    def diff(
+        self,
+        label: str,
+        /,
+        *,
+        trace_id: str,
+        component: str,
+        before: Mapping[str, Any],
+        after: Mapping[str, Any],
+        keys: Iterable[str],
+        session_id: str | None = None,
+        plain: Iterable[str] = (),
+    ) -> str:
+        """State transition: log before/after for the listed keys that changed. DEBUG only."""
+        return self._diff(
+            label, trace_id=trace_id, component=component, session_id=session_id,
+            before=before, after=after, keys=keys, plain=plain, site=_callsite(
+                2),
+        )
+
+    def _snapshot(self, label, *, trace_id, component, session_id, plain, variables, site) -> str:
+        if Severity.DEBUG.rank < self._level.rank:
+            return ""  # cheap no-op unless LOG_LEVEL=DEBUG
+        try:
+            shown = variables if self._include_text else mask_text(
+                variables, plain=frozenset(plain))
+            return self.event(
+                trace_id=trace_id, component=component, session_id=session_id,
+                event_type=EventType.STATE_SNAPSHOT, severity=Severity.DEBUG,
+                metadata={"label": label,
+                          "callsite": site, "variables": shown},
+            )
+        except Exception:  # noqa: BLE001
+            self.failures += 1
+            return ""
+
+    def _diff(self, label, *, trace_id, component, session_id, before, after, keys, plain, site) -> str:
+        if Severity.DEBUG.rank < self._level.rank:
+            return ""
+        try:
+            plain_set = frozenset(plain)
+            watched = list(keys)
+            changes: dict[str, Any] = {}
+            for key in watched:
+                old = before.get(key, _MISSING)
+                new = after.get(key, _MISSING)
+                try:
+                    same = bool(old == new)
+                except Exception:  # noqa: BLE001 - e.g. array comparison; treat as changed
+                    same = False
+                if same:
+                    continue
+                pair: dict[str, Any] = {}
+                if old is not _MISSING:
+                    pair["before"] = old
+                if new is not _MISSING:
+                    pair["after"] = new
+                changes[key] = pair if (
+                    self._include_text or key in plain_set) else mask_text(pair)
+            return self.event(
+                trace_id=trace_id, component=component, session_id=session_id,
+                event_type=EventType.STATE_SNAPSHOT, severity=Severity.DEBUG,
+                metadata={"label": label, "callsite": site,
+                          "watched": watched, "changes": changes},
+            )
+        except Exception:  # noqa: BLE001
+            self.failures += 1
+            return ""
+
     def close(self) -> None:
         for sink in self._sinks:
             try:
                 sink.close()
             except Exception:  # noqa: BLE001
                 self.failures += 1
+
+
+class Scope:
+    """An Emitter bound to one trace/component: ``log = obs.bind(...)``, then
+    ``log.snapshot("after policy", rule=rule, score=score)``."""
+
+    __slots__ = ("_emitter", "_trace_id", "_component", "_session_id")
+
+    def __init__(self, emitter: Emitter, trace_id: str, component: str, session_id: str | None) -> None:
+        self._emitter = emitter
+        self._trace_id = trace_id
+        self._component = component
+        self._session_id = session_id
+
+    def snapshot(self, label: str, /, *, plain: Iterable[str] = (), **variables: Any) -> str:
+        return self._emitter._snapshot(
+            label, trace_id=self._trace_id, component=self._component,
+            session_id=self._session_id, plain=plain, variables=variables, site=_callsite(
+                2),
+        )
+
+    def diff(
+        self,
+        label: str,
+        /,
+        *,
+        before: Mapping[str, Any],
+        after: Mapping[str, Any],
+        keys: Iterable[str],
+        plain: Iterable[str] = (),
+    ) -> str:
+        return self._emitter._diff(
+            label, trace_id=self._trace_id, component=self._component,
+            session_id=self._session_id, before=before, after=after, keys=keys,
+            plain=plain, site=_callsite(2),
+        )
 
 
 # Safe default for components built without observability (tests, scripts).

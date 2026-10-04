@@ -22,14 +22,12 @@ _SECRET_KEY = re.compile(
 )
 _AUDIO_KEYS = frozenset({"audio", "raw_audio", "samples", "waveform", "pcm"})
 _TEXT_KEYS = frozenset(
-    {"transcript", "final_response", "draft_response",
-        "response_text", "input_text", "text"}
+    {"transcript", "final_response", "draft_response", "response_text", "input_text", "text"}
 )
 _NEVER_TEXT_KEYS = frozenset({"prompt", "system_prompt", "messages"})
 
 _BEARER = re.compile(r"(?i)\b(bearer|basic)\s+[A-Za-z0-9._~+/=-]+")
-_KV_SECRET = re.compile(
-    r"(?i)\b(api[_-]?key|token|password|secret)(\s*[=:]\s*)\S+")
+_KV_SECRET = re.compile(r"(?i)\b(api[_-]?key|token|password|secret)(\s*[=:]\s*)\S+")
 
 _MAX_DEPTH = 6
 _MAX_ITEMS = 200
@@ -43,8 +41,7 @@ def hash_text(text: str) -> str:
 
 def _scrub(text: str) -> str:
     text = _BEARER.sub(lambda m: f"{m.group(1)} {REDACTED}", text)
-    text = _KV_SECRET.sub(
-        lambda m: f"{m.group(1)}{m.group(2)}{REDACTED}", text)
+    text = _KV_SECRET.sub(lambda m: f"{m.group(1)}{m.group(2)}{REDACTED}", text)
     return text if len(text) <= _MAX_STR else text[:_MAX_STR] + "...[truncated]"
 
 
@@ -89,3 +86,36 @@ def _walk(value: Any, include_text: bool, depth: int) -> Any:
     if hasattr(value, "shape") and hasattr(value, "dtype"):  # numpy-like
         return f"[ARRAY {tuple(value.shape)} OMITTED]"
     return _scrub(str(value))[:500]
+
+
+def mask_text(value: Any, *, plain: frozenset[str] = frozenset(), _depth: int = 0) -> Any:
+    """Make watched variables safe by TYPE, not by name.
+
+    Redaction is name-based, so a transcript held in a variable called ``msg``
+    would slip through. For variable traces we instead treat every string as
+    text: replace it with ``<name>_length`` / ``<name>_hash`` unless its name is
+    in ``plain`` (the caller explicitly vouching that it is a short, non-sensitive
+    value such as a rule id).
+    """
+    if _depth > _MAX_DEPTH:
+        return "[TRUNCATED]"
+    if isinstance(value, dict):
+        out: dict[str, Any] = {}
+        for key, item in value.items():
+            name = str(key)
+            if _SECRET_KEY.search(name.lower()):
+                out[name] = item  # leave for redact(): no length/hash of a credential
+            elif isinstance(item, str):
+                if name in plain:
+                    out[name] = item
+                else:
+                    out[f"{name}_length"] = len(item)
+                    out[f"{name}_hash"] = hash_text(item)
+            else:
+                out[name] = mask_text(item, plain=plain, _depth=_depth + 1)
+        return out
+    if isinstance(value, (list, tuple, set, frozenset)):
+        return [mask_text(v, plain=plain, _depth=_depth + 1) for v in list(value)[:_MAX_ITEMS]]
+    if isinstance(value, str):
+        return {"length": len(value), "hash": hash_text(value)}
+    return value

@@ -1,6 +1,6 @@
 """Host observability: structured events, central redaction, console/file sinks."""
 
-from observability.emitter import NULL_EMITTER, Emitter, StageTimer
+from observability.emitter import NULL_EMITTER, Emitter, Scope, StageTimer
 from observability.events import (
     RESERVED_EVENT_TYPES,
     Event,
@@ -16,6 +16,7 @@ __all__ = [
     "EventType",
     "NULL_EMITTER",
     "RESERVED_EVENT_TYPES",
+    "Scope",
     "Severity",
     "StageTimer",
     "build_emitter",

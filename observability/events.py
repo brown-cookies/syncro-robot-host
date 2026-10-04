@@ -54,6 +54,8 @@ class EventType(str, Enum):
 
     DEGRADATION_APPLIED = "degradation_applied"  # FR-O11
 
+    STATE_SNAPSHOT = "state_snapshot"  # FR-O5 debugger-style variable trace (DEBUG only)
+
 
 # FR-O8: no action executor exists yet, so these must never be emitted.
 RESERVED_EVENT_TYPES = frozenset(
@@ -83,14 +85,11 @@ class Event:
     parent_event_id: str | None = None
     error: dict[str, Any] | None = None
     event_id: str = field(default_factory=lambda: str(uuid4()))
-    timestamp: str = field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
     def to_dict(self) -> dict[str, Any]:
-        """
-        Canonical record. Every key is always present (null when absent)
-        so console and file sinks share one schema.
-        """
+        """Canonical record. Every key is always present (null when absent)
+        so console and file sinks share one schema."""
         return {
             "event_id": self.event_id,
             "trace_id": self.trace_id,
