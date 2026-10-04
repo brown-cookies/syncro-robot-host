@@ -72,9 +72,20 @@ class ActionExecutor:
         if not isinstance(slots, dict):
             return self._failure(intent, "invalid_slots", "slots must be an object")
 
+        # Idempotency: one utterance + one intent == at most one committed
+        # mutation. Only add_task needs an explicit guard: reschedule sets an
+        # absolute deadline (re-running it is a no-op) and reminder outcomes are
+        # already guarded by the pending-state check in the storage layer.
+        interaction_key = state.get("interaction_key")
+        mutation_key = (
+            f"{interaction_key}:{intent}"
+            if isinstance(interaction_key, str) and interaction_key
+            else None
+        )
+
         try:
             if intent == "add_task":
-                return self._execute_add_task(user_id, slots)
+                return self._execute_add_task(user_id, slots, mutation_key)
             if intent == "reschedule_task":
                 return self._execute_reschedule_task(user_id, slots, state)
             if intent == "snooze_reminder":
@@ -88,7 +99,10 @@ class ActionExecutor:
             )
 
     def _execute_add_task(
-        self, user_id: str, raw_slots: dict[str, Any]
+        self,
+        user_id: str,
+        raw_slots: dict[str, Any],
+        mutation_key: str | None = None,
     ) -> ExecutionOutcome:
         try:
             slots = AddTaskSlots.model_validate(raw_slots)
@@ -97,18 +111,32 @@ class ActionExecutor:
                 "add_task", "invalid_slots", _validation_detail(exc)
             )
 
+        client_write_id = f"exec:{mutation_key}" if mutation_key else None
+        already_existed = (
+            client_write_id is not None
+            and self._store.task_id_for_client_write_id(user_id, client_write_id)
+            is not None
+        )
         task_id = self._store.save_task(
             user_id,
             slots.title,
             deadline=slots.deadline,
             notes=slots.notes,
             priority=slots.priority,
+            # tasks.client_write_id is UNIQUE (SPEC section 9), so the insert is
+            # itself idempotent: a replay of the same utterance returns the
+            # original task instead of creating a second row.
+            client_write_id=client_write_id,
         )
         return ExecutionOutcome(
             succeeded=True,
             intent="add_task",
             target_id=task_id,
-            detail=f"task {task_id!r} created",
+            detail=(
+                f"task {task_id!r} already existed (repeat request ignored)"
+                if already_existed
+                else f"task {task_id!r} created"
+            ),
         )
 
     def _execute_reschedule_task(

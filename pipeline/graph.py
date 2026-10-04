@@ -55,7 +55,12 @@ def make_executor_node(executor: ActionExecutor):
 
     def executor_node(state: DialogueState) -> DialogueState:
         outcome = executor.execute(state)
-        return {"execution_outcome": outcome.model_dump(mode="json")}
+        dumped = outcome.model_dump(mode="json")
+        sink = state.get("outcome_sink")
+        if sink is not None and outcome.succeeded:
+            # Recorded immediately, before any later node can fail.
+            sink.record(dumped)
+        return {"execution_outcome": dumped}
 
     return executor_node
 
@@ -170,19 +175,24 @@ def invoke_dialogue(
     audio: Any,
     sample_rate: int,
     interaction_sequence: int = 0,
+    interaction_key: str | None = None,
+    outcome_sink: Any = None,
 ) -> DialogueGraphResult:
     """Invoke the dialogue graph with the supplied request state."""
     started = monotonic()
-    state = graph.invoke(
-        {
-            "session_id": session_id,
-            "user_id": user_id,
-            "interaction_sequence": interaction_sequence,
-            "audio": audio,
-            "sample_rate": sample_rate,
-            "started_monotonic": started,
-        }
-    )
+    initial_state: dict[str, Any] = {
+        "session_id": session_id,
+        "user_id": user_id,
+        "interaction_sequence": interaction_sequence,
+        "audio": audio,
+        "sample_rate": sample_rate,
+        "started_monotonic": started,
+    }
+    if interaction_key is not None:
+        initial_state["interaction_key"] = interaction_key
+    if outcome_sink is not None:
+        initial_state["outcome_sink"] = outcome_sink
+    state = graph.invoke(initial_state)
     return DialogueGraphResult(
         state=state,
         stage_durations_s={"dialogue_graph": monotonic() - started},

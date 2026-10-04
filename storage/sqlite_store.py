@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sqlite3
 from datetime import datetime, timezone
 from typing import Any, Literal
 from uuid import uuid4
@@ -130,8 +131,14 @@ class SQLiteStore:
         deadline: datetime | None = None,
         notes: str | None = None,
         priority: str = "normal",
+        client_write_id: str | None = None,
     ) -> str:
         """Create a new task row and return its generated ``task_id``.
+
+        When ``client_write_id`` is given, the insert is idempotent: if a task
+        for this user already carries that id, its ``task_id`` is returned and
+        no second row is created. The UNIQUE constraint on the column is the
+        enforcement, so it holds for any caller, not just the executor.
 
         The id is generated here, at the persistence boundary -- this
         method never accepts a model-generated id (plan Phase 2: "never
@@ -143,26 +150,54 @@ class SQLiteStore:
         if not title or not title.strip():
             raise ValueError("title must contain non-whitespace characters")
 
+        if client_write_id is not None:
+            existing = self.task_id_for_client_write_id(user_id, client_write_id)
+            if existing is not None:
+                return existing
+
         task_id = str(uuid4())
         now = datetime.now(timezone.utc)
-        with self.database.connection() as conn:
-            conn.execute(
-                """
-                INSERT INTO tasks(
-                    task_id, user_id, title, deadline, notes, priority, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    task_id,
-                    user_id,
-                    title,
-                    deadline.isoformat() if deadline else None,
-                    notes,
-                    priority,
-                    now.isoformat(),
-                ),
-            )
+        try:
+            with self.database.connection() as conn:
+                conn.execute(
+                    """
+                    INSERT INTO tasks(
+                        task_id, user_id, title, deadline, notes, priority,
+                        created_at, client_write_id
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        task_id,
+                        user_id,
+                        title,
+                        deadline.isoformat() if deadline else None,
+                        notes,
+                        priority,
+                        now.isoformat(),
+                        client_write_id,
+                    ),
+                )
+        except sqlite3.IntegrityError:
+            # Lost a race on the UNIQUE client_write_id: the other writer's
+            # row is the one logical mutation, so return it.
+            if client_write_id is not None:
+                existing = self.task_id_for_client_write_id(
+                    user_id, client_write_id)
+                if existing is not None:
+                    return existing
+            raise
         return task_id
+
+    def task_id_for_client_write_id(
+        self, user_id: str, client_write_id: str
+    ) -> str | None:
+        """Return the task already stored under this idempotency key, if any."""
+        with self.database.connection() as conn:
+            row = conn.execute(
+                "SELECT task_id FROM tasks WHERE user_id = ? AND client_write_id = ?",
+                (user_id, client_write_id),
+            ).fetchone()
+        return str(row["task_id"]) if row is not None else None
 
     def reschedule_task(
         self, user_id: str, task_id: str, new_deadline: datetime

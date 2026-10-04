@@ -21,6 +21,8 @@ classification and boundary behavior.
 
 from __future__ import annotations
 
+import hashlib
+import logging
 from concurrent.futures import Future, ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -38,6 +40,9 @@ from adapters.tts.piper_adapter import TTSAdapterError
 from pipeline.contracts import DecisionTraceRecord
 
 from pipeline.graph import invoke_dialogue
+from pipeline.state import CommittedOutcomeSink
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -66,6 +71,26 @@ class SessionContext:
     interaction_sequence: int = 0
     wake_word_detected_at: int | None = None  # edge-clock epoch ms, SPEC 7.3
     clock_offset_ms: float | None = None
+
+    @property
+    def interaction_key(self) -> str | None:
+        """Stable identity of this one utterance, or None if it can't be derived.
+
+        Derived from the edge-supplied ``(user_id, session_id,
+        wake_word_detected_at)``. A transport-level replay of the same
+        utterance carries the same triple, so it maps to the same key; a user
+        deliberately saying the same command again produces a new wake-word
+        timestamp and therefore a new key. ``interaction_sequence`` is
+        intentionally not used: it is host-assigned at submit time, so a replay
+        would get a fresh value, and it resets on restart.
+
+        Callers that never set ``wake_word_detected_at`` (direct runner use) get
+        None and therefore no idempotency and no committed-outcome capture.
+        """
+        if self.wake_word_detected_at is None:
+            return None
+        raw = f"{self.user_id}\x1f{self.session_id}\x1f{self.wake_word_detected_at}"
+        return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 
 @dataclass(frozen=True, slots=True)
@@ -119,6 +144,7 @@ class InteractionError(RuntimeError):
         wire_code: str,
         degradation_reason: str | None,
         trace_required: bool,
+        committed_outcomes: tuple[dict[str, Any], ...] = (),
     ) -> None:
         super().__init__(f"interaction failed at stage {stage!r}: {cause}")
         self.stage = stage
@@ -126,6 +152,24 @@ class InteractionError(RuntimeError):
         self.wire_code = wire_code
         self.degradation_reason = degradation_reason
         self.trace_required = trace_required
+        # ExecutionOutcome dicts for mutations that committed before this
+        # failure. When non-empty the user's request WAS carried out; only the
+        # reply failed.
+        self.committed_outcomes = committed_outcomes
+
+    @property
+    def committed_message(self) -> str | None:
+        """Truthful user-facing text when a mutation committed before failure."""
+        if not self.committed_outcomes:
+            return None
+        details = "; ".join(
+            str(outcome.get("detail", outcome.get("intent", "action")))
+            for outcome in self.committed_outcomes
+        )
+        return (
+            f"Your request was already carried out ({details}), but I could "
+            "not finish my reply. You do not need to repeat it."
+        )
 
 
 # Central F4 mapping: transport code consumes the stable wire code rather than
@@ -227,6 +271,7 @@ class InteractionRunner:
         ``InteractionError`` before crossing this boundary. Trace persistence
         still occurs only after TTS timing is known (F1).
         """
+        outcome_sink = CommittedOutcomeSink()
         try:
             graph_result = invoke_dialogue(
                 self._graph,
@@ -235,6 +280,8 @@ class InteractionRunner:
                 audio=audio,
                 sample_rate=sample_rate,
                 interaction_sequence=session.interaction_sequence,
+                interaction_key=session.interaction_key,
+                outcome_sink=outcome_sink,
             )
             state: dict[str, Any] = cast(dict[str, Any], graph_result.state)
 
@@ -312,6 +359,18 @@ class InteractionRunner:
             raise
         except Exception as exc:  # noqa: BLE001 - interaction boundary
             disposition = self._classify_failure(exc)
+            # Read the sink FIRST: the executor may already have changed the
+            # user's data before this later stage failed.
+            committed = outcome_sink.snapshot()
+            if committed:
+                logger.warning(
+                    "interaction failed at stage %r AFTER %d mutation(s) committed "
+                    "(session=%s, targets=%s)",
+                    disposition.stage,
+                    len(committed),
+                    session.session_id,
+                    [outcome.get("target_id") for outcome in committed],
+                )
             if disposition.trace_required:
                 self._persist_degraded_trace(
                     session=session, disposition=disposition)
@@ -321,6 +380,7 @@ class InteractionRunner:
                 wire_code=disposition.wire_code,
                 degradation_reason=disposition.degradation_reason,
                 trace_required=disposition.trace_required,
+                committed_outcomes=committed,
             ) from exc
 
     def persist_transport_degraded_trace(

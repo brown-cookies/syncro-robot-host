@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from threading import Lock
 from typing import Annotated, Any, TypedDict
 
 
@@ -13,6 +14,29 @@ def merge_stage_timings(left: dict[str, float], right: dict[str, float]) -> dict
     be commutative and must not mutate either argument.
     """
     return {**left, **right}
+
+
+class CommittedOutcomeSink:
+    """In-memory, per-interaction record of mutations that already committed.
+
+    The runner creates one per interaction and the executor node appends each
+    succeeded outcome. If a later stage raises, the graph's own state is lost,
+    but this object survives, so the runner can tell the user the request was
+    already carried out. Deliberately never persisted: it adds no table or
+    column (SPEC section 9) and holds nothing past the interaction.
+    """
+
+    def __init__(self) -> None:
+        self._lock = Lock()
+        self._outcomes: list[dict[str, Any]] = []
+
+    def record(self, outcome: dict[str, Any]) -> None:
+        with self._lock:
+            self._outcomes.append(dict(outcome))
+
+    def snapshot(self) -> tuple[dict[str, Any], ...]:
+        with self._lock:
+            return tuple(self._outcomes)
 
 
 class DialogueState(TypedDict, total=False):
@@ -28,6 +52,16 @@ class DialogueState(TypedDict, total=False):
     # utterance ordering explicit. This is transient graph state only; it is
     # never persisted as a decision_trace field.
     interaction_sequence: int
+
+    # Stable identity of this one utterance (hash of user, session_id and
+    # wake_word_detected_at). The executor derives its idempotency key from it
+    # so a replay of the same utterance cannot commit a second mutation.
+    # Transient graph state only; never a decision_trace field.
+    interaction_key: str
+
+    # Runner-owned sink the executor node reports succeeded mutations into, so a
+    # failure in a later stage cannot hide a committed change from the runner.
+    outcome_sink: CommittedOutcomeSink
 
     # Raw input audio for the current utterance.
     # Consumed by the STT and affect-analysis branches.
