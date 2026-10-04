@@ -109,10 +109,8 @@ def _install_ollama_probe(probes: dict[str, StageProbe]) -> Callable[[], None]:
         payload = kwargs.get("json")
         stage = None
         if isinstance(url, str) and url.rstrip("/").endswith("/api/generate"):
-            prompt = payload.get("prompt", "") if isinstance(
-                payload, dict) else ""
-            stage = "intent" if "strict SYNCRO intent classifier" in str(
-                prompt) else "reasoning"
+            prompt = payload.get("prompt", "") if isinstance(payload, dict) else ""
+            stage = "intent" if "strict SYNCRO intent classifier" in str(prompt) else "reasoning"
         if stage is None:
             return original(url, *args, **kwargs)
         return probes[stage].wrap(original)(url, *args, **kwargs)
@@ -148,8 +146,7 @@ def _summary(values: list[float]) -> dict[str, float | None]:
     ordered = sorted(values)
     n = len(ordered)
     mean = sum(ordered) / n
-    median = ordered[n //
-                     2] if n % 2 else (ordered[n // 2 - 1] + ordered[n // 2]) / 2
+    median = ordered[n // 2] if n % 2 else (ordered[n // 2 - 1] + ordered[n // 2]) / 2
     rank = max(0, min(n - 1, int((n - 1) * 0.95 + 0.999999)))
     return {
         "count": n,
@@ -165,8 +162,7 @@ def _capture_audio(components: Any) -> tuple[Any, int]:
     print("[audio_capture] Recording one benchmark utterance -- speak now...")
     started = time.monotonic()
     audio, sample_rate = components.audio_input.capture()
-    print(
-        f"[audio_capture] OK ({time.monotonic() - started:.3f}s, sample_rate={sample_rate})")
+    print(f"[audio_capture] OK ({time.monotonic() - started:.3f}s, sample_rate={sample_rate})")
     return audio, sample_rate
 
 
@@ -218,8 +214,7 @@ def main() -> int:
     print(
         f"[config] intent_timeout_s={settings.intent_timeout_s} reasoning_timeout_s={settings.reasoning_timeout_s} non_llm_timeout_margin_s={settings.non_llm_timeout_margin_s}"
     )
-    print(
-        f"[config] session_timeout_seconds={settings.session_timeout_seconds}")
+    print(f"[config] session_timeout_seconds={settings.session_timeout_seconds}")
     print(f"[config] stt_device={settings.stt_device!r}")
     print(f"[config] stt_model_size={settings.stt_model_size!r}")
     print(f"[config] stt_compute_type={settings.stt_compute_type!r}")
@@ -245,8 +240,7 @@ def main() -> int:
         )
 
         started = time.monotonic()
-        result = runner.run(session=session, audio=audio,
-                            sample_rate=sample_rate)
+        result = runner.run(session=session, audio=audio, sample_rate=sample_rate)
         total_observed = time.monotonic() - started
 
         stage = result.stage_timings_s
@@ -267,8 +261,7 @@ def main() -> int:
             tts_s=probes["tts"].elapsed_s,
             graph_s=float(stage.get("dialogue_graph", 0.0)),
             interaction_to_tts_completion_s=result.latency_ms / 1000.0,
-            llm_total_s=probes["intent"].elapsed_s +
-            probes["reasoning"].elapsed_s,
+            llm_total_s=probes["intent"].elapsed_s + probes["reasoning"].elapsed_s,
             total_observed_s=total_observed,
             stage_timing_source="adapter-method probes + graph reducer timings",
         )
@@ -313,8 +306,7 @@ def main() -> int:
     lines.append("")
     lines.append("PURPOSE")
     lines.append("-------")
-    lines.append(
-        "Measure the current unmodified two-LLM WP-103 path before any F6 optimization.")
+    lines.append("Measure the current unmodified two-LLM WP-103 path before any F6 optimization.")
     lines.append(
         "No num_predict, keep_alive, model split, timeout change, or STT-device change is applied."
     )
@@ -325,10 +317,8 @@ def main() -> int:
     lines.append(f"ollama_url: {settings.ollama_url}")
     lines.append(f"intent_timeout_s: {settings.intent_timeout_s}")
     lines.append(f"reasoning_timeout_s: {settings.reasoning_timeout_s}")
-    lines.append(
-        f"non_llm_timeout_margin_s: {settings.non_llm_timeout_margin_s}")
-    lines.append(
-        f"session_timeout_seconds: {settings.session_timeout_seconds}")
+    lines.append(f"non_llm_timeout_margin_s: {settings.non_llm_timeout_margin_s}")
+    lines.append(f"session_timeout_seconds: {settings.session_timeout_seconds}")
     lines.append(f"stt_device: {settings.stt_device}")
     lines.append(f"stt_model_size: {settings.stt_model_size}")
     lines.append(f"stt_compute_type: {settings.stt_compute_type}")
