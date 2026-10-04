@@ -15,7 +15,7 @@ real device-token authentication and real downlink pacing.
 from __future__ import annotations
 
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 import numpy as np
@@ -36,7 +36,7 @@ def make_pending_trace(**overrides):
         "trace_id": uuid4(),
         "session_id": "s1",
         "user_id": "u1",
-        "timestamp": datetime.now(timezone.utc),
+        "timestamp": datetime.now(UTC),
         "intent": "smalltalk",
         "intent_confidence": 0.9,
         "retrieved_context_ids": [],
@@ -152,7 +152,7 @@ def build_test_app(graph, tts, store, **deps_overrides) -> tuple[FastAPI, Intera
     return app, worker
 
 
-def build_test_app_with_deps(deps: "stream.StreamDeps") -> FastAPI:
+def build_test_app_with_deps(deps: stream.StreamDeps) -> FastAPI:
     app = FastAPI()
     app.include_router(stream.router)
     app.dependency_overrides[stream.get_stream_deps] = lambda: deps
@@ -241,12 +241,22 @@ def test_session_collision_on_same_connection_keeps_the_original_session_running
         with TestClient(app) as client:
             with client.websocket_connect("/v1/stream") as ws:
                 ws.send_json(
-                    {"type": "start_audio", "session_id": "s1", "user_id": "u1", "wake_word_detected_at": 1}
+                    {
+                        "type": "start_audio",
+                        "session_id": "s1",
+                        "user_id": "u1",
+                        "wake_word_detected_at": 1,
+                    }
                 )
                 assert ws.receive_json()["type"] == "ready"
 
                 ws.send_json(
-                    {"type": "start_audio", "session_id": "s2", "user_id": "u1", "wake_word_detected_at": 2}
+                    {
+                        "type": "start_audio",
+                        "session_id": "s2",
+                        "user_id": "u1",
+                        "wake_word_detected_at": 2,
+                    }
                 )
                 assert ws.receive_json() == {
                     "type": "error",
@@ -269,7 +279,12 @@ def test_malformed_audio_frame_releases_the_session():
         with TestClient(app) as client:
             with client.websocket_connect("/v1/stream") as ws:
                 ws.send_json(
-                    {"type": "start_audio", "session_id": "s1", "user_id": "u1", "wake_word_detected_at": 1}
+                    {
+                        "type": "start_audio",
+                        "session_id": "s1",
+                        "user_id": "u1",
+                        "wake_word_detected_at": 1,
+                    }
                 )
                 assert ws.receive_json()["type"] == "ready"
 
@@ -282,7 +297,12 @@ def test_malformed_audio_frame_releases_the_session():
                 # Released immediately, per the ErrorMessage contract
                 # ("ends the named session on both sides").
                 ws.send_json(
-                    {"type": "start_audio", "session_id": "s1", "user_id": "u1", "wake_word_detected_at": 2}
+                    {
+                        "type": "start_audio",
+                        "session_id": "s1",
+                        "user_id": "u1",
+                        "wake_word_detected_at": 2,
+                    }
                 )
                 assert ws.receive_json()["type"] == "ready"
     finally:
@@ -296,7 +316,12 @@ def test_pipeline_failure_maps_to_a_wire_error_and_persists_a_degraded_trace():
         with TestClient(app) as client:
             with client.websocket_connect("/v1/stream") as ws:
                 ws.send_json(
-                    {"type": "start_audio", "session_id": "s1", "user_id": "u1", "wake_word_detected_at": 1}
+                    {
+                        "type": "start_audio",
+                        "session_id": "s1",
+                        "user_id": "u1",
+                        "wake_word_detected_at": 1,
+                    }
                 )
                 assert ws.receive_json()["type"] == "ready"
 
@@ -315,7 +340,9 @@ def test_pipeline_failure_maps_to_a_wire_error_and_persists_a_degraded_trace():
 
 def test_queue_overflow_reports_queue_overflow_and_still_releases_the_session():
     store = FakeStore()
-    runner = InteractionRunner(graph=FakeGraph(), store=store, tts=FakeTTS(), resampler=to_pcm16_16k)
+    runner = InteractionRunner(
+        graph=FakeGraph(), store=store, tts=FakeTTS(), resampler=to_pcm16_16k
+    )
     deps = stream.StreamDeps(
         worker=AlwaysFullWorker(runner=runner),
         session_registry=SessionRegistry(),
@@ -326,7 +353,12 @@ def test_queue_overflow_reports_queue_overflow_and_still_releases_the_session():
     with TestClient(app) as client:
         with client.websocket_connect("/v1/stream") as ws:
             ws.send_json(
-                {"type": "start_audio", "session_id": "s1", "user_id": "u1", "wake_word_detected_at": 1}
+                {
+                    "type": "start_audio",
+                    "session_id": "s1",
+                    "user_id": "u1",
+                    "wake_word_detected_at": 1,
+                }
             )
             assert ws.receive_json()["type"] == "ready"
 
@@ -335,7 +367,12 @@ def test_queue_overflow_reports_queue_overflow_and_still_releases_the_session():
             assert error["error_code"] == "queue_overflow"
 
             ws.send_json(
-                {"type": "start_audio", "session_id": "s1", "user_id": "u1", "wake_word_detected_at": 2}
+                {
+                    "type": "start_audio",
+                    "session_id": "s1",
+                    "user_id": "u1",
+                    "wake_word_detected_at": 2,
+                }
             )
             assert ws.receive_json()["type"] == "ready"
 
@@ -354,7 +391,12 @@ def test_session_timeout_reclaims_an_abandoned_session_and_persists_a_degraded_t
         with TestClient(app) as client:
             with client.websocket_connect("/v1/stream") as ws:
                 ws.send_json(
-                    {"type": "start_audio", "session_id": "s1", "user_id": "u1", "wake_word_detected_at": 1}
+                    {
+                        "type": "start_audio",
+                        "session_id": "s1",
+                        "user_id": "u1",
+                        "wake_word_detected_at": 1,
+                    }
                 )
                 assert ws.receive_json()["type"] == "ready"
 
@@ -371,7 +413,12 @@ def test_session_timeout_reclaims_an_abandoned_session_and_persists_a_degraded_t
                 # session_id is free again immediately, on the same
                 # connection, same as a clean end_audio completion.
                 ws.send_json(
-                    {"type": "start_audio", "session_id": "s1", "user_id": "u1", "wake_word_detected_at": 2}
+                    {
+                        "type": "start_audio",
+                        "session_id": "s1",
+                        "user_id": "u1",
+                        "wake_word_detected_at": 2,
+                    }
                 )
                 assert ws.receive_json()["type"] == "ready"
     finally:
@@ -392,14 +439,17 @@ def test_session_timeout_reaper_ignores_session_after_worker_handoff():
             time.sleep(0.5)
             return super().invoke(state)
 
-    app, worker = build_test_app(
-        SlowGraph(), FakeTTS(), store, session_timeout_seconds=0.15
-    )
+    app, worker = build_test_app(SlowGraph(), FakeTTS(), store, session_timeout_seconds=0.15)
     try:
         with TestClient(app) as client:
             with client.websocket_connect("/v1/stream") as ws:
                 ws.send_json(
-                    {"type": "start_audio", "session_id": "s1", "user_id": "u1", "wake_word_detected_at": 1}
+                    {
+                        "type": "start_audio",
+                        "session_id": "s1",
+                        "user_id": "u1",
+                        "wake_word_detected_at": 1,
+                    }
                 )
                 assert ws.receive_json()["type"] == "ready"
 
@@ -424,7 +474,12 @@ def test_audio_frame_activity_resets_the_inactivity_timeout():
         with TestClient(app) as client:
             with client.websocket_connect("/v1/stream") as ws:
                 ws.send_json(
-                    {"type": "start_audio", "session_id": "s1", "user_id": "u1", "wake_word_detected_at": 1}
+                    {
+                        "type": "start_audio",
+                        "session_id": "s1",
+                        "user_id": "u1",
+                        "wake_word_detected_at": 1,
+                    }
                 )
                 assert ws.receive_json()["type"] == "ready"
 

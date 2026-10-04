@@ -9,7 +9,7 @@ return empty audio plus the text, and print the fallback line to the console.
 from __future__ import annotations
 
 import threading
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 import numpy as np
@@ -22,12 +22,20 @@ from pipeline.interaction import InteractionError, InteractionRunner, SessionCon
 
 def _pending_trace():
     return {
-        "trace_id": uuid4(), "session_id": "s1", "user_id": "u1",
-        "timestamp": datetime.now(timezone.utc), "intent": "snooze_reminder",
-        "intent_confidence": 0.9, "retrieved_context_ids": [],
-        "affect_level": "High", "deadline_proximity": "imminent",
-        "policy_rule": "R5", "action_taken": "deliver", "lead_time_min": 15.0,
-        "reminder_outcome": "pending", "degradation_reason": None,
+        "trace_id": uuid4(),
+        "session_id": "s1",
+        "user_id": "u1",
+        "timestamp": datetime.now(UTC),
+        "intent": "snooze_reminder",
+        "intent_confidence": 0.9,
+        "retrieved_context_ids": [],
+        "affect_level": "High",
+        "deadline_proximity": "imminent",
+        "policy_rule": "R5",
+        "action_taken": "deliver",
+        "lead_time_min": 15.0,
+        "reminder_outcome": "pending",
+        "degradation_reason": None,
         "network_event": None,
     }
 
@@ -36,9 +44,12 @@ class _Graph:
     def invoke(self, state):
         return {
             "response_payload": {
-                "type": "response", "session_id": state["session_id"],
+                "type": "response",
+                "session_id": state["session_id"],
                 "tts_text": "Let's focus on the most important item first.",
-                "state_tag": "speaking", "policy_rule": "R5", "lead_time_min": 15.0,
+                "state_tag": "speaking",
+                "policy_rule": "R5",
+                "lead_time_min": 15.0,
             },
             "pending_trace": _pending_trace(),
             "stage_timings_s": {"stt": 0.01},
@@ -86,15 +97,17 @@ def _session():
 
 def _runner(tts, store, console, timeout=0.05):
     return InteractionRunner(
-        graph=_Graph(), store=store, tts=tts, resampler=to_pcm16_16k,
-        tts_timeout_s=timeout, console=console.append,
+        graph=_Graph(),
+        store=store,
+        tts=tts,
+        resampler=to_pcm16_16k,
+        tts_timeout_s=timeout,
+        console=console.append,
     )
 
 
 def _run(runner):
-    return runner.run(
-        session=_session(), audio=np.zeros(160, dtype=np.float32), sample_rate=16_000
-    )
+    return runner.run(session=_session(), audio=np.zeros(160, dtype=np.float32), sample_rate=16_000)
 
 
 def test_forced_tts_timeout_degrades_traces_and_prints_fallback_line():
@@ -112,8 +125,7 @@ def test_forced_tts_timeout_degrades_traces_and_prints_fallback_line():
     assert len(store.saved) == 1 and store.saved_degraded == []
     assert store.saved[0]["degradation_reason"] == "tts_timeout"
     assert store.saved[0]["policy_rule"] == "R5"
-    assert any("TTS timed out" in line and "fallback channel activated" in line
-               for line in console)
+    assert any("TTS timed out" in line and "fallback channel activated" in line for line in console)
 
 
 def test_timed_out_tts_never_runs_concurrently_with_next_interaction():
@@ -213,7 +225,7 @@ def test_tts_adapter_error_still_maps_to_interaction_error():
         _run(_runner(_FailingTTS(), store, console, timeout=2.0))
 
     assert exc_info.value.stage == "tts"
-    assert store.saved == []          # no normal trace for a failed interaction
+    assert store.saved == []  # no normal trace for a failed interaction
     assert console == []
 
 

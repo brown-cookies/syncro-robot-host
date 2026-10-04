@@ -77,26 +77,27 @@ def test_same_source_and_external_id_is_idempotent(client, store):
 
     assert first.status_code == 201 and second.status_code == 200
     assert second.json()["task_id"] == first.json()["task_id"]
-    assert len(store.list_tasks()) == 1                       # no duplicate row
+    assert len(store.list_tasks()) == 1  # no duplicate row
     assert store.list_tasks()[0]["title"] == "Send the weekly report"  # no-op, not an update
     assert [e["outcome"] for e in store.list_ingress_events()] == ["created", "duplicate"]
 
 
 def test_same_external_id_from_a_different_source_is_a_new_task(client, store):
     client.post(URL, json=_body(), headers=_auth())
-    other = client.post(
-        URL, json=_body(source="calendar-sim"), headers=_auth(OTHER_TOKEN)
-    )
+    other = client.post(URL, json=_body(source="calendar-sim"), headers=_auth(OTHER_TOKEN))
     assert other.status_code == 201
     assert len(store.list_tasks()) == 2
 
 
-@pytest.mark.parametrize("headers", [
-    {},                                             # missing
-    {"Authorization": "Bearer wrong-token-value-1234567"},
-    {"Authorization": "Basic abc"},                 # wrong scheme
-    {"Authorization": "Bearer"},                    # no token
-])
+@pytest.mark.parametrize(
+    "headers",
+    [
+        {},  # missing
+        {"Authorization": "Bearer wrong-token-value-1234567"},
+        {"Authorization": "Basic abc"},  # wrong scheme
+        {"Authorization": "Bearer"},  # no token
+    ],
+)
 def test_missing_or_invalid_token_is_401_and_writes_nothing(client, store, headers):
     response = client.post(URL, json=_body(), headers=headers)
     assert response.status_code == 401
@@ -111,17 +112,13 @@ def test_participant_scope_token_is_rejected_on_ingest(client, store):
 
 
 def test_valid_token_cannot_write_as_a_different_source(client, store):
-    response = client.post(
-        URL, json=_body(source="calendar-sim"), headers=_auth(SOURCE_TOKEN)
-    )
+    response = client.post(URL, json=_body(source="calendar-sim"), headers=_auth(SOURCE_TOKEN))
     assert response.status_code == 401
     assert store.list_tasks() == []
 
 
 def test_lowercase_bearer_scheme_is_accepted(client):
-    response = client.post(
-        URL, json=_body(), headers={"Authorization": f"bearer {SOURCE_TOKEN}"}
-    )
+    response = client.post(URL, json=_body(), headers={"Authorization": f"bearer {SOURCE_TOKEN}"})
     assert response.status_code == 201
 
 
@@ -140,13 +137,16 @@ def test_non_json_body_is_400(client):
     assert response.status_code == 400
 
 
-@pytest.mark.parametrize("bad", [
-    {"title": ""},
-    {"priority": "urgent"},
-    {"created_at": "yesterday"},
-    {"due_at": "not-a-date"},
-    {"external_id": ""},
-])
+@pytest.mark.parametrize(
+    "bad",
+    [
+        {"title": ""},
+        {"priority": "urgent"},
+        {"created_at": "yesterday"},
+        {"due_at": "not-a-date"},
+        {"external_id": ""},
+    ],
+)
 def test_invalid_field_values_are_422(client, store, bad):
     response = client.post(URL, json=_body(**bad), headers=_auth())
     assert response.status_code == 422
@@ -184,11 +184,12 @@ def test_unconfigured_app_returns_503():
 
 def test_parse_source_tokens():
     assert tasks.parse_source_tokens("") == {}
-    assert tasks.parse_source_tokens(
-        f"email-sim:{SOURCE_TOKEN}, calendar-sim:{OTHER_TOKEN}"
-    ) == {"email-sim": SOURCE_TOKEN, "calendar-sim": OTHER_TOKEN}
+    assert tasks.parse_source_tokens(f"email-sim:{SOURCE_TOKEN}, calendar-sim:{OTHER_TOKEN}") == {
+        "email-sim": SOURCE_TOKEN,
+        "calendar-sim": OTHER_TOKEN,
+    }
     with pytest.raises(ValueError):
-        tasks.parse_source_tokens("email-sim:short")          # token too short
+        tasks.parse_source_tokens("email-sim:short")  # token too short
     with pytest.raises(ValueError):
         tasks.parse_source_tokens("no-separator-here")
     with pytest.raises(ValueError):

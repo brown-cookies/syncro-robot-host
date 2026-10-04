@@ -181,8 +181,8 @@ The rest of this document measures the trunk against that table.
 **Where.** `pipeline/nodes/output.py:139-148`. The output node computes
 
 ```python
-latency_ms=max(0.0, (monotonic() - float(started_monotonic)) * 1000.0),
-latency_basis="host_observed_only",
+latency_ms = (max(0.0, (monotonic() - float(started_monotonic)) * 1000.0),)
+latency_basis = ("host_observed_only",)
 ```
 
 then calls `store.save_decision_trace(...)`. `started_monotonic` is set by the caller before the

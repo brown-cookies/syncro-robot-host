@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import tempfile
 import threading
+from datetime import UTC
 from pathlib import Path
 
 import numpy as np
@@ -39,23 +40,33 @@ class CannedGraph:
     """Returns what the dialogue graph would for a High/imminent reminder (R5)."""
 
     def invoke(self, state):
-        from datetime import datetime, timezone
+        from datetime import datetime
         from uuid import uuid4
 
         return {
             "response_payload": {
-                "type": "response", "session_id": state["session_id"],
+                "type": "response",
+                "session_id": state["session_id"],
                 "tts_text": "Let's focus on the most important item first.",
-                "state_tag": "speaking", "policy_rule": "R5", "lead_time_min": 15.0,
+                "state_tag": "speaking",
+                "policy_rule": "R5",
+                "lead_time_min": 15.0,
             },
             "pending_trace": {
-                "trace_id": uuid4(), "session_id": state["session_id"],
-                "user_id": state["user_id"], "timestamp": datetime.now(timezone.utc),
-                "intent": "snooze_reminder", "intent_confidence": 0.9,
-                "retrieved_context_ids": [], "affect_level": "High",
-                "deadline_proximity": "imminent", "policy_rule": "R5",
-                "action_taken": "deliver", "lead_time_min": 15.0,
-                "reminder_outcome": "pending", "degradation_reason": None,
+                "trace_id": uuid4(),
+                "session_id": state["session_id"],
+                "user_id": state["user_id"],
+                "timestamp": datetime.now(UTC),
+                "intent": "snooze_reminder",
+                "intent_confidence": 0.9,
+                "retrieved_context_ids": [],
+                "affect_level": "High",
+                "deadline_proximity": "imminent",
+                "policy_rule": "R5",
+                "action_taken": "deliver",
+                "lead_time_min": 15.0,
+                "reminder_outcome": "pending",
+                "degradation_reason": None,
                 "network_event": None,
             },
             "stage_timings_s": {},
@@ -67,24 +78,32 @@ def main() -> None:
         store = SQLiteStore(str(Path(tmp) / "demo.db"))
         tts = HangingTTS()
         runner = InteractionRunner(
-            graph=CannedGraph(), store=store, tts=tts, resampler=to_pcm16_16k,
+            graph=CannedGraph(),
+            store=store,
+            tts=tts,
+            resampler=to_pcm16_16k,
             tts_timeout_s=0.5,
         )
         try:
             result = runner.run(
                 session=SessionContext(SESSION_ID, USER_ID, started_monotonic=0.0),
-                audio=np.zeros(160, dtype=np.float32), sample_rate=16_000,
+                audio=np.zeros(160, dtype=np.float32),
+                sample_rate=16_000,
             )
         finally:
             tts.release.set()
             runner.close()
 
         row = store.list_decision_traces(USER_ID)[-1]
-        print(f"[result] degradation_reason={result.degradation_reason} "
-              f"audio_samples={result.tts_audio.size} "
-              f"text={result.response_payload['tts_text']!r}")
-        print(f"[trace]  trace_id={row['trace_id']} policy_rule={row['policy_rule']} "
-              f"degradation_reason={row['degradation_reason']}")
+        print(
+            f"[result] degradation_reason={result.degradation_reason} "
+            f"audio_samples={result.tts_audio.size} "
+            f"text={result.response_payload['tts_text']!r}"
+        )
+        print(
+            f"[trace]  trace_id={row['trace_id']} policy_rule={row['policy_rule']} "
+            f"degradation_reason={row['degradation_reason']}"
+        )
 
 
 if __name__ == "__main__":

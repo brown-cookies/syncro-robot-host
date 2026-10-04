@@ -5,15 +5,26 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from pipeline.contracts import DegradedTraceRecord, DecisionTraceRecord
+from pipeline.contracts import DecisionTraceRecord, DegradedTraceRecord
 from storage.database import SQLiteDatabase
 
-
 TRACE_FIELDS = (
-    "trace_id", "session_id", "user_id", "timestamp", "intent",
-    "intent_confidence", "retrieved_context_ids", "affect_level",
-    "deadline_proximity", "policy_rule", "action_taken", "lead_time_min",
-    "reminder_outcome", "degradation_reason", "network_event", "latency_ms",
+    "trace_id",
+    "session_id",
+    "user_id",
+    "timestamp",
+    "intent",
+    "intent_confidence",
+    "retrieved_context_ids",
+    "affect_level",
+    "deadline_proximity",
+    "policy_rule",
+    "action_taken",
+    "lead_time_min",
+    "reminder_outcome",
+    "degradation_reason",
+    "network_event",
+    "latency_ms",
     "latency_basis",
 )
 
@@ -52,7 +63,6 @@ class DecisionTraceRepository:
                 f"VALUES ({', '.join('?' for _ in TRACE_FIELDS)})",
                 values,
             )
-
 
     def suppress_pending_reminder_traces(self, user_id: str) -> int:
         """Suppress other pending reminder traces when policy requires it."""

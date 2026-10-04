@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from storage.database import SQLiteDatabase
@@ -21,9 +21,7 @@ class ContextResult:
         """Return the identifiers represented by the context collection."""
         ids = [str(item["task_id"]) for item in self.tasks]
         ids.extend(
-            str(item["task_id"])
-            for item in self.overdue_tasks
-            if str(item["task_id"]) not in ids
+            str(item["task_id"]) for item in self.overdue_tasks if str(item["task_id"]) not in ids
         )
         if self.recent_routine is not None:
             ids.append(str(self.recent_routine["log_id"]))
@@ -44,7 +42,7 @@ class ContextRepository:
         deadline_proximity_hours: int,
     ) -> ContextResult:
         """Retrieve context records required for the current request."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         now_iso = now.isoformat()
 
         overdue_limit = max(top_k, 1)
@@ -95,9 +93,7 @@ class ContextRepository:
         for row in overdue_rows:
             task = dict(row)
             try:
-                deadline = datetime.fromisoformat(
-                    str(task["deadline"]).replace("Z", "+00:00")
-                )
+                deadline = datetime.fromisoformat(str(task["deadline"]).replace("Z", "+00:00"))
             except ValueError:
                 continue
             if task["status"] == "overdue" or deadline < now:
@@ -109,9 +105,7 @@ class ContextRepository:
             if not deadline_value:
                 continue
             try:
-                deadline = datetime.fromisoformat(
-                    str(deadline_value).replace("Z", "+00:00")
-                )
+                deadline = datetime.fromisoformat(str(deadline_value).replace("Z", "+00:00"))
             except ValueError:
                 continue
             delta_hours = (deadline - now).total_seconds() / 3600.0

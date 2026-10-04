@@ -4,7 +4,9 @@ from pipeline.nodes.llm import _reject_unexecuted_mutation_claim, make_llm_node
 
 
 class CaptureLLM:
-    def __init__(self, response='{"response_text":"You have one overdue task.","proposed_action":"deliver"}'):
+    def __init__(
+        self, response='{"response_text":"You have one overdue task.","proposed_action":"deliver"}'
+    ):
         """Initialize the CaptureLLM and establish its runtime state."""
         self.prompt = None
         self.response = response
@@ -124,30 +126,23 @@ UNCHANGED_MUTATION_RESPONSE_CASES = (
     # of its own clause however long that noun phrase grows
     ("dismiss_reminder", "None of the reminders were dismissed."),
     ("add_task", "None of the tasks were added."),
-    ("dismiss_reminder",
-     "None of the recurring weekly reminders were dismissed."),
-    ("reschedule_task",
-     "None of the meetings on Thursday afternoon were moved."),
-    ("snooze_reminder",
-     "None of the reminders you set for this weekend were snoozed."),
+    ("dismiss_reminder", "None of the recurring weekly reminders were dismissed."),
+    ("reschedule_task", "None of the meetings on Thursday afternoon were moved."),
+    ("snooze_reminder", "None of the reminders you set for this weekend were snoozed."),
     ("dismiss_reminder", "Neither reminder was cleared."),
-    ("reschedule_task",
-     "Neither of the two calendar entries was rescheduled."),
+    ("reschedule_task", "Neither of the two calendar entries was rescheduled."),
     ("add_task", "No tasks were added."),
     ("add_task", "No new tasks have been added to your shopping list."),
-    ("snooze_reminder",
-     "No reminders about the dentist appointment were delayed."),
+    ("snooze_reminder", "No reminders about the dentist appointment were delayed."),
     ("add_task", "No item from the list you dictated was saved."),
     # a parenthetical splits subject from predicate, or splits an auxiliary
     # from its participle; the clause is still one clause
-    ("dismiss_reminder",
-     "None of the reminders, including the weekly ones, were dismissed."),
+    ("dismiss_reminder", "None of the reminders, including the weekly ones, were dismissed."),
     ("dismiss_reminder", "I have not, however, dismissed that reminder."),
     # a marker clause that carries its own blocker still blocks
     ("add_task", "No problem, I have not added it yet."),
     ("snooze_reminder", "Not a problem, I can snooze it for you."),
-    ("dismiss_reminder",
-     "No problem, cleared reminders stay in your history."),
+    ("dismiss_reminder", "No problem, cleared reminders stay in your history."),
 )
 # AI-BLOCK-END
 
@@ -157,21 +152,23 @@ def test_overdue_request_limits_llm_context_to_overdue_tasks():
     llm = CaptureLLM()
     node = make_llm_node(llm)
 
-    result = node({
-        "transcript": "What is my overdue task?",
-        "intent": "request_summary",
-        "intent_confidence": 0.99,
-        "slots": {},
-        "context": {
-            "tasks": [
-                {"task_id": "t1", "title": "Future task", "status": "pending"},
-            ],
-            "overdue_tasks": [
-                {"task_id": "t2", "title": "Overdue task", "status": "overdue"},
-            ],
-            "recent_routine": None,
-        },
-    })
+    result = node(
+        {
+            "transcript": "What is my overdue task?",
+            "intent": "request_summary",
+            "intent_confidence": 0.99,
+            "slots": {},
+            "context": {
+                "tasks": [
+                    {"task_id": "t1", "title": "Future task", "status": "pending"},
+                ],
+                "overdue_tasks": [
+                    {"task_id": "t2", "title": "Overdue task", "status": "overdue"},
+                ],
+                "recent_routine": None,
+            },
+        }
+    )
 
     assert result["draft_response"] == "You have one overdue task."
     assert '"Overdue task"' in llm.prompt
@@ -184,18 +181,14 @@ def _claim_fragment(response_text: str) -> str:
     return response_text.strip().casefold().rstrip(".!?")
 
 
-@pytest.mark.parametrize(
-    ("intent", "response_text"), UNCHANGED_MUTATION_RESPONSE_CASES
-)
+@pytest.mark.parametrize(("intent", "response_text"), UNCHANGED_MUTATION_RESPONSE_CASES)
 def test_ordinary_wording_is_returned_unchanged(intent, response_text):
     result = _reject_unexecuted_mutation_claim(intent, response_text)
 
     assert result == response_text
 
 
-@pytest.mark.parametrize(
-    ("intent", "response_text"), DEGRADED_MUTATION_CLAIM_CASES
-)
+@pytest.mark.parametrize(("intent", "response_text"), DEGRADED_MUTATION_CLAIM_CASES)
 def test_completed_mutation_claim_is_replaced(intent, response_text):
     result = _reject_unexecuted_mutation_claim(intent, response_text)
 
@@ -226,11 +219,13 @@ def test_clarification_path_returns_before_the_mutation_guard():
     node = make_llm_node(llm)
     final_response = "I added it to your list."
 
-    result = node({
-        "proposed_action": "clarify",
-        "final_response": final_response,
-        "intent": "add_task",
-    })
+    result = node(
+        {
+            "proposed_action": "clarify",
+            "final_response": final_response,
+            "intent": "add_task",
+        }
+    )
 
     assert result["draft_response"] == final_response
     assert result["proposed_action"] == "clarify"

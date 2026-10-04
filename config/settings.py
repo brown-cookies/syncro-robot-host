@@ -129,11 +129,7 @@ class Settings:
 
     def __post_init__(self) -> None:
         """Enforce the D5 sum-based timeout invariant this dataclass can't express per-field."""
-        budget = (
-            self.intent_timeout_s
-            + self.reasoning_timeout_s
-            + self.non_llm_timeout_margin_s
-        )
+        budget = self.intent_timeout_s + self.reasoning_timeout_s + self.non_llm_timeout_margin_s
         if budget >= self.session_timeout_seconds:
             raise ValueError(
                 "D5 invariant violated: intent_timeout_s + reasoning_timeout_s + "
@@ -144,7 +140,7 @@ class Settings:
             )
 
     @classmethod
-    def from_env(cls) -> "Settings":
+    def from_env(cls) -> Settings:
         """Build application settings from the current environment."""
         defaults = cls()
 
@@ -153,7 +149,6 @@ class Settings:
             host_address=os.getenv("HOST_ADDRESS", defaults.host_address),
             ws_port=_int_env("WS_PORT", defaults.ws_port),
             db_path=os.getenv("DB_PATH", defaults.db_path),
-
             # LLM
             ollama_url=os.getenv("OLLAMA_URL", defaults.ollama_url),
             llm_model=os.getenv("LLM_MODEL", defaults.llm_model),
@@ -161,66 +156,35 @@ class Settings:
             intent_confidence_threshold=_float_env(
                 "INTENT_CONFIDENCE_THRESHOLD", defaults.intent_confidence_threshold
             ),
-            intent_timeout_s=_float_env(
-                "INTENT_TIMEOUT_S", defaults.intent_timeout_s
-            ),
-            reasoning_timeout_s=_float_env(
-                "REASONING_TIMEOUT_S", defaults.reasoning_timeout_s
-            ),
+            intent_timeout_s=_float_env("INTENT_TIMEOUT_S", defaults.intent_timeout_s),
+            reasoning_timeout_s=_float_env("REASONING_TIMEOUT_S", defaults.reasoning_timeout_s),
             non_llm_timeout_margin_s=_float_env(
                 "NON_LLM_TIMEOUT_MARGIN_S", defaults.non_llm_timeout_margin_s
             ),
-            intent_num_predict=_int_env(
-                "INTENT_NUM_PREDICT", defaults.intent_num_predict
-            ),
-            ollama_keep_alive=os.getenv(
-                "OLLAMA_KEEP_ALIVE", defaults.ollama_keep_alive
-            ),
-            llm_warmup_timeout_s=_float_env(
-                "LLM_WARMUP_TIMEOUT_S", defaults.llm_warmup_timeout_s
-            ),
+            intent_num_predict=_int_env("INTENT_NUM_PREDICT", defaults.intent_num_predict),
+            ollama_keep_alive=os.getenv("OLLAMA_KEEP_ALIVE", defaults.ollama_keep_alive),
+            llm_warmup_timeout_s=_float_env("LLM_WARMUP_TIMEOUT_S", defaults.llm_warmup_timeout_s),
             interaction_queue_maxsize=_int_env(
                 "INTERACTION_QUEUE_MAXSIZE", defaults.interaction_queue_maxsize
             ),
-
             # STT
-            stt_model_size=os.getenv(
-                "STT_MODEL_SIZE", defaults.stt_model_size
-            ),
-            stt_compute_type=os.getenv(
-                "STT_COMPUTE_TYPE", defaults.stt_compute_type
-            ),
+            stt_model_size=os.getenv("STT_MODEL_SIZE", defaults.stt_model_size),
+            stt_compute_type=os.getenv("STT_COMPUTE_TYPE", defaults.stt_compute_type),
             stt_device=os.getenv("STT_DEVICE", defaults.stt_device),
-
             # TTS
-            piper_model_path=os.getenv(
-                "PIPER_MODEL_PATH", defaults.piper_model_path
-            ),
+            piper_model_path=os.getenv("PIPER_MODEL_PATH", defaults.piper_model_path),
             tts_timeout_s=_float_env("TTS_TIMEOUT_S", defaults.tts_timeout_s),
-            ingest_source_tokens=os.getenv(
-                "INGEST_SOURCE_TOKENS", defaults.ingest_source_tokens
-            ),
+            ingest_source_tokens=os.getenv("INGEST_SOURCE_TOKENS", defaults.ingest_source_tokens),
             # Audio
-            audio_sample_rate_hz=_int_env(
-                "AUDIO_SAMPLE_RATE_HZ", defaults.audio_sample_rate_hz
-            ),
-            audio_channels=_int_env(
-                "AUDIO_CHANNELS", defaults.audio_channels
-            ),
+            audio_sample_rate_hz=_int_env("AUDIO_SAMPLE_RATE_HZ", defaults.audio_sample_rate_hz),
+            audio_channels=_int_env("AUDIO_CHANNELS", defaults.audio_channels),
             audio_capture_seconds=_float_env(
                 "AUDIO_CAPTURE_SECONDS", defaults.audio_capture_seconds
             ),
-            audio_input_device=os.getenv(
-                "AUDIO_INPUT_DEVICE", defaults.audio_input_device
-            ),
-            audio_output_device=os.getenv(
-                "AUDIO_OUTPUT_DEVICE", defaults.audio_output_device
-            ),
-
+            audio_input_device=os.getenv("AUDIO_INPUT_DEVICE", defaults.audio_input_device),
+            audio_output_device=os.getenv("AUDIO_OUTPUT_DEVICE", defaults.audio_output_device),
             # openSMILE / affect
-            opensmile_executable=os.getenv(
-                "OPENSMILE_EXECUTABLE", defaults.opensmile_executable
-            ),
+            opensmile_executable=os.getenv("OPENSMILE_EXECUTABLE", defaults.opensmile_executable),
             affect_detector_backend=os.getenv(
                 "AFFECT_DETECTOR_BACKEND", defaults.affect_detector_backend
             ),
@@ -228,29 +192,20 @@ class Settings:
                 "AFFECT_CLASSIFIER_PATH",
                 defaults.affect_classifier_path,
             ),
-
             # Policy
             adaptive_lead_time_enabled=_bool_env(
                 "ADAPTIVE_LEAD_TIME_ENABLED",
                 defaults.adaptive_lead_time_enabled,
             ),
-            lead_time_default=_int_env(
-                "LEAD_TIME_DEFAULT", defaults.lead_time_default
-            ),
-            lead_time_min=_int_env(
-                "LEAD_TIME_MIN", defaults.lead_time_min
-            ),
-            lead_time_max=_int_env(
-                "LEAD_TIME_MAX", defaults.lead_time_max
-            ),
+            lead_time_default=_int_env("LEAD_TIME_DEFAULT", defaults.lead_time_default),
+            lead_time_min=_int_env("LEAD_TIME_MIN", defaults.lead_time_min),
+            lead_time_max=_int_env("LEAD_TIME_MAX", defaults.lead_time_max),
             alpha=_float_env("ALPHA", defaults.alpha),
             deadline_proximity_hours=_int_env(
                 "DEADLINE_PROXIMITY_HOURS",
                 defaults.deadline_proximity_hours,
             ),
-            context_top_k=_int_env(
-                "CONTEXT_TOP_K", defaults.context_top_k
-            ),
+            context_top_k=_int_env("CONTEXT_TOP_K", defaults.context_top_k),
             grace_window_minutes=_int_env(
                 "GRACE_WINDOW_MINUTES",
                 defaults.grace_window_minutes,
@@ -267,7 +222,6 @@ class Settings:
                 "DELIVERY_FAILED_QUEUE_BOUND",
                 defaults.delivery_failed_queue_bound,
             ),
-
             # Logging
             log_level=os.getenv("LOG_LEVEL", defaults.log_level),
         )
@@ -277,4 +231,3 @@ class Settings:
 def get_settings() -> Settings:
     """Return the immutable settings snapshot used by the running process."""
     return Settings.from_env()
-

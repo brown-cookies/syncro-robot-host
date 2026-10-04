@@ -21,12 +21,14 @@ classification and boundary behavior.
 
 from __future__ import annotations
 
-from concurrent.futures import Future, ThreadPoolExecutor, TimeoutError as FutureTimeoutError
+from collections.abc import Callable
+from concurrent.futures import Future, ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FutureTimeoutError
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from threading import Lock
 from time import monotonic, time
-from typing import Any, Callable, cast
+from typing import Any, cast
 from uuid import uuid4
 
 import numpy as np
@@ -36,7 +38,6 @@ from adapters.llm.ollama_adapter import LLMAdapterError
 from adapters.stt.whisper_adapter import STTAdapterError
 from adapters.tts.piper_adapter import TTSAdapterError
 from pipeline.contracts import DecisionTraceRecord
-
 from pipeline.graph import invoke_dialogue
 
 
@@ -206,8 +207,9 @@ class InteractionRunner:
         self._tts_executor.shutdown(wait=False, cancel_futures=True)
         self._tts_executor = None
 
-
-    def run(self, *, session: SessionContext, audio: np.ndarray, sample_rate: int) -> InteractionResult:
+    def run(
+        self, *, session: SessionContext, audio: np.ndarray, sample_rate: int
+    ) -> InteractionResult:
         """Run one full interaction and return its result.
 
         All graph, adapter, and runner-stage failures are translated into
@@ -339,7 +341,7 @@ class InteractionRunner:
                 "trace_id": uuid4(),
                 "session_id": session.session_id,
                 "user_id": session.user_id,
-                "timestamp": datetime.now(timezone.utc),
+                "timestamp": datetime.now(UTC),
                 "degradation_reason": reason,
                 "network_event": None,
                 "latency_ms": 0.0,
@@ -384,4 +386,6 @@ class InteractionRunner:
         if session.wake_word_detected_at is not None and session.clock_offset_ms is not None:
             wake_word_on_host_clock_ms = session.wake_word_detected_at + session.clock_offset_ms
             return max(0.0, tts_completed_epoch_ms - wake_word_on_host_clock_ms), "wake_word_to_tts"
-        return max(0.0, (tts_completed_monotonic - session.started_monotonic) * 1000.0), "host_observed_only"
+        return max(
+            0.0, (tts_completed_monotonic - session.started_monotonic) * 1000.0
+        ), "host_observed_only"

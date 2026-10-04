@@ -31,8 +31,7 @@ def test_device_id_raises_before_authentication() -> None:
 def test_authenticate_stores_identity_on_success() -> None:
     connection = Connection(authenticate=_fixed_identity_authenticator)
     identity = connection.authenticate({"Authorization": "Bearer valid-token"})
-    assert identity == DeviceIdentity(
-        device_id="edge-01", user_id="wp103-demo-user")
+    assert identity == DeviceIdentity(device_id="edge-01", user_id="wp103-demo-user")
     assert connection.is_authenticated is True
     assert connection.device_id == "edge-01"
     assert connection.user_id == "wp103-demo-user"
@@ -60,8 +59,7 @@ def test_authenticate_allows_retry_after_a_failed_attempt() -> None:
         connection.authenticate({"Authorization": "Bearer wrong-token"})
     # a failed attempt leaves the connection in NEW, not a rejected state
     identity = connection.authenticate({"Authorization": "Bearer valid-token"})
-    assert identity == DeviceIdentity(
-        device_id="edge-01", user_id="wp103-demo-user")
+    assert identity == DeviceIdentity(device_id="edge-01", user_id="wp103-demo-user")
 
 
 def test_clock_offset_is_none_before_sync() -> None:
@@ -73,30 +71,22 @@ def test_record_clock_sync_computes_spec_7_4_midpoint_offset() -> None:
     connection = Connection(authenticate=_fixed_identity_authenticator)
     # edge sends at 1000, host receives at 1050, host replies at 1060:
     # offset = ((1050 - 1000) + (1060 - 1000)) / 2 = (50 + 60) / 2 = 55
-    offset = connection.record_clock_sync(
-        edge_send_ms=1000, host_recv_ms=1050, host_send_ms=1060
-    )
+    offset = connection.record_clock_sync(edge_send_ms=1000, host_recv_ms=1050, host_send_ms=1060)
     assert offset == 55.0
     assert connection.clock_offset_ms == 55.0
 
 
 def test_record_clock_sync_handles_negative_offset() -> None:
     connection = Connection(authenticate=_fixed_identity_authenticator)
-    offset = connection.record_clock_sync(
-        edge_send_ms=2000, host_recv_ms=1950, host_send_ms=1960
-    )
+    offset = connection.record_clock_sync(edge_send_ms=2000, host_recv_ms=1950, host_send_ms=1960)
     assert offset == -45.0
 
 
 def test_record_clock_sync_rejects_a_second_call() -> None:
     connection = Connection(authenticate=_fixed_identity_authenticator)
-    connection.record_clock_sync(
-        edge_send_ms=1000, host_recv_ms=1050, host_send_ms=1060
-    )
+    connection.record_clock_sync(edge_send_ms=1000, host_recv_ms=1050, host_send_ms=1060)
     with pytest.raises(ClockSyncError):
-        connection.record_clock_sync(
-            edge_send_ms=2000, host_recv_ms=1950, host_send_ms=1960
-        )
+        connection.record_clock_sync(edge_send_ms=2000, host_recv_ms=1950, host_send_ms=1960)
     # the original offset is untouched by the rejected second call
     assert connection.clock_offset_ms == 55.0
 

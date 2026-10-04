@@ -55,6 +55,7 @@ def make_policy_node(
     lead_time_max: float = LEAD_TIME_MAX_MINUTES,
 ):
     """Create the policy graph node with its injected policy logic."""
+
     def policy_node(state: DialogueState) -> DialogueState:
         """Apply policy decisions to the current dialogue state."""
         intent = state.get("intent")
@@ -115,9 +116,7 @@ def make_policy_node(
             "policy_rule": rule,
             "action_taken": action,
             "lead_time_min": lead_time,
-            "reminder_outcome": (
-                "pending" if governed else "n/a"
-            ),
+            "reminder_outcome": ("pending" if governed else "n/a"),
         }
 
     return policy_node

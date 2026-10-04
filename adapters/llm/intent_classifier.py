@@ -11,8 +11,6 @@ from config.settings import Settings, get_settings
 from pipeline.contracts import ALLOWED_INTENTS
 
 
-
-
 class IntentClassifierError(RuntimeError):
     """Raised when intent classification cannot produce a valid result."""
 
@@ -35,7 +33,7 @@ class OllamaIntentClassifier:
         """Classify the supplied input using the configured classifier."""
         prompt = f"""You are a strict SYNCRO intent classifier.
 Classify the user's utterance into exactly one of these intents:
-{', '.join(sorted(ALLOWED_INTENTS))}
+{", ".join(sorted(ALLOWED_INTENTS))}
 
 Return ONLY valid JSON with this shape:
 {{"intent":"...","confidence":0.0,"slots":{{}}}}
@@ -75,14 +73,20 @@ User utterance:
         slots = parsed.get("slots", {})
         if intent not in ALLOWED_INTENTS:
             raise IntentClassifierError(f"Invalid intent returned by model: {intent!r}")
-        if isinstance(confidence, bool) or not isinstance(confidence, (int, float)) or not 0 <= float(confidence) <= 1:
+        if (
+            isinstance(confidence, bool)
+            or not isinstance(confidence, (int, float))
+            or not 0 <= float(confidence) <= 1
+        ):
             raise IntentClassifierError(f"Invalid confidence returned by model: {confidence!r}")
         if not isinstance(slots, dict):
             raise IntentClassifierError("Intent classifier returned non-object slots.")
         if intent == "snooze_reminder":
             value = slots.get("snooze_minutes")
             if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
-                raise IntentClassifierError("snooze_reminder requires positive integer snooze_minutes.")
+                raise IntentClassifierError(
+                    "snooze_reminder requires positive integer snooze_minutes."
+                )
 
         return str(intent), float(confidence), dict(slots)
 
@@ -105,7 +109,9 @@ User utterance:
             try:
                 value = json.loads(match.group(0))
             except json.JSONDecodeError as nested:
-                raise IntentClassifierError("Ollama intent response was not valid JSON.") from nested
+                raise IntentClassifierError(
+                    "Ollama intent response was not valid JSON."
+                ) from nested
         if not isinstance(value, dict):
             raise IntentClassifierError("Ollama intent response must be a JSON object.")
         return value

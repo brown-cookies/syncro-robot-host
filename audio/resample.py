@@ -58,11 +58,9 @@ def to_pcm16_16k(audio: np.ndarray, rate: int) -> np.ndarray:
     """
     samples = np.asarray(audio, dtype=np.float64)
     if samples.ndim != 1:
-        raise ValueError(
-            f"to_pcm16_16k expects mono (1-D) audio, got shape {samples.shape}")
+        raise ValueError(f"to_pcm16_16k expects mono (1-D) audio, got shape {samples.shape}")
     if rate <= 0:
-        raise ValueError(
-            f"to_pcm16_16k requires a positive sample rate, got {rate}")
+        raise ValueError(f"to_pcm16_16k requires a positive sample rate, got {rate}")
 
     if samples.size == 0:
         return np.zeros(0, dtype=np.int16)
@@ -70,8 +68,7 @@ def to_pcm16_16k(audio: np.ndarray, rate: int) -> np.ndarray:
     if rate == TARGET_SAMPLE_RATE_HZ:
         resampled = samples
     else:
-        target_length = max(
-            1, round(samples.size * TARGET_SAMPLE_RATE_HZ / rate))
+        target_length = max(1, round(samples.size * TARGET_SAMPLE_RATE_HZ / rate))
         source_times = np.arange(samples.size) / rate
         target_times = np.arange(target_length) / TARGET_SAMPLE_RATE_HZ
         resampled = np.interp(target_times, source_times, samples)
@@ -96,12 +93,10 @@ def chunk_100ms(pcm: np.ndarray) -> list[bytes]:
     """
     pcm = np.asarray(pcm, dtype=np.int16)
     if pcm.ndim != 1:
-        raise ValueError(
-            f"chunk_100ms expects mono (1-D) PCM, got shape {pcm.shape}")
+        raise ValueError(f"chunk_100ms expects mono (1-D) PCM, got shape {pcm.shape}")
 
     little_endian = pcm.astype("<i2", copy=False)
     raw = little_endian.tobytes()
     return [
-        raw[offset: offset + BYTES_PER_FRAME]
-        for offset in range(0, len(raw), BYTES_PER_FRAME)
+        raw[offset : offset + BYTES_PER_FRAME] for offset in range(0, len(raw), BYTES_PER_FRAME)
     ]

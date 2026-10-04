@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 
 from .dataset import validate_feature_table
-from .evaluate import DEFAULT_N_SPLITS, DEPLOYMENT_THRESHOLD, evaluate_held_out, evaluate_ravdess
+from .evaluate import DEFAULT_N_SPLITS, DEPLOYMENT_THRESHOLD, evaluate_ravdess
 from .model import build_mlp_pipeline, build_svc_pipeline
 
 

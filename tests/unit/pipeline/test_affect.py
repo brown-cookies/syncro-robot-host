@@ -33,17 +33,13 @@ def test_affect_node_uses_same_audio_contract():
 
 def test_affect_node_rejects_invalid_detector_level():
     """Verify that invalid detector output degrades instead of aborting the turn."""
-    result = make_affect_node(FakeAffect("medium"))(
-        {"audio": [1], "sample_rate": 16000}
-    )
+    result = make_affect_node(FakeAffect("medium"))({"audio": [1], "sample_rate": 16000})
     assert result == {"affect_level": "Low", "degradation_reason": "affect_detector_failure"}
 
 
 def test_affect_node_degrades_when_detector_fails():
     """Verify that detector failures are converted to a safe fallback level."""
-    result = make_affect_node(FailingAffect())(
-        {"audio": [1], "sample_rate": 16000}
-    )
+    result = make_affect_node(FailingAffect())({"audio": [1], "sample_rate": 16000})
     assert result == {"affect_level": "Low", "degradation_reason": "affect_detector_failure"}
 
 
@@ -55,7 +51,5 @@ def test_affect_node_rejects_missing_audio():
 
 def test_affect_node_preserves_genuine_low_without_degradation():
     """Verify a genuine Low classifier result carries no degradation reason."""
-    result = make_affect_node(FakeAffect("Low"))(
-        {"audio": [1], "sample_rate": 16000}
-    )
+    result = make_affect_node(FakeAffect("Low"))({"audio": [1], "sample_rate": 16000})
     assert result == {"affect_level": "Low", "degradation_reason": None}

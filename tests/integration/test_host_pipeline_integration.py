@@ -30,6 +30,7 @@ def make_wav_bytes() -> bytes:
 
 def install_fake_runtime(monkeypatch):
     """Install the controlled fake runtime dependencies used by the integration test."""
+
     class FakeWhisperModel:
         def __init__(self, model_size, device, compute_type):
             """Initialize the FakeWhisperModel and establish its runtime state."""

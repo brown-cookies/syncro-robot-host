@@ -36,9 +36,7 @@ def verify_runtime(
     prediction = model.predict(sample)
     label = str(prediction[0])
     if label not in ALLOWED_LEVELS:
-        raise AssertionError(
-            f"Sample prediction returned an unexpected affect level: {label!r}"
-        )
+        raise AssertionError(f"Sample prediction returned an unexpected affect level: {label!r}")
 
     metrics = json.loads(Path(metrics_path).read_text(encoding="utf-8"))
     try:
@@ -84,9 +82,7 @@ def write_runtime_verification(payload: dict[str, object], output_path: str | Pa
 def _parser() -> argparse.ArgumentParser:
     """Build the command-line parser for the runtime verification producer."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--model", type=Path, default=Path("models/affect/affect_svc_v1.joblib")
-    )
+    parser.add_argument("--model", type=Path, default=Path("models/affect/affect_svc_v1.joblib"))
     parser.add_argument(
         "--metrics", type=Path, default=Path("evidences/ml/experiment/metrics.json")
     )

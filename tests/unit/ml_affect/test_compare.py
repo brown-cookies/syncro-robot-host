@@ -12,7 +12,15 @@ def test_compare_reports_both_models_on_same_groupkfold(tmp_path):
     vectors = []
     for speaker_index in range(4):
         for clip_index, (source, target) in enumerate(labels):
-            rows.append([f"clip_{speaker_index}_{clip_index}.wav", "RAVDESS", f"s{speaker_index}", source, target])
+            rows.append(
+                [
+                    f"clip_{speaker_index}_{clip_index}.wav",
+                    "RAVDESS",
+                    f"s{speaker_index}",
+                    source,
+                    target,
+                ]
+            )
             vectors.append([speaker_index, clip_index] + [0.0] * 86)
     with manifest.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
@@ -23,6 +31,7 @@ def test_compare_reports_both_models_on_same_groupkfold(tmp_path):
         writer.writerow([f"feature_{index:02d}" for index in range(88)])
         writer.writerows(vectors)
     from ml.affect.dataset import write_feature_alignment_sidecar
+
     write_feature_alignment_sidecar(manifest, features)
 
     result = compare_ravdess_models(features, manifest, n_splits=4)

@@ -12,9 +12,10 @@ from __future__ import annotations
 import hmac
 import json
 import logging
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Literal, Mapping
+from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
@@ -105,9 +106,7 @@ async def ingest_task(
     deps: IngestDeps = Depends(get_ingest_deps),
 ) -> dict[str, Any]:
     """Accept one externally sourced task, idempotently."""
-    token_source = _authenticate(
-        request.headers.get("authorization"), deps.source_tokens
-    )
+    token_source = _authenticate(request.headers.get("authorization"), deps.source_tokens)
 
     try:
         body = await request.json()
@@ -143,8 +142,10 @@ async def ingest_task(
     response.status_code = 201 if created else 200
     logger.info(
         "[ingest] source=%s external_id=%s outcome=%s task_id=%s",
-        payload.source, payload.external_id,
-        "created" if created else "duplicate", task["task_id"],
+        payload.source,
+        payload.external_id,
+        "created" if created else "duplicate",
+        task["task_id"],
     )
     return {
         "task_id": task["task_id"],

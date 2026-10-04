@@ -27,8 +27,11 @@ from storage.sqlite_store import SQLiteStore
 
 TOKEN = "demo-connector-token-123456"
 BODY = {
-    "source": "email-sim", "external_id": "msg-001", "title": "Send the weekly report",
-    "priority": "high", "due_at": "2026-10-01T09:00:00+08:00",
+    "source": "email-sim",
+    "external_id": "msg-001",
+    "title": "Send the weekly report",
+    "priority": "high",
+    "due_at": "2026-10-01T09:00:00+08:00",
     "created_at": "2026-09-24T08:00:00+08:00",
 }
 
@@ -46,8 +49,18 @@ def main() -> None:
             ("valid request           ", client.post("/v1/tasks/ingest", json=BODY, headers=good)),
             ("same (source, ext_id)   ", client.post("/v1/tasks/ingest", json=BODY, headers=good)),
             ("no token                ", client.post("/v1/tasks/ingest", json=BODY)),
-            ("unknown field           ", client.post("/v1/tasks/ingest", json={**BODY, "x": 1}, headers=good)),
-            ("missing title           ", client.post("/v1/tasks/ingest", json={k: v for k, v in BODY.items() if k != "title"}, headers=good)),
+            (
+                "unknown field           ",
+                client.post("/v1/tasks/ingest", json={**BODY, "x": 1}, headers=good),
+            ),
+            (
+                "missing title           ",
+                client.post(
+                    "/v1/tasks/ingest",
+                    json={k: v for k, v in BODY.items() if k != "title"},
+                    headers=good,
+                ),
+            ),
         ]
         for label, response in cases:
             print(f"[ingest] {label} -> {response.status_code}")

@@ -108,8 +108,7 @@ class ConditionReportMessage(_Message):
     type: Literal["condition_report"] = "condition_report"
     session_id: str | None
     condition: ConditionReportCondition
-    detected_at: int = Field(
-        ge=0, description="uint64 ms epoch, edge-local clock.")
+    detected_at: int = Field(ge=0, description="uint64 ms epoch, edge-local clock.")
 
 
 class ErrorMessage(_Message):
@@ -188,9 +187,7 @@ def parse_uplink_message(raw: dict) -> UplinkMessage:
     message_type = raw.get("type")
     model = UPLINK_MESSAGE_TYPES.get(message_type)  # type: ignore[arg-type]
     if model is None:
-        raise UnknownMessageTypeError(
-            f"unrecognized uplink message type: {message_type!r}"
-        )
+        raise UnknownMessageTypeError(f"unrecognized uplink message type: {message_type!r}")
     return model.model_validate(raw)
 
 

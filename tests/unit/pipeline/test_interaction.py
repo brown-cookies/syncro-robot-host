@@ -8,7 +8,7 @@ per Phase 6, and the runner is its single normal-path trace writer.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 import numpy as np
@@ -23,7 +23,7 @@ def make_pending_trace(**overrides):
         "trace_id": uuid4(),
         "session_id": "s1",
         "user_id": "u1",
-        "timestamp": datetime.now(timezone.utc),
+        "timestamp": datetime.now(UTC),
         "intent": "smalltalk",
         "intent_confidence": 0.9,
         "retrieved_context_ids": [],
@@ -46,11 +46,20 @@ class FakeGraph:
     built against that interface now (see module docstring).
     """
 
-    def __init__(self, *, tts_text="Sure, I can help with that.", pending_trace=None, stage_timings_s=None, call_order=None):
+    def __init__(
+        self,
+        *,
+        tts_text="Sure, I can help with that.",
+        pending_trace=None,
+        stage_timings_s=None,
+        call_order=None,
+    ):
         self.received_state: dict | None = None
         self._tts_text = tts_text
         self._pending_trace = pending_trace if pending_trace is not None else make_pending_trace()
-        self._stage_timings_s = stage_timings_s if stage_timings_s is not None else {"stt": 0.01, "affect": 0.02}
+        self._stage_timings_s = (
+            stage_timings_s if stage_timings_s is not None else {"stt": 0.01, "affect": 0.02}
+        )
         self._call_order = call_order
 
     def invoke(self, state):
@@ -147,7 +156,9 @@ def test_runner_executes_a_full_fake_interaction_without_transport_code():
     graph = FakeGraph()
     tts = FakeTTS()
     store = FakeStore()
-    runner = InteractionRunner(graph=graph, store=store, tts=tts, resampler=to_pcm16_16k, clock=FakeClock())
+    runner = InteractionRunner(
+        graph=graph, store=store, tts=tts, resampler=to_pcm16_16k, clock=FakeClock()
+    )
 
     result = runner.run(
         session=make_session(),
@@ -170,7 +181,9 @@ def test_runner_invokes_the_graph_with_the_supplied_audio_and_ids():
     )
     audio = np.ones(320, dtype=np.float32)
 
-    runner.run(session=make_session(session_id="s-x", user_id="u-x"), audio=audio, sample_rate=16_000)
+    runner.run(
+        session=make_session(session_id="s-x", user_id="u-x"), audio=audio, sample_rate=16_000
+    )
 
     assert graph.received_state is not None
     assert graph.received_state["session_id"] == "s-x"
@@ -182,7 +195,9 @@ def test_runner_invokes_the_graph_with_the_supplied_audio_and_ids():
 def test_runner_synthesizes_the_graphs_response_text():
     tts = FakeTTS()
     graph = FakeGraph(tts_text="The meeting is at 3pm.")
-    runner = InteractionRunner(graph=graph, store=FakeStore(), tts=tts, resampler=to_pcm16_16k, clock=FakeClock())
+    runner = InteractionRunner(
+        graph=graph, store=FakeStore(), tts=tts, resampler=to_pcm16_16k, clock=FakeClock()
+    )
 
     runner.run(session=make_session(), audio=np.zeros(160, dtype=np.float32), sample_rate=16_000)
 
@@ -198,7 +213,9 @@ def test_result_contains_stage_timings_from_graph_and_from_tts():
         graph=graph, store=FakeStore(), tts=FakeTTS(), resampler=to_pcm16_16k, clock=FakeClock()
     )
 
-    result = runner.run(session=make_session(), audio=np.zeros(160, dtype=np.float32), sample_rate=16_000)
+    result = runner.run(
+        session=make_session(), audio=np.zeros(160, dtype=np.float32), sample_rate=16_000
+    )
 
     assert result.stage_timings_s["stt"] == 0.011
     assert result.stage_timings_s["affect"] == 0.022
@@ -215,7 +232,9 @@ def test_trace_is_written_after_tts_not_before():
     graph = FakeGraph(call_order=call_order)
     tts = FakeTTS(call_order=call_order)
     store = FakeStore(call_order=call_order)
-    runner = InteractionRunner(graph=graph, store=store, tts=tts, resampler=to_pcm16_16k, clock=FakeClock())
+    runner = InteractionRunner(
+        graph=graph, store=store, tts=tts, resampler=to_pcm16_16k, clock=FakeClock()
+    )
 
     runner.run(session=make_session(), audio=np.zeros(160, dtype=np.float32), sample_rate=16_000)
 
@@ -226,7 +245,7 @@ def test_trace_latency_is_finalized_from_tts_timing_before_persist():
     call_order: list[str] = []
 
     class AdvancingTTS(FakeTTS):
-        def __init__(self, clock: "SteppedClock"):
+        def __init__(self, clock: SteppedClock):
             super().__init__(call_order=call_order)
             self._clock = clock
 
@@ -275,7 +294,11 @@ def test_ensure_user_is_called_before_saving_the_trace():
 
     ordered_store = OrderedFakeStore(call_order=call_order)
     runner = InteractionRunner(
-        graph=FakeGraph(), store=ordered_store, tts=FakeTTS(), resampler=to_pcm16_16k, clock=FakeClock()
+        graph=FakeGraph(),
+        store=ordered_store,
+        tts=FakeTTS(),
+        resampler=to_pcm16_16k,
+        clock=FakeClock(),
     )
 
     runner.run(session=make_session(), audio=np.zeros(160, dtype=np.float32), sample_rate=16_000)
@@ -291,9 +314,13 @@ def test_result_contains_16k_int16_resampled_audio():
     raw_audio = np.zeros(native_rate, dtype=np.float32)  # 1 second at Piper's native rate
     graph = FakeGraph()
     tts = FakeTTS(audio=raw_audio, native_rate=native_rate)
-    runner = InteractionRunner(graph=graph, store=FakeStore(), tts=tts, resampler=to_pcm16_16k, clock=FakeClock())
+    runner = InteractionRunner(
+        graph=graph, store=FakeStore(), tts=tts, resampler=to_pcm16_16k, clock=FakeClock()
+    )
 
-    result = runner.run(session=make_session(), audio=np.zeros(160, dtype=np.float32), sample_rate=16_000)
+    result = runner.run(
+        session=make_session(), audio=np.zeros(160, dtype=np.float32), sample_rate=16_000
+    )
 
     assert result.tts_audio.dtype == np.int16
     assert result.tts_sample_rate == 16_000
@@ -338,7 +365,11 @@ def test_latency_uses_wake_word_to_tts_when_clock_sync_available():
 
 def test_latency_never_goes_negative():
     runner = InteractionRunner(
-        graph=FakeGraph(), store=FakeStore(), tts=FakeTTS(), resampler=to_pcm16_16k, clock=FakeClock(start=0.0)
+        graph=FakeGraph(),
+        store=FakeStore(),
+        tts=FakeTTS(),
+        resampler=to_pcm16_16k,
+        clock=FakeClock(start=0.0),
     )
     # started_monotonic *after* the clock's first reading would otherwise
     # produce a negative interval; the runner must clamp to zero.
@@ -443,11 +474,17 @@ def test_runner_raises_a_clear_error_when_pending_trace_is_missing():
             return update
 
     runner = InteractionRunner(
-        graph=NoTraceGraph(), store=FakeStore(), tts=FakeTTS(), resampler=to_pcm16_16k, clock=FakeClock()
+        graph=NoTraceGraph(),
+        store=FakeStore(),
+        tts=FakeTTS(),
+        resampler=to_pcm16_16k,
+        clock=FakeClock(),
     )
 
     with pytest.raises(InteractionError) as exc_info:
-        runner.run(session=make_session(), audio=np.zeros(160, dtype=np.float32), sample_rate=16_000)
+        runner.run(
+            session=make_session(), audio=np.zeros(160, dtype=np.float32), sample_rate=16_000
+        )
 
     assert exc_info.value.wire_code == "pipeline_failure"
     assert isinstance(exc_info.value.cause, KeyError)
@@ -462,7 +499,9 @@ def test_runner_rejects_an_invalid_pending_trace():
     )
 
     with pytest.raises(Exception):  # pydantic.ValidationError
-        runner.run(session=make_session(), audio=np.zeros(160, dtype=np.float32), sample_rate=16_000)
+        runner.run(
+            session=make_session(), audio=np.zeros(160, dtype=np.float32), sample_rate=16_000
+        )
 
 
 # --- F4 interaction-boundary failures ------------------------------------
@@ -484,7 +523,9 @@ def test_runner_wraps_stt_adapter_failure_with_malformed_audio_wire_code():
     )
 
     with pytest.raises(InteractionError) as exc_info:
-        runner.run(session=make_session(), audio=np.zeros(160, dtype=np.float32), sample_rate=16_000)
+        runner.run(
+            session=make_session(), audio=np.zeros(160, dtype=np.float32), sample_rate=16_000
+        )
 
     error = exc_info.value
     assert error.stage == "stt"
@@ -510,7 +551,9 @@ def test_runner_wraps_llm_failure_with_pipeline_failure_wire_code():
     )
 
     with pytest.raises(InteractionError) as exc_info:
-        runner.run(session=make_session(), audio=np.zeros(160, dtype=np.float32), sample_rate=16_000)
+        runner.run(
+            session=make_session(), audio=np.zeros(160, dtype=np.float32), sample_rate=16_000
+        )
 
     error = exc_info.value
     assert error.stage == "llm"
@@ -536,7 +579,9 @@ def test_runner_wraps_tts_failure_with_pipeline_failure_wire_code():
     )
 
     with pytest.raises(InteractionError) as exc_info:
-        runner.run(session=make_session(), audio=np.zeros(160, dtype=np.float32), sample_rate=16_000)
+        runner.run(
+            session=make_session(), audio=np.zeros(160, dtype=np.float32), sample_rate=16_000
+        )
 
     error = exc_info.value
     assert error.stage == "tts"
@@ -560,7 +605,9 @@ def test_runner_wraps_unexpected_node_value_error_without_raw_exception_leak():
     )
 
     with pytest.raises(InteractionError) as exc_info:
-        runner.run(session=make_session(), audio=np.zeros(160, dtype=np.float32), sample_rate=16_000)
+        runner.run(
+            session=make_session(), audio=np.zeros(160, dtype=np.float32), sample_rate=16_000
+        )
 
     error = exc_info.value
     assert error.stage == "pipeline"
@@ -583,7 +630,9 @@ def test_runner_persists_degraded_trace_for_pipeline_failure():
     )
 
     with pytest.raises(InteractionError):
-        runner.run(session=make_session(), audio=np.zeros(160, dtype=np.float32), sample_rate=16_000)
+        runner.run(
+            session=make_session(), audio=np.zeros(160, dtype=np.float32), sample_rate=16_000
+        )
 
     assert len(store.saved_degraded_traces) == 1
     degraded = store.saved_degraded_traces[0]
@@ -597,16 +646,18 @@ def test_runner_degraded_trace_has_no_normal_interaction_fields():
     class FailingTTS(FakeTTS):
         def synthesize(self, text):
             from adapters.tts.piper_adapter import TTSAdapterError
+
             raise TTSAdapterError("voice unavailable")
 
     store = FakeStore()
     runner = InteractionRunner(
-        graph=FakeGraph(), store=store, tts=FailingTTS(),
-        resampler=to_pcm16_16k, clock=FakeClock()
+        graph=FakeGraph(), store=store, tts=FailingTTS(), resampler=to_pcm16_16k, clock=FakeClock()
     )
 
     with pytest.raises(InteractionError):
-        runner.run(session=make_session(), audio=np.zeros(160, dtype=np.float32), sample_rate=16_000)
+        runner.run(
+            session=make_session(), audio=np.zeros(160, dtype=np.float32), sample_rate=16_000
+        )
 
     degraded = store.saved_degraded_traces[0]
     assert "intent" not in degraded

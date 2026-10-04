@@ -36,8 +36,7 @@ def test_start_audio_requires_wake_word_detected_at() -> None:
 
 def test_start_audio_rejects_a_negative_timestamp() -> None:
     with pytest.raises(ValidationError):
-        StartAudioMessage(session_id="session-1",
-                          user_id="user-1", wake_word_detected_at=-1)
+        StartAudioMessage(session_id="session-1", user_id="user-1", wake_word_detected_at=-1)
 
 
 def test_start_audio_rejects_unknown_fields() -> None:
@@ -74,9 +73,7 @@ def test_tts_audio_end_mirrors_end_audio_shape() -> None:
 
 
 def test_condition_report_allows_a_null_session_id() -> None:
-    message = ConditionReportMessage(
-        session_id=None, condition="mute_engaged", detected_at=123
-    )
+    message = ConditionReportMessage(session_id=None, condition="mute_engaged", detected_at=123)
     assert message.session_id is None
 
 
@@ -100,14 +97,11 @@ def test_error_message_rejects_a_code_outside_spec_7_3s_enum() -> None:
 
 def test_clock_sync_request_carries_edge_send_ms() -> None:
     message = ClockSyncRequestMessage(edge_send_ms=1000)
-    assert message.model_dump() == {
-        "type": "clock_sync_request", "edge_send_ms": 1000}
+    assert message.model_dump() == {"type": "clock_sync_request", "edge_send_ms": 1000}
 
 
 def test_clock_sync_response_echoes_and_adds_host_clocks() -> None:
-    message = ClockSyncResponseMessage(
-        edge_send_ms=1000, host_recv_ms=1050, host_send_ms=1060
-    )
+    message = ClockSyncResponseMessage(edge_send_ms=1000, host_recv_ms=1050, host_send_ms=1060)
     assert message.model_dump() == {
         "type": "clock_sync_response",
         "edge_send_ms": 1000,
@@ -149,8 +143,7 @@ def test_parse_uplink_message_dispatches_by_type_field() -> None:
 
 def test_parse_uplink_message_rejects_an_unrecognized_type() -> None:
     with pytest.raises(UnknownMessageTypeError):
-        parse_uplink_message(
-            {"type": "not_a_real_message", "session_id": "session-1"})
+        parse_uplink_message({"type": "not_a_real_message", "session_id": "session-1"})
 
 
 def test_parse_uplink_message_propagates_validation_errors_from_the_matched_model() -> None:
@@ -158,8 +151,7 @@ def test_parse_uplink_message_propagates_validation_errors_from_the_matched_mode
     # this should raise the model's own ValidationError, not
     # UnknownMessageTypeError.
     with pytest.raises(ValidationError):
-        parse_uplink_message(
-            {"type": "start_audio", "session_id": "session-1"})
+        parse_uplink_message({"type": "start_audio", "session_id": "session-1"})
 
 
 def test_parse_uplink_message_rejects_a_missing_type_field() -> None:

@@ -18,7 +18,9 @@ def test_detector_returns_allowed_level(monkeypatch):
     detector.model = FakeModel()
     monkeypatch.setattr(
         "adapters.affect.classifier_detector.extract_features",
-        lambda audio, sample_rate: type("R", (), {"vector": np.zeros(88), "elapsed_seconds": 0.001})(),
+        lambda audio, sample_rate: type(
+            "R", (), {"vector": np.zeros(88), "elapsed_seconds": 0.001}
+        )(),
     )
     assert detector.detect(np.zeros(16000, dtype=np.float32), 16000) == "Moderate"
 

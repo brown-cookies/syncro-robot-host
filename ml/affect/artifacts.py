@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import json
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -13,20 +13,24 @@ import sklearn
 ARTIFACT_VERSION = "affect_svc_v1"
 
 
-def save_model_artifact(model: Any, path: str | Path, *, extra_metadata: dict[str, Any] | None = None) -> Path:
+def save_model_artifact(
+    model: Any, path: str | Path, *, extra_metadata: dict[str, Any] | None = None
+) -> Path:
     """Persist a trained affect model artifact with its metadata."""
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump(model, target)
     metadata = {
         "artifact_version": ARTIFACT_VERSION,
-        "created_at_utc": datetime.now(timezone.utc).isoformat(),
+        "created_at_utc": datetime.now(UTC).isoformat(),
         "scikit_learn_version": sklearn.__version__,
     }
     if extra_metadata:
         metadata.update(extra_metadata)
     metadata_path = target.with_suffix(target.suffix + ".json")
-    metadata_path.write_text(json.dumps(metadata, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    metadata_path.write_text(
+        json.dumps(metadata, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     return target
 
 

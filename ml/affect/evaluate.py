@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from collections.abc import Callable
 from typing import Any, cast
 
 import numpy as np
@@ -38,20 +38,16 @@ def evaluate_predictions(
     n_splits: int | None,
 ) -> EvaluationResult:
     """Calculate fixed WP-104 macro-F1, per-class F1, and a 3x3 confusion matrix."""
-    true_values = [str(value)
-                   for value in np.asarray(y_true, dtype=object).tolist()]
-    pred_values = [str(value)
-                   for value in np.asarray(y_pred, dtype=object).tolist()]
+    true_values = [str(value) for value in np.asarray(y_true, dtype=object).tolist()]
+    pred_values = [str(value) for value in np.asarray(y_pred, dtype=object).tolist()]
     if len(true_values) != len(pred_values):
-        raise ValueError(
-            "Evaluation labels and predictions must have equal lengths")
+        raise ValueError("Evaluation labels and predictions must have equal lengths")
     if not true_values:
         raise ValueError("Evaluation requires at least one prediction")
     labels = list(ALLOWED_LEVELS)
     unexpected = (set(true_values) | set(pred_values)) - set(labels)
     if unexpected:
-        raise ValueError(
-            f"Evaluation contains invalid affect levels: {sorted(unexpected)}")
+        raise ValueError(f"Evaluation contains invalid affect levels: {sorted(unexpected)}")
 
     macro = float(
         f1_score(
@@ -99,17 +95,14 @@ def evaluate_ravdess(
     if model_factory is None:
         model_factory = build_svc_pipeline
     if any(record.corpus != "ravdess" for record in records):
-        raise ValueError(
-            "RAVDESS GroupKFold manifest must contain RAVDESS records only")
+        raise ValueError("RAVDESS GroupKFold manifest must contain RAVDESS records only")
     features = _validate_matrix(features, len(records), "RAVDESS")
     speakers = {record.speaker_id for record in records}
     if n_splits > len(speakers):
-        raise ValueError(
-            "n_splits cannot exceed the number of distinct RAVDESS speakers")
+        raise ValueError("n_splits cannot exceed the number of distinct RAVDESS speakers")
 
     y = np.asarray([record.target_label for record in records], dtype=object)
-    groups = np.asarray(
-        [record.speaker_id for record in records], dtype=object)
+    groups = np.asarray([record.speaker_id for record in records], dtype=object)
     splitter = GroupKFold(n_splits=n_splits)
     y_true: list[str] = []
     y_pred: list[str] = []
@@ -121,9 +114,7 @@ def evaluate_ravdess(
         train_speakers = set(groups[train_idx])
         test_speakers = set(groups[test_idx])
         if train_speakers & test_speakers:
-            raise AssertionError(
-                f"Speaker leakage detected in GroupKFold fold {fold_number}"
-            )
+            raise AssertionError(f"Speaker leakage detected in GroupKFold fold {fold_number}")
         model = model_factory()
         model.fit(features[train_idx], y[train_idx])
         predictions = model.predict(features[test_idx])
@@ -132,8 +123,7 @@ def evaluate_ravdess(
 
     result = evaluate_predictions(y_true, y_pred, n_splits=n_splits)
     if len(result.y_true) != len(records):
-        raise AssertionError(
-            "OOF predictions do not cover every RAVDESS record")
+        raise AssertionError("OOF predictions do not cover every RAVDESS record")
     return result
 
 
@@ -150,10 +140,8 @@ def evaluate_held_out(
     if expected_corpus not in {"ravdess", "tess"}:
         raise ValueError(f"Unsupported held-out corpus: {corpus!r}")
     if any(record.corpus != expected_corpus for record in records):
-        raise ValueError(
-            f"Manifest contains a corpus other than {expected_corpus!r}")
-    features = _validate_matrix(
-        features, len(records), expected_corpus.upper())
+        raise ValueError(f"Manifest contains a corpus other than {expected_corpus!r}")
+    features = _validate_matrix(features, len(records), expected_corpus.upper())
     predictions = model.predict(features)
     return evaluate_predictions(
         [record.target_label for record in records],
@@ -166,27 +154,24 @@ def _validate_matrix(features: np.ndarray, record_count: int, corpus: str) -> np
     """Validate an in-memory feature matrix at the evaluation boundary."""
     matrix = np.asarray(features, dtype=np.float64)
     if matrix.ndim != 2 or matrix.shape[1] != 88:
-        raise ValueError(
-            f"{corpus} evaluation features must have exactly 88 columns")
+        raise ValueError(f"{corpus} evaluation features must have exactly 88 columns")
     if matrix.shape[0] != record_count:
         raise ValueError(
             f"{corpus} feature rows ({matrix.shape[0]}) != manifest rows ({record_count})"
         )
     if not np.isfinite(matrix).all():
-        raise ValueError(
-            f"{corpus} evaluation features must contain only finite values")
+        raise ValueError(f"{corpus} evaluation features must contain only finite values")
     return matrix
 
 
 def format_metrics(result: EvaluationResult) -> str:
     """Render stable human-readable metrics for WP-104 evidence and CLI output."""
     lines = [f"macro-F1: {result.macro_f1:.6f}"]
-    lines.extend(
-        f"{label} F1: {result.per_class_f1[label]:.6f}" for label in ALLOWED_LEVELS
-    )
+    lines.extend(f"{label} F1: {result.per_class_f1[label]:.6f}" for label in ALLOWED_LEVELS)
     lines.append("confusion matrix [Low, Moderate, High]:")
-    lines.extend("  " + " ".join(str(int(value)) for value in row)
-                 for row in result.confusion_matrix)
+    lines.extend(
+        "  " + " ".join(str(int(value)) for value in row) for row in result.confusion_matrix
+    )
     return "\n".join(lines)
 
 

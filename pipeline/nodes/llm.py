@@ -10,12 +10,15 @@ from pipeline.state import DialogueState
 
 def make_llm_node(llm):
     """Create the LLM graph node with its injected generation dependency."""
+
     def llm_node(state: DialogueState) -> DialogueState:
         """Generate a draft response and store it in dialogue state."""
         if state.get("proposed_action") == "clarify":
             final_response = state.get("final_response")
             if final_response is None:
-                raise RuntimeError("Node 3 clarification path requires final_response in DialogueState.")
+                raise RuntimeError(
+                    "Node 3 clarification path requires final_response in DialogueState."
+                )
             return {"draft_response": final_response, "proposed_action": "clarify"}
 
         intent = state.get("intent")
@@ -63,10 +66,9 @@ Never output motor commands or low-level hardware instructions.
         if not isinstance(proposed_action, str) or not proposed_action.strip():
             proposed_action = "respond"
 
-        response_text = _reject_unexecuted_mutation_claim(
-            intent, response_text.strip()
-        )
+        response_text = _reject_unexecuted_mutation_claim(intent, response_text.strip())
         return {"draft_response": response_text, "proposed_action": proposed_action.strip()}
+
     return llm_node
 
 
@@ -237,9 +239,19 @@ _ELLIPTICAL_CLAIM = (
     + r"\W*(?:[a-z0-9][a-z0-9']*\W+){0,2}"
     + r"(?:%(verbs)s)\b"
     + r"(?:\W*$"
-    + r"|\W+(?:" + _ELLIPTICAL_OBJECT + "|" + _ELLIPTICAL_ADJUNCT + r")\b"
-    + r"|\W+(?:" + _ELLIPTICAL_PARTICLE + r")\W+"
-    + r"(?:" + _ELLIPTICAL_OBJECT + "|" + _ELLIPTICAL_PARTICLE_TAIL + r")\b"
+    + r"|\W+(?:"
+    + _ELLIPTICAL_OBJECT
+    + "|"
+    + _ELLIPTICAL_ADJUNCT
+    + r")\b"
+    + r"|\W+(?:"
+    + _ELLIPTICAL_PARTICLE
+    + r")\W+"
+    + r"(?:"
+    + _ELLIPTICAL_OBJECT
+    + "|"
+    + _ELLIPTICAL_PARTICLE_TAIL
+    + r")\b"
     + r"|\W+[a-z0-9][a-z0-9']*\W*(?::|$))"
 )
 
@@ -307,30 +319,22 @@ _DANGLING_TAIL = re.compile(
 # its own, so a parenthetical cut this clause and it began before the break.
 # Adverbs and coordinators are deliberately absent: they can head a clause
 # whose subject really was dropped ("No problem, just added it.").
-_SUBJECTLESS_WORDS = frozenset(
-    "am is are was were be been being has have had do does did".split()
-)
+_SUBJECTLESS_WORDS = frozenset("am is are was were be been being has have had do does did".split())
 
 # Deterministic replacements. Each states the proposal without asserting any
 # completed mutation, reads as one utterance for text to speech, and is itself
 # blocked by the negation rule above, so re-running the guard over it is a
 # no-op.
 _SAFE_REPLIES = {
-    "add_task": (
-        "I have not added that yet, but I can add it to your list if you "
-        "would like."
-    ),
+    "add_task": ("I have not added that yet, but I can add it to your list if you would like."),
     "reschedule_task": (
-        "I have not moved anything yet, but I can request that new time if "
-        "you would like."
+        "I have not moved anything yet, but I can request that new time if you would like."
     ),
     "snooze_reminder": (
-        "I have not snoozed that reminder yet, but I can snooze it if you "
-        "would like."
+        "I have not snoozed that reminder yet, but I can snooze it if you would like."
     ),
     "dismiss_reminder": (
-        "I have not dismissed that reminder yet, but I can dismiss it if "
-        "you would like."
+        "I have not dismissed that reminder yet, but I can dismiss it if you would like."
     ),
 }
 
@@ -377,9 +381,7 @@ def _reject_unexecuted_mutation_claim(intent: str, response_text: str) -> str:
     normalized = normalized.casefold()
     for raw_sentence in _SENTENCE_SPLIT.split(normalized):
         sentence = raw_sentence.strip()
-        if sentence and _claims_completed_mutation(
-            sentence, verb_pattern, claim_patterns
-        ):
+        if sentence and _claims_completed_mutation(sentence, verb_pattern, claim_patterns):
             return _SAFE_REPLIES[intent]
     return response_text
 
@@ -415,17 +417,15 @@ def _leaves_claim_standing(prefix: str) -> bool:
     clause = segments[-1]
     earlier = segments[:-1]
     clause_words = _WORD.findall(clause)
-    if clause_words and all(
-        word in _SUBJECTLESS_WORDS for word in clause_words
-    ):
+    if clause_words and all(word in _SUBJECTLESS_WORDS for word in clause_words):
         scope = earlier + [clause]
     else:
-        scope = [
-            segment for segment in earlier if _DANGLING_TAIL.search(segment)
-        ]
+        scope = [segment for segment in earlier if _DANGLING_TAIL.search(segment)]
         scope.append(clause)
     window = " ".join(scope)
     return not (_NEGATION.search(window) or _PROSPECTIVE.search(window))
+
+
 # AI-BLOCK-END
 
 

@@ -78,10 +78,19 @@ def _build_old_schema_database(path: str) -> None:
                 latency_basis
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
-                "11111111-1111-1111-1111-111111111111", "s1", "u1",
-                "2026-01-01T00:00:00+00:00", "add_task", 0.9, "Low",
-                "not_imminent", "normal_delivery", "deliver", "delivered",
-                42.0, "host_observed_only",
+                "11111111-1111-1111-1111-111111111111",
+                "s1",
+                "u1",
+                "2026-01-01T00:00:00+00:00",
+                "add_task",
+                0.9,
+                "Low",
+                "not_imminent",
+                "normal_delivery",
+                "deliver",
+                "delivered",
+                42.0,
+                "host_observed_only",
             ),
         )
         conn.commit()
@@ -101,8 +110,7 @@ def test_migration_relaxes_not_null_columns_on_an_existing_database(tmp_path):
         initialize_schema(conn)
 
     with sqlite3.connect(db_path) as conn:
-        columns = {row[1]: row[3] for row in conn.execute(
-            "PRAGMA table_info(decision_trace)")}
+        columns = {row[1]: row[3] for row in conn.execute("PRAGMA table_info(decision_trace)")}
     assert columns["intent"] == 0
     assert columns["intent_confidence"] == 0
     assert columns["affect_level"] == 0
@@ -131,8 +139,7 @@ def test_save_degraded_trace_succeeds_against_an_upgraded_in_place_database(tmp_
     )
 
     rows = repo.list_for_user("u1")
-    degraded = next(
-        r for r in rows if r["trace_id"] == "22222222-2222-2222-2222-222222222222")
+    degraded = next(r for r in rows if r["trace_id"] == "22222222-2222-2222-2222-222222222222")
     assert degraded["intent"] is None
     assert degraded["deadline_proximity"] == "n/a"
 
@@ -148,8 +155,7 @@ def test_migration_preserves_the_row_that_already_existed(tmp_path):
 
     repo = DecisionTraceRepository(db)
     rows = repo.list_for_user("u1")
-    original = next(
-        r for r in rows if r["trace_id"] == "11111111-1111-1111-1111-111111111111")
+    original = next(r for r in rows if r["trace_id"] == "11111111-1111-1111-1111-111111111111")
     assert original["intent"] == "add_task"
     assert original["intent_confidence"] == 0.9
     assert original["affect_level"] == "Low"
@@ -178,10 +184,7 @@ def test_migration_failure_mid_rebuild_rolls_back_without_losing_rows(tmp_path):
             _migrate_decision_trace(conn)
 
         table_names = {
-            row[0]
-            for row in conn.execute(
-                "SELECT name FROM sqlite_master WHERE type = 'table'"
-            )
+            row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")
         }
         assert "decision_trace" in table_names
         assert "decision_trace__pre_migration" not in table_names
@@ -223,8 +226,7 @@ def test_fresh_database_is_unaffected_by_the_migration_path(tmp_path):
         initialize_schema(conn)
 
     with sqlite3.connect(db_path) as conn:
-        columns = {row[1]: row[3] for row in conn.execute(
-            "PRAGMA table_info(decision_trace)")}
+        columns = {row[1]: row[3] for row in conn.execute("PRAGMA table_info(decision_trace)")}
     assert columns["intent"] == 0
     assert columns["intent_confidence"] == 0
     assert columns["affect_level"] == 0

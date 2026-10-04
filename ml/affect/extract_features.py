@@ -4,16 +4,15 @@ from __future__ import annotations
 
 import argparse
 import csv
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 import numpy as np
 
 from .dataset import write_feature_alignment_sidecar
 from .features import EXPECTED_FEATURE_COUNT, FeatureExtractionResult, extract_features
 
-FEATURE_COLUMNS = tuple(
-    f"feature_{index:02d}" for index in range(EXPECTED_FEATURE_COUNT))
+FEATURE_COLUMNS = tuple(f"feature_{index:02d}" for index in range(EXPECTED_FEATURE_COUNT))
 
 
 def _load_audio(path: Path) -> tuple[np.ndarray, int]:
@@ -21,8 +20,7 @@ def _load_audio(path: Path) -> tuple[np.ndarray, int]:
     try:
         import soundfile as sf
     except ImportError as exc:
-        raise RuntimeError(
-            "soundfile is required for WP-104 audio extraction") from exc
+        raise RuntimeError("soundfile is required for WP-104 audio extraction") from exc
     try:
         audio, sample_rate = sf.read(path, dtype="float32", always_2d=False)
     except Exception as exc:
@@ -34,11 +32,9 @@ def _read_manifest(manifest_path: Path) -> list[dict[str, str]]:
     """Load and validate the canonical manifest rows used by batch extraction."""
     with manifest_path.open("r", encoding="utf-8", newline="") as handle:
         reader = csv.DictReader(handle)
-        required = {"audio_path", "corpus",
-                    "speaker_id", "source_label", "target_label"}
+        required = {"audio_path", "corpus", "speaker_id", "source_label", "target_label"}
         if set(reader.fieldnames or ()) != required:
-            raise ValueError(
-                "Manifest must contain exactly the canonical five columns")
+            raise ValueError("Manifest must contain exactly the canonical five columns")
         return list(reader)
 
 
@@ -46,8 +42,7 @@ def extract_manifest_features(
     manifest_path: Path,
     audio_root: Path,
     *,
-    extractor: Callable[[np.ndarray, int],
-                        FeatureExtractionResult] = extract_features,
+    extractor: Callable[[np.ndarray, int], FeatureExtractionResult] = extract_features,
     progress_every: int = 25,
     progress_label: str | None = None,
 ) -> np.ndarray:
@@ -66,11 +61,9 @@ def extract_manifest_features(
         relative_path = Path(record["audio_path"])
         audio_path = (root / relative_path).resolve()
         if root not in audio_path.parents:
-            raise ValueError(
-                f"Manifest audio path escapes dataset root: {record['audio_path']}")
+            raise ValueError(f"Manifest audio path escapes dataset root: {record['audio_path']}")
         if not audio_path.is_file():
-            raise FileNotFoundError(
-                f"Manifest audio file does not exist: {audio_path}")
+            raise FileNotFoundError(f"Manifest audio file does not exist: {audio_path}")
 
         audio, sample_rate = _load_audio(audio_path)
         result = extractor(audio, sample_rate)
@@ -94,8 +87,7 @@ def write_feature_table(matrix: np.ndarray, output_path: Path) -> None:
     """Write an 88-column floating-point feature matrix as a CSV file."""
     array = np.asarray(matrix)
     if array.ndim != 2 or array.shape[1] != EXPECTED_FEATURE_COUNT:
-        raise ValueError(
-            f"Feature matrix must have exactly {EXPECTED_FEATURE_COUNT} columns")
+        raise ValueError(f"Feature matrix must have exactly {EXPECTED_FEATURE_COUNT} columns")
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with output_path.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.writer(handle)
@@ -103,7 +95,9 @@ def write_feature_table(matrix: np.ndarray, output_path: Path) -> None:
         writer.writerows(array.tolist())
 
 
-def extract_corpus(manifest: Path, audio_root: Path, output: Path, *, progress_every: int) -> np.ndarray:
+def extract_corpus(
+    manifest: Path, audio_root: Path, output: Path, *, progress_every: int
+) -> np.ndarray:
     """Extract and persist one corpus feature table while reporting progress to the console."""
     matrix = extract_manifest_features(
         manifest,
@@ -122,10 +116,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--ravdess-root", type=Path, required=True)
     parser.add_argument("--tess-root", type=Path, required=True)
-    parser.add_argument("--manifest-dir", type=Path,
-                        default=Path("datasets/affect/manifests"))
-    parser.add_argument("--output-dir", type=Path,
-                        default=Path("datasets/features"))
+    parser.add_argument("--manifest-dir", type=Path, default=Path("datasets/affect/manifests"))
+    parser.add_argument("--output-dir", type=Path, default=Path("datasets/features"))
     parser.add_argument("--progress-every", type=int, default=25)
     args = parser.parse_args()
 
