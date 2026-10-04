@@ -57,6 +57,9 @@ build/
 .coverage
 htmlcov/
 
+# Ruff cache
+.ruff_cache/
+
 # Temporary files
 tmp/
 temp/
