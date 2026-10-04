@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import threading
 from datetime import datetime, timezone
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import numpy as np
 import pytest
@@ -40,7 +40,7 @@ class _Graph:
                 "tts_text": "Let's focus on the most important item first.",
                 "state_tag": "speaking", "policy_rule": "R5", "lead_time_min": 15.0,
             },
-            "pending_trace": _pending_trace(),
+            "pending_trace": {**_pending_trace(), "trace_id": UUID(state["trace_id"])},
             "stage_timings_s": {"stt": 0.01},
         }
 

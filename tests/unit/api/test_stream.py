@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import time
 from datetime import datetime, timezone
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import numpy as np
 import pytest
@@ -73,7 +73,9 @@ class FakeGraph:
                 "lead_time_min": 15.0,
             },
             "pending_trace": make_pending_trace(
-                session_id=state["session_id"], user_id=state["user_id"]
+                session_id=state["session_id"],
+                user_id=state["user_id"],
+                trace_id=UUID(state["trace_id"]),
             ),
             "stage_timings_s": {"stt": 0.01, "affect": 0.02},
         }
@@ -123,8 +125,10 @@ class AlwaysFullWorker:
 
     def __init__(self, runner: InteractionRunner | None = None) -> None:
         self.runner = runner
+        self.submitted_trace_ids: list[str | None] = []
 
-    def submit(self, *, session, audio, sample_rate):
+    def submit(self, *, session, audio, sample_rate, trace_id=None):
+        self.submitted_trace_ids.append(trace_id)
         raise WorkerQueueFullError("queue is full")
 
 
@@ -215,6 +219,28 @@ def test_full_round_trip_start_audio_to_tts_audio_end():
 
     assert store.saved_traces, "a real decision trace was persisted end-to-end"
     assert graph.received_state["session_id"] == "s1"
+
+
+def test_transport_minted_trace_id_reaches_the_graph_and_the_decision_trace():
+    """OBS-LOG FR-O1: start_audio mints the id; the runner and graph reuse it."""
+    graph = FakeGraph()
+    store = FakeStore()
+    app, worker = build_test_app(graph, FakeTTS(audio=np.linspace(-0.5, 0.5, 3_200, dtype=np.float32)), store)
+    try:
+        with TestClient(app) as client:
+            with client.websocket_connect("/v1/stream") as ws:
+                ws.send_json(
+                    {"type": "start_audio", "session_id": "s1", "user_id": "u1", "wake_word_detected_at": 1}
+                )
+                assert ws.receive_json()["type"] == "ready"
+                ws.send_bytes(b"\x00\x00" * 160)
+                ws.send_json({"type": "end_audio", "session_id": "s1", "frame_count": 1})
+                assert ws.receive_json()["type"] == "response"
+    finally:
+        worker.stop(timeout=2.0)
+
+    UUID(graph.received_state["trace_id"])
+    assert str(store.saved_traces[0]["trace_id"]) == graph.received_state["trace_id"]
 
 
 def test_clock_sync_request_gets_a_response_with_the_echoed_timestamp():
@@ -342,6 +368,9 @@ def test_queue_overflow_reports_queue_overflow_and_still_releases_the_session():
     assert store.saved_degraded_traces
     assert store.saved_degraded_traces[0]["degradation_reason"] == "queue_overflow"
     assert store.saved_degraded_traces[0]["session_id"] == "s1"
+    # OBS-LOG FR-O1: the id the transport tried to submit is the one persisted.
+    worker = deps.worker
+    assert str(store.saved_degraded_traces[0]["trace_id"]) == worker.submitted_trace_ids[0]
 
 
 # --- session-timeout reaper ---------------------------------------------
@@ -382,6 +411,34 @@ def test_session_timeout_reclaims_an_abandoned_session_and_persists_a_degraded_t
     assert store.saved_degraded_traces[0]["session_id"] == "s1"
     # Never reached end_audio, so this never went through save_decision_trace.
     assert not store.saved_traces
+
+
+def test_session_timeout_degraded_trace_uses_the_transport_minted_trace_id():
+    """OBS-LOG FR-O1: the reaper passes the id minted at start_audio, not a new one."""
+    store = FakeStore()
+    app, worker = build_test_app(FakeGraph(), FakeTTS(), store, session_timeout_seconds=0.15)
+    supplied: list[str | None] = []
+    original = worker.runner.persist_transport_degraded_trace
+
+    def spy(**kwargs):
+        supplied.append(kwargs.get("trace_id"))
+        return original(**kwargs)
+
+    worker.runner.persist_transport_degraded_trace = spy
+    try:
+        with TestClient(app) as client:
+            with client.websocket_connect("/v1/stream") as ws:
+                ws.send_json(
+                    {"type": "start_audio", "session_id": "s1", "user_id": "u1", "wake_word_detected_at": 1}
+                )
+                assert ws.receive_json()["type"] == "ready"
+                assert ws.receive_json()["error_code"] == "session_timeout"
+    finally:
+        worker.stop(timeout=2.0)
+
+    assert len(supplied) == 1 and supplied[0] is not None
+    UUID(supplied[0])
+    assert str(store.saved_degraded_traces[0]["trace_id"]) == supplied[0]
 
 
 def test_session_timeout_reaper_ignores_session_after_worker_handoff():

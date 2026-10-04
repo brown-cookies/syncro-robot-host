@@ -114,15 +114,21 @@ def build_dialogue_graph(
 def invoke_dialogue(
     graph,
     *,
+    trace_id: str,
     session_id: str,
     user_id: str,
     audio: Any,
     sample_rate: int,
 ) -> DialogueGraphResult:
-    """Invoke the dialogue graph with the supplied request state."""
+    """Invoke the dialogue graph with the supplied request state.
+
+    ``trace_id`` is minted once by ``InteractionRunner.run`` (OBS-LOG FR-O1) and
+    only threaded through here; the graph must never mint its own.
+    """
     started = monotonic()
     state = graph.invoke(
         {
+            "trace_id": trace_id,
             "session_id": session_id,
             "user_id": user_id,
             "audio": audio,

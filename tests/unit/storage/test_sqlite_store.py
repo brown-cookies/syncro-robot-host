@@ -194,6 +194,8 @@ def test_ensure_user_is_idempotent(tmp_path):
 
 
 def test_output_node_returns_pending_trace_without_persisting_it(tmp_path):
+    from uuid import uuid4
+
     from pipeline.nodes.output import make_output_node
 
     store = SQLiteStore(str(tmp_path / "pending.db"))
@@ -201,6 +203,7 @@ def test_output_node_returns_pending_trace_without_persisting_it(tmp_path):
 
     result = output_node(
         {
+            "trace_id": str(uuid4()),
             "session_id": "s1",
             "user_id": "new-user",
             "final_response": "You have one priority task.",
@@ -220,11 +223,14 @@ def test_output_node_returns_pending_trace_without_persisting_it(tmp_path):
 
 
 def test_output_node_does_not_require_store_for_trace_assembly():
+    from uuid import uuid4
+
     from pipeline.nodes.output import make_output_node
 
     output_node = make_output_node()
     result = output_node(
         {
+            "trace_id": str(uuid4()),
             "session_id": "s2",
             "user_id": "u2",
             "final_response": "Done.",

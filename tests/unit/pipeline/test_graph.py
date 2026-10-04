@@ -3,6 +3,7 @@ import pytest
 pytest.importorskip("langgraph")
 
 import numpy as np
+from uuid import uuid4
 
 from pipeline.graph import build_dialogue_graph
 from storage.sqlite_store import SQLiteStore
@@ -56,7 +57,8 @@ def test_graph_runs_all_four_nodes_and_assembles_pending_trace(tmp_path):
         grace_window_minutes=15, default_lead_time=15,
     )
     result = graph.invoke({
-        "session_id": "s1", "user_id": "u1",
+        "trace_id": str(uuid4()),
+"session_id": "s1", "user_id": "u1",
         "audio": np.zeros(160, dtype=np.float32), "sample_rate": 16000,
     })
     assert result["intent"] == "ask_status"
@@ -107,7 +109,8 @@ def test_graph_records_stage_timings_for_both_parallel_branches(tmp_path):
         deadline_proximity_hours=2, grace_window_minutes=15, default_lead_time=15,
     )
     result = graph.invoke({
-        "session_id": "s-timings", "user_id": "u-timings",
+        "trace_id": str(uuid4()),
+"session_id": "s-timings", "user_id": "u-timings",
         "audio": np.zeros(160, dtype=np.float32), "sample_rate": 16000,
     })
     stage_timings = result["stage_timings_s"]
@@ -129,7 +132,8 @@ def test_graph_records_every_stage_timing_for_latency_table(tmp_path):
         deadline_proximity_hours=2, grace_window_minutes=15, default_lead_time=15,
     )
     result = graph.invoke({
-        "session_id": "s-stages", "user_id": "u-stages",
+        "trace_id": str(uuid4()),
+"session_id": "s-stages", "user_id": "u-stages",
         "audio": np.zeros(160, dtype=np.float32), "sample_rate": 16000,
     })
     stage_timings = result["stage_timings_s"]
@@ -153,7 +157,8 @@ def test_graph_records_affect_degradation_reason_for_fallback(tmp_path):
         deadline_proximity_hours=2, grace_window_minutes=15, default_lead_time=15,
     )
     result = graph.invoke({
-        "session_id": "s-fallback", "user_id": "u-fallback",
+        "trace_id": str(uuid4()),
+"session_id": "s-fallback", "user_id": "u-fallback",
         "audio": np.zeros(160, dtype=np.float32), "sample_rate": 16000,
     })
     assert result["affect_level"] == "Low"

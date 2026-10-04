@@ -64,6 +64,7 @@ class _WorkItem:
     audio: np.ndarray
     sample_rate: int
     future: "Future[InteractionResult]"
+    trace_id: str | None = None
 
 
 class InteractionWorker:
@@ -127,7 +128,12 @@ class InteractionWorker:
         self._thread.start()
 
     def submit(
-        self, *, session: SessionContext, audio: np.ndarray, sample_rate: int
+        self,
+        *,
+        session: SessionContext,
+        audio: np.ndarray,
+        sample_rate: int,
+        trace_id: str | None = None,
     ) -> "Future[InteractionResult]":
         """Enqueue one interaction and return immediately.
 
@@ -135,11 +141,20 @@ class InteractionWorker:
         `WorkerQueueFullError` rather than waiting for room, so a caller on
         the event loop is never stalled by a saturated worker (this is the
         entire reason S1 asks for a bounded queue over an unbounded one).
+
+        ``trace_id`` is the id the transport minted on accepting the interaction
+        (OBS-LOG FR-O1); the runner reuses it instead of minting a second one.
         """
         if not self._accepting:
             raise WorkerStoppedError("InteractionWorker.submit() called after stop()")
         future: "Future[InteractionResult]" = Future()
-        item = _WorkItem(session=session, audio=audio, sample_rate=sample_rate, future=future)
+        item = _WorkItem(
+            session=session,
+            audio=audio,
+            sample_rate=sample_rate,
+            future=future,
+            trace_id=trace_id,
+        )
         try:
             self._queue.put_nowait(item)
         except queue.Full as exc:
@@ -191,7 +206,10 @@ class InteractionWorker:
             return
         try:
             result = self._runner.run(
-                session=work.session, audio=work.audio, sample_rate=work.sample_rate
+                session=work.session,
+                audio=work.audio,
+                sample_rate=work.sample_rate,
+                trace_id=work.trace_id,
             )
         except BaseException as exc:  # noqa: BLE001 - must never escape this thread
             work.future.set_exception(exc)

@@ -67,6 +67,7 @@ from api.ws.session_registry import GlobalSessionCollisionError, SessionRegistry
 from audio.resample import chunk_100ms
 from config import endpoints
 from pipeline.interaction import InteractionError, SessionContext
+from observability import new_trace_id
 from pipeline.worker import InteractionWorker, WorkerQueueFullError
 
 logger = logging.getLogger(__name__)
@@ -157,6 +158,10 @@ class _InFlightSession:
     audio_buffer: bytearray = field(default_factory=bytearray)
     frame_count: int = 0
     submitted: bool = False
+    # OBS-LOG FR-O1: minted once, when the transport accepts the interaction
+    # (start_audio). Reused by the runner and by any transport-originated
+    # degraded trace, so one interaction never carries two ids.
+    trace_id: str = field(default_factory=new_trace_id)
 
 
 class _StreamSession:
@@ -238,7 +243,10 @@ class _StreamSession:
         # the timeout trace still belongs to the snapshot above.
         self._release_session()
         self._deps.worker.runner.persist_transport_degraded_trace(
-            session=session, wire_code="session_timeout", degradation_reason="session_timeout"
+            session=session,
+            wire_code="session_timeout",
+            degradation_reason="session_timeout",
+            trace_id=in_flight.trace_id,
         )
         await self._send_error(session_id=session.session_id, error_code="session_timeout")
         return True
@@ -417,12 +425,18 @@ class _StreamSession:
         in_flight.submitted = True
         try:
             future = self._deps.worker.submit(
-                session=session, audio=audio, sample_rate=self._deps.audio_sample_rate_hz
+                session=session,
+                audio=audio,
+                sample_rate=self._deps.audio_sample_rate_hz,
+                trace_id=in_flight.trace_id,
             )
         except WorkerQueueFullError:
             await self._send_error(session_id=session.session_id, error_code="queue_overflow")
             self._deps.worker.runner.persist_transport_degraded_trace(
-                session=session, wire_code="queue_overflow", degradation_reason="queue_overflow"
+                session=session,
+                wire_code="queue_overflow",
+                degradation_reason="queue_overflow",
+                trace_id=in_flight.trace_id,
             )
             self._release_session()
             return

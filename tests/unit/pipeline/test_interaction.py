@@ -9,7 +9,7 @@ per Phase 6, and the runner is its single normal-path trace writer.
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import numpy as np
 import pytest
@@ -66,7 +66,8 @@ class FakeGraph:
                 "policy_rule": "n/a",
                 "lead_time_min": 15.0,
             },
-            "pending_trace": self._pending_trace,
+            # A real graph's output node reads state["trace_id"] (OBS-LOG FR-O1).
+            "pending_trace": {**self._pending_trace, "trace_id": UUID(state["trace_id"])},
             "stage_timings_s": self._stage_timings_s,
         }
 
