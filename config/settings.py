@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from typing import Literal
 from functools import lru_cache
 
 from dotenv import load_dotenv
@@ -126,6 +127,9 @@ class Settings:
 
     # Logging
     log_level: str = "INFO"
+    log_output: Literal["console", "file"] = "file"
+    log_file_path: str = "./logs/syncro-events.jsonl"
+    log_include_text: bool = False
 
     def __post_init__(self) -> None:
         """Enforce the D5 sum-based timeout invariant this dataclass can't express per-field."""
@@ -277,4 +281,3 @@ class Settings:
 def get_settings() -> Settings:
     """Return the immutable settings snapshot used by the running process."""
     return Settings.from_env()
-
