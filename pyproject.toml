@@ -1,0 +1,28 @@
+[project]
+name = "syncro-robot-host"
+version = "0.1.0"
+requires-python = ">=3.14"
+dependencies = [
+    "fastapi>=0.142.2",
+    "faster-whisper>=1.2.1",
+    "joblib>=1.6.0",
+    "langchain-core>=1.6.6",
+    "langgraph>=1.2.12",
+    "numpy>=2.5.3",
+    "opensmile>=2.6.0",
+    "piper-tts>=1.8.0",
+    "pydantic>=2.13.5",
+    "python-dotenv>=1.2.4",
+    "pyyaml>=6.0.3",
+    "requests>=2.34.2",
+    "scikit-learn>=1.9.1",
+    "sounddevice>=0.5.6",
+    "soundfile>=0.14.0",
+    "uvicorn>=0.54.0",
+    "websockets>=16.1.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
