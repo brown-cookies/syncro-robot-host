@@ -24,6 +24,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "pip-audit>=2.10.1",
     "poethepoet>=0.48.0",
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",
@@ -71,6 +72,13 @@ format-check = "ruff format --check ."
 [tool.poe.tasks.check]
 sequence = ["lint", "format-check"]
 
+# Security
+[tool.poe.tasks.audit]
+sequence = [
+    { cmd = "uv export --locked --no-dev --no-emit-project --format requirements-txt --output-file requirements-audit.txt" },
+    { cmd = "pip-audit -r requirements-audit.txt --disable-pip" },
+]
+
 # Ruff
 
 [tool.ruff]
@@ -94,7 +102,7 @@ source = [
     "audio",
     "config",
     "composition",
-    "ml_affect",
+    "ml",
     "pipeline",
     "storage",
 ]
@@ -102,3 +110,4 @@ source = [
 [tool.coverage.report]
 show_missing = true
 skip_empty = true
+fail_under = 70
