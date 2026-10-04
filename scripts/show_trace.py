@@ -84,7 +84,7 @@ def render(events: list[dict]) -> str:
     return "\n".join(rows)
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("trace_id", nargs="?", help="exact trace_id to show")
@@ -96,7 +96,7 @@ def main() -> int:
                         help="rows for --list (default 20)")
     parser.add_argument("--file", default=None,
                         help="JSONL path (default: LOG_FILE_PATH)")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     path = args.file
     if path is None:
@@ -113,15 +113,17 @@ def main() -> int:
         print(render_list(list_traces(path), args.limit))
         return 0
     trace_id = args.trace_id
+    rows = list_traces(path)
     if args.last:
-        rows = list_traces(path)
         if not rows:
             print("no traces found in that log", file=sys.stderr)
             return 1
         trace_id = rows[0]["trace_id"]
-        print(f"# {trace_id}  ({rows[0]['outcome']})")
     if not trace_id:
         parser.error("give a trace_id, or use --last / --list")
+    # Always name the trace, so the timeline can be matched to decision_trace.trace_id.
+    outcome = next((r["outcome"] for r in rows if r["trace_id"] == trace_id), "not found")
+    print(f"# {trace_id}  ({outcome})")
     print(render(load_trace(path, trace_id)))
     return 0
 
