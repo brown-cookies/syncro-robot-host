@@ -67,13 +67,40 @@ def test_redaction_runs_before_the_sink() -> None:
     assert meta["password"] == "[REDACTED]"
 
 
-def test_full_text_needs_include_text_and_a_debug_event() -> None:
+@pytest.mark.parametrize(
+    "severity", [Severity.DEBUG, Severity.INFO, Severity.WARNING, Severity.ERROR]
+)
+def test_debug_level_with_include_text_shows_full_text_at_every_severity(severity) -> None:
     sink = ListSink()
     emitter = Emitter([sink], level=Severity.DEBUG, include_text=True)
-    _emit(emitter, severity=Severity.DEBUG, metadata={"transcript": "hello"})
-    _emit(emitter, severity=Severity.INFO, metadata={"transcript": "hello"})
+    _emit(emitter, severity=severity, metadata={"transcript": "hello"})
     assert sink.records[0]["metadata"]["transcript"] == "hello"
-    assert "transcript" not in sink.records[1]["metadata"]
+
+
+def test_debug_level_without_include_text_is_hash_only() -> None:
+    sink = ListSink()
+    emitter = Emitter([sink], level=Severity.DEBUG, include_text=False)
+    _emit(emitter, severity=Severity.INFO, metadata={"transcript": "hello"})
+    meta = sink.records[0]["metadata"]
+    assert "transcript" not in meta and meta["transcript_length"] == 5
+
+
+@pytest.mark.parametrize("level", [Severity.INFO, Severity.WARNING])
+def test_include_text_is_ignored_above_debug_level(level) -> None:
+    # Built directly (no factory): the emitter itself must hold the DEBUG gate.
+    sink = ListSink()
+    emitter = Emitter([sink], level=level, include_text=True)
+    _emit(emitter, severity=Severity.ERROR, metadata={"transcript": "hello"})
+    meta = sink.records[0]["metadata"]
+    assert "transcript" not in meta and meta["transcript_length"] == 5
+
+
+def test_secrets_stay_redacted_when_full_text_is_enabled() -> None:
+    sink = ListSink()
+    emitter = Emitter([sink], level=Severity.DEBUG, include_text=True)
+    _emit(emitter, metadata={"transcript": "token=abc123", "password": "p"})
+    meta = sink.records[0]["metadata"]
+    assert "abc123" not in meta["transcript"] and meta["password"] == "[REDACTED]"
 
 
 def test_stage_success_emits_started_and_completed_with_one_duration() -> None:

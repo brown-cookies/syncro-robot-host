@@ -171,12 +171,18 @@ def test_model_events_never_carry_raw_text_prompts_or_slots(tmp_path):
 
 
 def test_full_transcript_on_model_event_needs_debug_and_the_flag(tmp_path):
+    # model_inference_completed is an INFO event. With LOG_LEVEL=DEBUG and
+    # LOG_INCLUDE_TEXT=true the text is shown; with either off it is hash-only.
     emitter, sink = make_emitter(level=Severity.DEBUG, include_text=True)
     build(tmp_path, emitter).invoke(initial_state(str(uuid4())))
-
-    # model_inference_completed is an INFO event: full text is DEBUG-only.
     stt = of_type(sink.records, "model_inference_completed", "stt")[0]["metadata"]
-    assert "transcript" not in stt and "transcript_hash" in stt
+    assert stt["transcript"] == SECRET and "transcript_hash" not in stt
+
+    for level, flag in ((Severity.DEBUG, False), (Severity.INFO, True)):
+        emitter, sink = make_emitter(level=level, include_text=flag)
+        build(tmp_path, emitter).invoke(initial_state(str(uuid4())))
+        stt = of_type(sink.records, "model_inference_completed", "stt")[0]["metadata"]
+        assert "transcript" not in stt and "transcript_hash" in stt, (level, flag)
 
 
 def test_development_detector_is_not_a_model_so_no_affect_inference_events(tmp_path):
@@ -241,14 +247,15 @@ def test_claim_rewrite_is_a_warning_branch_with_hashes_only():
     assert "added" not in json.dumps(branch)
 
 
-def test_warning_branch_stays_hashed_even_with_debug_and_text_flag():
+def test_warning_branch_shows_text_with_debug_and_text_flag():
     _, sink, _ = run_llm(
         "add_task", "I've added the task to your list.",
         level=Severity.DEBUG, include_text=True,
     )
     (branch,) = of_type(sink.records, "branch_selected", "llm")
-    assert "draft_response" not in branch["metadata"]
-    assert "draft_response_hash" in branch["metadata"]
+    assert branch["severity"] == "WARNING"
+    assert branch["metadata"]["draft_response"] == "I've added the task to your list."
+    assert "draft_response_hash" not in branch["metadata"]
 
 
 def test_clean_proposal_is_passed_through_at_info():

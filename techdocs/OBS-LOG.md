@@ -388,7 +388,7 @@ LOG_LEVEL=DEBUG
 LOG_INCLUDE_TEXT=true      (default: false)
 ```
 
-Either condition alone is insufficient. When enabled, full text appears only on DEBUG events, and credential/secret/token redaction still applies to it. Raw audio and unrestricted LLM prompts are never logged, regardless of the flag.
+Either condition alone is insufficient. When both hold, full text appears on events of any severity (INFO and WARNING events such as `model_inference_completed` and the mutation-claim `branch_selected` included), and credential/secret/token redaction still applies to it. Raw audio and unrestricted LLM prompts are never logged, regardless of the flag.
 
 Degradations and guard decisions must be diagnosable from `reason_code` plus the hashes alone, without text.
 

@@ -4,8 +4,8 @@ Policy:
 - credentials / tokens / secrets / auth values: always redacted
 - raw audio and byte/array payloads: always omitted
 - transcript / final_response (and similar): hash-only by default; full text
-  only when ``include_text`` is true (the emitter grants that only for DEBUG
-  events with LOG_INCLUDE_TEXT=true)
+  only when ``include_text`` is true (the emitter grants that only when
+  LOG_LEVEL=DEBUG and LOG_INCLUDE_TEXT=true, for events of any severity)
 - prompts: never logged, regardless of the flag (length + hash only)
 """
 

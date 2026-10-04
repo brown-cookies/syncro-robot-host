@@ -455,8 +455,9 @@ def _emit_guard_decision(
     every other intent the guard is not applicable and no branch exists. A
     rewrite is WARNING. ``draft_response`` / ``final_response`` are redacted
     keys: events carry length + hash unless LOG_LEVEL=DEBUG and
-    LOG_INCLUDE_TEXT=true, and a WARNING event never carries full text, so a
-    rewrite is diagnosable from ``reason_code`` plus the hashes alone.
+    LOG_INCLUDE_TEXT=true (any severity, so a rewrite WARNING included). With
+    the defaults a rewrite is diagnosable from ``reason_code`` plus the
+    hashes alone.
     """
     if intent not in _MUTATION_RULES:
         return

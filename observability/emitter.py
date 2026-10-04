@@ -122,7 +122,11 @@ class Emitter:
                 return
             if event.severity.rank < self._level.rank:
                 return
-            full_text = self._include_text and event.severity is Severity.DEBUG
+            # Section 7: full text needs LOG_INCLUDE_TEXT=true AND LOG_LEVEL=DEBUG,
+            # whatever the event's own severity. The level is checked here as well
+            # as in the factory so an Emitter built directly (tests, scripts)
+            # cannot leak text at INFO.
+            full_text = self._include_text and self._level is Severity.DEBUG
             record = redact(event.to_dict(), include_text=full_text)
         except Exception:  # noqa: BLE001 - observability must never raise
             self.failures += 1
