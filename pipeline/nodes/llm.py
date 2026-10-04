@@ -63,6 +63,7 @@ Never output motor commands or low-level hardware instructions.
             component="llm",
             session_id=state.get("session_id"),
             model_name=getattr(llm, "model_name", None),
+            model_version=getattr(llm, "model_version", None),
             metadata={"intent": intent},
         ) as call:
             raw = llm.generate(prompt)

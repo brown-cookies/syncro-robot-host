@@ -47,8 +47,9 @@ class ModelCall:
 
     ``result`` is attached to ``model_inference_completed``: put the prediction
     and confidence there (text fields use their redacted names, e.g.
-    ``transcript``). ``elapsed_s`` is set once, from one monotonic reading,
-    when the block exits.
+    ``transcript``). A model with no real score leaves ``confidence`` unset and
+    the event records ``null``; a value is never invented. ``elapsed_s`` is set
+    once, from one monotonic reading, when the block exits.
     """
 
     elapsed_s: float = 0.0
@@ -246,11 +247,17 @@ class Emitter:
         Raw model inputs are never passed here; callers put only the
         prediction/confidence in ``call.result``. The original exception is
         re-raised untouched.
+
+        Schema (FR-O6): every model event carries ``model_name`` and
+        ``model_version``, and both terminal events carry ``confidence``.
+        Each is ``null`` when unknown or not applicable, so consumers can rely
+        on the keys being present.
         """
         call = ModelCall()
-        base: dict[str, Any] = {"model_name": model_name}
-        if model_version is not None:
-            base["model_version"] = model_version
+        base: dict[str, Any] = {
+            "model_name": model_name,
+            "model_version": model_version,
+        }
         base.update(metadata or {})
         call.started_event_id = self.event(
             trace_id=trace_id,
@@ -274,7 +281,7 @@ class Emitter:
                 session_id=session_id,
                 duration_ms=call.elapsed_s * 1000.0,
                 parent_event_id=call.started_event_id or None,
-                metadata={**base, "outcome": "failure"},
+                metadata={**base, "confidence": None, "outcome": "failure"},
                 error=error_info(exc, component=component, operation="inference"),
             )
             raise
@@ -288,7 +295,7 @@ class Emitter:
                 session_id=session_id,
                 duration_ms=call.elapsed_s * 1000.0,
                 parent_event_id=call.started_event_id or None,
-                metadata={**base, **call.result, "outcome": "success"},
+                metadata={**base, "confidence": None, **call.result, "outcome": "success"},
             )
 
     def degradation(

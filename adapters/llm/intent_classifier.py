@@ -7,6 +7,7 @@ import re
 
 import requests
 
+from adapters.llm.ollama_meta import fetch_model_version
 from config.settings import Settings, get_settings
 from pipeline.contracts import ALLOWED_INTENTS
 
@@ -30,11 +31,19 @@ class OllamaIntentClassifier:
         self._keep_alive = settings.ollama_keep_alive
         self._num_predict = settings.intent_num_predict
         self._threshold = settings.intent_confidence_threshold
+        self._model_version: str | None = None
 
     @property
     def model_name(self) -> str:
         """Configured Ollama model, reported in OBS-LOG model events."""
         return self._model
+
+    @property
+    def model_version(self) -> str | None:
+        """Ollama digest of the served model, resolved once and cached."""
+        if self._model_version is None:
+            self._model_version = fetch_model_version(self._base_url, self._model)
+        return self._model_version
 
     def classify(self, transcript: str) -> tuple[str, float, dict[str, object]]:
         """Classify the supplied input using the configured classifier."""

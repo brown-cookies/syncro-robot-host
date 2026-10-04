@@ -43,6 +43,7 @@ def make_affect_node(
                 component="affect",
                 session_id=session_id,
                 model_name=getattr(detector, "model_name", None),
+                model_version=getattr(detector, "model_version", None),
             )
         else:
             inference = nullcontext(ModelCall())

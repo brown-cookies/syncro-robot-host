@@ -22,6 +22,7 @@ def make_stt_node(stt, emitter: Emitter = NULL_EMITTER):
             component="stt",
             session_id=state.get("session_id"),
             model_name=getattr(stt, "model_name", None),
+            model_version=getattr(stt, "model_version", None),
         ) as call:
             transcript = stt.transcribe(audio, sample_rate=sample_rate)
             call.result["transcript"] = transcript

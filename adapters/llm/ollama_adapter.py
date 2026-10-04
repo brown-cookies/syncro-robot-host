@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import requests
 
+from adapters.llm.ollama_meta import fetch_model_version
 from config.settings import Settings, get_settings
 
 
@@ -23,11 +24,22 @@ class OllamaLLMAdapter:
         # intent classifier (see config/settings.py Settings.__post_init__).
         self._timeout_s = settings.reasoning_timeout_s
         self._keep_alive = settings.ollama_keep_alive
+        self._model_version: str | None = None
 
     @property
     def model_name(self) -> str:
         """Configured Ollama model, reported in OBS-LOG model events."""
         return self._model
+
+    @property
+    def model_version(self) -> str | None:
+        """Ollama digest of the served model, resolved once and cached.
+
+        None (not cached) while Ollama can't report it, so a later call retries.
+        """
+        if self._model_version is None:
+            self._model_version = fetch_model_version(self._base_url, self._model)
+        return self._model_version
 
     def generate(self, prompt: str) -> str:
         """Generate an LLM response from the supplied conversation state and context."""

@@ -18,12 +18,19 @@ class WhisperSTTAdapter:
         self._sample_rate = settings.audio_sample_rate_hz
         self._model_name = settings.stt_model_size
         try:
+            import faster_whisper
             from faster_whisper import WhisperModel
         except ImportError as exc:  # pragma: no cover - dependency boundary
             raise STTAdapterError(
                 "faster-whisper is not installed. Run `pip install faster-whisper`."
             ) from exc
 
+        # Library release + model size + compute type: the three things that
+        # change what a given transcript came from.
+        self._model_version = (
+            f"faster-whisper-{getattr(faster_whisper, '__version__', 'unknown')}"
+            f"/{settings.stt_compute_type}"
+        )
         try:
             self._model = WhisperModel(
                 settings.stt_model_size,
@@ -40,6 +47,11 @@ class WhisperSTTAdapter:
     def model_name(self) -> str:
         """Configured model size, reported in OBS-LOG model events."""
         return self._model_name
+
+    @property
+    def model_version(self) -> str:
+        """faster-whisper release and compute type, reported in OBS-LOG model events."""
+        return self._model_version
 
     def transcribe(self, audio: np.ndarray, sample_rate: int) -> str:
         """Transcribe the supplied audio using the configured speech-to-text backend."""

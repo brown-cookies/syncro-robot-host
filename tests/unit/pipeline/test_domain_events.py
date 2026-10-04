@@ -57,6 +57,7 @@ def of_type(records, event_type: str, component: str | None = None):
 
 class FakeSTT:
     model_name = "tiny.en"
+    model_version = "stt-v1"
 
     def transcribe(self, audio, sample_rate):
         return SECRET
@@ -64,6 +65,7 @@ class FakeSTT:
 
 class FakeIntent:
     model_name = "qwen-test"
+    model_version = "sha256:intent"
 
     def classify(self, transcript):
         return ("ask_status", 0.91, {"free": SECRET})
@@ -71,6 +73,7 @@ class FakeIntent:
 
 class FakeAffect:
     model_name = "affect-svc"
+    model_version = "v-test"
 
     def detect(self, audio, sample_rate):
         return "Low"
@@ -78,6 +81,7 @@ class FakeAffect:
 
 class FakeLLM:
     model_name = "qwen-test"
+    model_version = "sha256:llm"
 
     def __init__(self, response_text="All good.", proposed_action="respond"):
         self._payload = json.dumps(
@@ -135,6 +139,9 @@ def test_model_events_for_stt_affect_intent_llm_share_the_trace_id(tmp_path):
         assert completed[0]["duration_ms"] >= 0
         assert completed[0]["metadata"]["outcome"] == "success"
         assert completed[0]["metadata"]["model_name"]
+        # FR-O6: the same three keys on every model event, null when unknown.
+        assert completed[0]["metadata"]["model_version"], component
+        assert "confidence" in completed[0]["metadata"], component
     assert not of_type(sink.records, "model_inference_failed")
 
 
@@ -147,7 +154,9 @@ def test_model_events_carry_prediction_and_confidence_where_available(tmp_path):
     assert intent["confidence"] == 0.91
     affect = of_type(sink.records, "model_inference_completed", "affect")[0]["metadata"]
     assert affect["prediction"] == "Low"
-    assert "confidence" not in affect and "model_version" not in affect
+    # No real score -> null, never an invented value; version present (FR-O6).
+    assert affect["confidence"] is None
+    assert affect["model_version"] == "v-test"
 
 
 def test_model_events_never_carry_raw_text_prompts_or_slots(tmp_path):
@@ -475,3 +484,19 @@ def test_every_emitted_reason_code_is_a_degradation_reason(tmp_path):
                for r in of_type(sink.records, "degradation_applied")]
     assert len(reasons) == 4
     assert set(reasons) <= allowed
+
+
+def test_model_event_keys_are_present_and_null_when_model_reports_nothing(tmp_path):
+    class Bare:
+        def transcribe(self, audio, sample_rate):
+            return SECRET
+
+    emitter, sink = make_emitter()
+    emitter_obj = emitter
+    with emitter_obj.model_inference(trace_id="t", component="stt") as call:
+        call.result["prediction"] = "x"
+    started = [r for r in sink.records if r["event_type"] == "model_inference_started"][0]
+    done = [r for r in sink.records if r["event_type"] == "model_inference_completed"][0]
+    for meta in (started["metadata"], done["metadata"]):
+        assert meta["model_name"] is None and meta["model_version"] is None
+    assert done["metadata"]["confidence"] is None

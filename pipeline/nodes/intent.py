@@ -22,6 +22,7 @@ def make_intent_node(
             component="intent",
             session_id=state.get("session_id"),
             model_name=getattr(classifier, "model_name", None),
+            model_version=getattr(classifier, "model_version", None),
         ) as call:
             intent, confidence, slots = classifier.classify(transcript)
             call.result.update(prediction=intent, confidence=confidence)
