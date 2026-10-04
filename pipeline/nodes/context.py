@@ -5,6 +5,30 @@ from __future__ import annotations
 from pipeline.state import DialogueState
 
 
+def retrieve_context_payload(
+    store, user_id: str, top_k: int, deadline_proximity_hours: int
+) -> DialogueState:
+    """Read the user's bounded context from storage as graph-state fields.
+
+    Shared by Node 2 (pre-decision) and the executor node (post-mutation
+    refresh) so both always produce the same shape.
+    """
+    result = store.retrieve_context(
+        user_id,
+        top_k=top_k,
+        deadline_proximity_hours=deadline_proximity_hours,
+    )
+    return {
+        "context": {
+            "tasks": result.tasks,
+            "recent_routine": result.recent_routine,
+            "overdue_tasks": result.overdue_tasks,
+        },
+        "retrieved_context_ids": result.ids,
+        "deadline_proximity": result.deadline_proximity,
+    }
+
+
 def make_context_node(store, top_k: int, deadline_proximity_hours: int):
     """Create the context graph node with its injected storage dependency."""
     def context_node(state: DialogueState) -> DialogueState:
@@ -22,19 +46,7 @@ def make_context_node(store, top_k: int, deadline_proximity_hours: int):
         user_id = state.get("user_id")
         if user_id is None:
             raise RuntimeError("Node 2 context retrieval requires user_id in DialogueState.")
-        result = store.retrieve_context(
-            user_id,
-            top_k=top_k,
-            deadline_proximity_hours=deadline_proximity_hours,
-        )
-        return {
-            "context": {
-                "tasks": result.tasks,
-                "recent_routine": result.recent_routine,
-                "overdue_tasks": result.overdue_tasks,
-            },
-            "retrieved_context_ids": result.ids,
-            "deadline_proximity": result.deadline_proximity,
-        }
+        return retrieve_context_payload(
+            store, user_id, top_k, deadline_proximity_hours)
 
     return context_node

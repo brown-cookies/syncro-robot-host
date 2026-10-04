@@ -189,3 +189,29 @@ def test_bootstrap_classifier_failure_falls_back_to_development(monkeypatch, tes
     )
     result = bootstrap.build_host_components(test_settings)
     assert result.graph.__class__.__name__ == "DevelopmentAffectDetector"
+
+
+
+def test_bootstrap_injects_action_executor_with_same_store(monkeypatch, test_settings):
+    """Phase 17 Gate A: graph receives an executor bound to the root store."""
+    _patch_graph_dependencies(monkeypatch, test_settings)
+    import sys
+    import types
+
+    captured = {}
+
+    class FakeGraph:
+        pass
+
+    def fake_build_dialogue_graph(**kwargs):
+        captured.update(kwargs)
+        return FakeGraph()
+
+    fake_graph_module = types.ModuleType("pipeline.graph")
+    setattr(fake_graph_module, "build_dialogue_graph", fake_build_dialogue_graph)
+    monkeypatch.setitem(sys.modules, "pipeline.graph", fake_graph_module)
+
+    result = bootstrap.build_host_components(test_settings)
+
+    assert "executor" in captured
+    assert captured["executor"].store is result.store

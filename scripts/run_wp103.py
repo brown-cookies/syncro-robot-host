@@ -196,7 +196,11 @@ def main() -> int:
         return 1
 
     emit(f"[interaction] response: {result.response_payload.get('tts_text', '')}")
+    emit(f"[interaction] intent: {result.intent}")
+    emit(f"[interaction] slots: {result.slots}")
+    emit(f"[interaction] execution_outcome: {result.execution_outcome}")
     emit(f"[interaction] policy_rule: {result.response_payload.get('policy_rule')}")
+    emit(f"[interaction] lead_time_min: {result.response_payload.get('lead_time_min')}")
     emit(f"[interaction] state_tag: {result.response_payload.get('state_tag')}")
     emit(f"[interaction] trace_id: {result.trace_id}")
     emit(f"[interaction] stage timings (s): {result.stage_timings_s}")

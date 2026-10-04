@@ -313,6 +313,40 @@ def test_pipeline_failure_maps_to_a_wire_error_and_persists_a_degraded_trace():
     assert store.saved_degraded_traces[0]["degradation_reason"] == "pipeline_failure"
 
 
+class CommittedThenRaisingGraph:
+    """Reports a committed mutation to the runner's sink, then fails."""
+
+    def invoke(self, state):
+        state["outcome_sink"].record({
+            "succeeded": True, "intent": "add_task", "target_id": "task-42",
+            "detail": "task 'task-42' created",
+        })
+        raise ValueError("simulated failure after commit")
+
+
+def test_failure_after_committed_mutation_tells_the_edge_the_request_already_happened():
+    store = FakeStore()
+    app, worker = build_test_app(CommittedThenRaisingGraph(), FakeTTS(), store)
+    try:
+        with TestClient(app) as client:
+            with client.websocket_connect("/v1/stream") as ws:
+                ws.send_json(
+                    {"type": "start_audio", "session_id": "s1", "user_id": "u1", "wake_word_detected_at": 1}
+                )
+                assert ws.receive_json()["type"] == "ready"
+
+                ws.send_json({"type": "end_audio", "session_id": "s1", "frame_count": 0})
+                error = ws.receive_json()
+                # Wire code is unchanged (no SPEC amendment); the message is truthful.
+                assert error["error_code"] == "pipeline_failure"
+                assert "already carried out" in error["message"]
+                assert "task-42" in error["message"]
+    finally:
+        worker.stop(timeout=2.0)
+
+    assert store.saved_degraded_traces  # the degraded trace is still written
+
+
 def test_queue_overflow_reports_queue_overflow_and_still_releases_the_session():
     store = FakeStore()
     runner = InteractionRunner(graph=FakeGraph(), store=store, tts=FakeTTS(), resampler=to_pcm16_16k)

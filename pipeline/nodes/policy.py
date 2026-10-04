@@ -59,7 +59,8 @@ def make_policy_node(
         """Apply policy decisions to the current dialogue state."""
         intent = state.get("intent")
         if intent is None:
-            raise RuntimeError("Node 4 policy requires intent in DialogueState.")
+            raise RuntimeError(
+                "Node 4 policy requires intent in DialogueState.")
 
         # Clarification and summary/status interactions never enter the policy
         # domain. This is required by SPEC §8.3 (policy_rule/deadline both n/a).
@@ -73,9 +74,11 @@ def make_policy_node(
         if not governed:
             proximity = "n/a"
 
-        draft = str(state.get("draft_response", state.get("final_response", ""))).strip()
+        draft = str(state.get("draft_response",
+                    state.get("final_response", ""))).strip()
         if not draft:
-            raise RuntimeError("Node 4 requires a non-empty Node 3 draft response.")
+            raise RuntimeError(
+                "Node 4 requires a non-empty Node 3 draft response.")
 
         action = "deliver"
         if rule == "R1":
@@ -107,7 +110,8 @@ def make_policy_node(
             if store is not None and isinstance(user_id, str)
             else float(default_lead_time)
         )
-        lead_time = clamp_lead_time(raw_lead_time, lead_time_min, lead_time_max)
+        lead_time = clamp_lead_time(
+            raw_lead_time, lead_time_min, lead_time_max)
 
         return {
             "final_response": final,

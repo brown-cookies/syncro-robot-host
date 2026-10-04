@@ -33,7 +33,7 @@ from __future__ import annotations
 import queue
 import threading
 from concurrent.futures import Future
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import numpy as np
 
@@ -88,6 +88,11 @@ class InteractionWorker:
         )
         self._started = False
         self._accepting = True
+        # Interaction order is assigned at the host ingress boundary. A lock
+        # makes sequence allocation deterministic when multiple WebSocket
+        # event loops/threads submit for the same user concurrently.
+        self._sequence_lock = threading.Lock()
+        self._next_sequence_by_user: dict[str, int] = {}
 
     @property
     def runner(self) -> InteractionRunner:
@@ -129,24 +134,44 @@ class InteractionWorker:
     def submit(
         self, *, session: SessionContext, audio: np.ndarray, sample_rate: int
     ) -> "Future[InteractionResult]":
-        """Enqueue one interaction and return immediately.
+        """Enqueue one accepted interaction and return immediately.
+
+        Every accepted interaction receives a monotonically increasing sequence
+        scoped to its user. Sequence allocation and FIFO enqueue happen under
+        one lock, so worker execution order cannot invert the assigned order.
+        Because this host intentionally has one worker thread, later accepted
+        utterances for a user execute after earlier ones; when both target the
+        same reminder, the later utterance therefore becomes the final state.
 
         Never blocks: if the queue is already full this raises
         `WorkerQueueFullError` rather than waiting for room, so a caller on
-        the event loop is never stalled by a saturated worker (this is the
+        the event loop is never stalled by a saturated queue (this is the
         entire reason S1 asks for a bounded queue over an unbounded one).
         """
         if not self._accepting:
             raise WorkerStoppedError("InteractionWorker.submit() called after stop()")
         future: "Future[InteractionResult]" = Future()
-        item = _WorkItem(session=session, audio=audio, sample_rate=sample_rate, future=future)
-        try:
-            self._queue.put_nowait(item)
-        except queue.Full as exc:
-            raise WorkerQueueFullError(
-                f"interaction queue is full (maxsize={self._queue.maxsize}); "
-                "rejecting new work instead of blocking the caller"
-            ) from exc
+        # Sequence allocation and FIFO enqueue must be one critical section.
+        # Otherwise submitter A could receive sequence N, submitter B could
+        # receive N+1 and enqueue first, and the explicit ordering contract
+        # would no longer match worker execution order.
+        with self._sequence_lock:
+            sequence = self._next_sequence_by_user.get(session.user_id, 0) + 1
+            self._next_sequence_by_user[session.user_id] = sequence
+            ordered_session = replace(session, interaction_sequence=sequence)
+            item = _WorkItem(
+                session=ordered_session,
+                audio=audio,
+                sample_rate=sample_rate,
+                future=future,
+            )
+            try:
+                self._queue.put_nowait(item)
+            except queue.Full as exc:
+                raise WorkerQueueFullError(
+                    f"interaction queue is full (maxsize={self._queue.maxsize}); "
+                    "rejecting new work instead of blocking the caller"
+                ) from exc
         return future
 
     def stop(self, *, timeout: float | None = None) -> None:

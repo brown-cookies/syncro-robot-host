@@ -431,8 +431,11 @@ class _StreamSession:
             result = await asyncio.wrap_future(future)
         except InteractionError as exc:
             await self._send_error(
-                session_id=session.session_id, error_code=exc.wire_code, detail=str(
-                    exc)
+                session_id=session.session_id,
+                error_code=exc.wire_code,
+                # If a mutation committed before the failure, say so: otherwise
+                # the user retries a request that already happened.
+                detail=exc.committed_message or str(exc),
             )
             self._release_session()
             return

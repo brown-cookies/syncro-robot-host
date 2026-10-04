@@ -88,3 +88,25 @@ def test_settings_reads_interaction_queue_maxsize_environment(monkeypatch) -> No
     monkeypatch.setenv("INTERACTION_QUEUE_MAXSIZE", "3")
     settings = Settings.from_env()
     assert settings.interaction_queue_maxsize == 3
+
+
+def test_settings_rejects_invalid_adaptive_alpha() -> None:
+    with pytest.raises(ValueError, match="alpha must be finite"):
+        Settings(alpha=0.0)
+    with pytest.raises(ValueError, match="alpha must be finite"):
+        Settings(alpha=1.0)
+
+
+def test_settings_rejects_invalid_lead_time_bounds() -> None:
+    with pytest.raises(ValueError, match="lead_time_max"):
+        Settings(lead_time_min=60, lead_time_max=5)
+
+
+def test_settings_rejects_default_lead_time_outside_bounds() -> None:
+    with pytest.raises(ValueError, match="lead_time_default"):
+        Settings(lead_time_default=61)
+
+
+def test_settings_rejects_non_finite_alpha() -> None:
+    with pytest.raises(ValueError, match="alpha must be finite"):
+        Settings(alpha=float("nan"))
