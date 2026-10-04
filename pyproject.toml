@@ -23,6 +23,27 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = [
-    "pytest>=9.1.1",
-]
+dev = ["poethepoet>=0.48.0", "pytest>=9.1.1"]
+
+[tool.uv]
+package = false
+
+[tool.poe.tasks]
+# Whole suite and groups
+test-all = "python -m pytest -q"
+test-unit = "python -m pytest -q tests/unit"
+test-integration = "python -m pytest -q tests/integration"
+
+# One component at a time
+test-adapters = "python -m pytest -q tests/unit/adapters"
+test-api = "python -m pytest -q tests/unit/api"
+test-audio = "python -m pytest -q tests/unit/audio"
+test-composition = "python -m pytest -q tests/unit/composition"
+test-config = "python -m pytest -q tests/unit/config"
+test-pipeline = "python -m pytest -q tests/unit/pipeline"
+test-storage = "python -m pytest -q tests/unit/storage"
+test-ml-affect = "python -m pytest -q tests/unit/ml_affect"
+test-scripts = "python -m pytest -q tests/unit/scripts"
+
+# Operational
+serve = "python -m uvicorn api.app:app --host 0.0.0.0 --port 8765"
