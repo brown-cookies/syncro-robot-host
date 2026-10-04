@@ -10,7 +10,7 @@ from langgraph.graph import END, START, StateGraph
 
 from pipeline.executor import ActionExecutor, EXECUTABLE_INTENTS
 from pipeline.nodes.affect import make_affect_node
-from pipeline.nodes.context import make_context_node
+from pipeline.nodes.context import make_context_node, retrieve_context_payload
 from pipeline.nodes.intent import make_intent_node
 from pipeline.nodes.llm import make_llm_node
 from pipeline.nodes.output import make_output_node
@@ -50,8 +50,17 @@ def timed(name: str, node: Callable[[DialogueState], DialogueState]):
     return wrapped
 
 
-def make_executor_node(executor: ActionExecutor):
-    """Create the graph node that records the executor's authoritative outcome."""
+def make_executor_node(
+    executor: ActionExecutor,
+    *,
+    refresh_context: Callable[[str], dict[str, Any]] | None = None,
+):
+    """Create the graph node that records the executor's authoritative outcome.
+
+    ``refresh_context`` re-reads the user's context from storage. After a
+    succeeded mutation it supplies ``post_execution_context`` so Node 3 never
+    reasons from the pre-mutation snapshot Node 2 took.
+    """
 
     def executor_node(state: DialogueState) -> DialogueState:
         outcome = executor.execute(state)
@@ -60,7 +69,14 @@ def make_executor_node(executor: ActionExecutor):
         if sink is not None and outcome.succeeded:
             # Recorded immediately, before any later node can fail.
             sink.record(dumped)
-        return {"execution_outcome": dumped}
+        update: DialogueState = {"execution_outcome": dumped}
+        user_id = state.get("user_id")
+        if outcome.succeeded and refresh_context is not None and user_id:
+            # Deliberately not guarded: a refresh error propagates so the runner
+            # records a degraded trace. The mutation is already in the outcome
+            # sink above, so the failure message still reports it as committed.
+            update["post_execution_context"] = refresh_context(user_id)
+        return update
 
     return executor_node
 
@@ -129,7 +145,15 @@ def build_dialogue_graph(
     )
     if executor is None:
         raise ValueError("build_dialogue_graph requires an ActionExecutor")
-    builder.add_node("executor", make_executor_node(executor))
+    builder.add_node(
+        "executor",
+        make_executor_node(
+            executor,
+            refresh_context=lambda user_id: retrieve_context_payload(
+                store, user_id, context_top_k, deadline_proximity_hours
+            )["context"],
+        ),
+    )
     builder.add_node("node3_llm", timed("llm", make_llm_node(llm)))
     builder.add_node("affect", timed(
         "affect", make_affect_node(affect_detector)))

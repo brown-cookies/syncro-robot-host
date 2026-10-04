@@ -27,9 +27,34 @@ def make_llm_node(llm):
                 "and transcript in DialogueState."
             )
 
-        context = state.get("context", {})
-        reasoning_context = _select_context_for_request(transcript, context)
         execution_outcome = state.get("execution_outcome")
+        mutation_succeeded = (
+            isinstance(execution_outcome, dict)
+            and execution_outcome.get("succeeded") is True
+        )
+        if mutation_succeeded:
+            # Node 2's context predates the mutation, so it must not reach the
+            # prompt. Use the post-mutation refresh; if that is unavailable,
+            # show nothing rather than a stale snapshot.
+            fresh_context = state.get("post_execution_context")
+            if isinstance(fresh_context, dict):
+                context = fresh_context
+                context_freshness = (
+                    "- The retrieved context was re-read AFTER the mutation and "
+                    "reflects its result."
+                )
+            else:
+                context = {}
+                context_freshness = (
+                    "- The mutation just ran and the post-mutation context is "
+                    "unavailable, so the retrieved context is empty. Confirm only "
+                    "the execution outcome; do not describe any task list, "
+                    "deadline or reminder state."
+                )
+        else:
+            context = state.get("context", {})
+            context_freshness = ""
+        reasoning_context = _select_context_for_request(transcript, context)
 
         if isinstance(execution_outcome, dict):
             outcome_text = json.dumps(execution_outcome, ensure_ascii=True)
@@ -68,6 +93,11 @@ Context-selection rules:
 - Do not enumerate upcoming/non-overdue tasks when answering an overdue-task request.
 - If there are no overdue tasks, say that there are no overdue tasks.
 - For other task-list requests, use the relevant task lists in the retrieved context.
+
+State-claim rules:
+- State facts about the user's tasks, deadlines or reminders ONLY if they appear in the retrieved context or the execution outcome.
+- Never state or imply a total number of tasks or reminders: the retrieved context is a bounded window, not a full list.
+{context_freshness}
 
 Execution truthfulness rules:
 - The executor is authoritative; proposed_action is never proof that a mutation happened.

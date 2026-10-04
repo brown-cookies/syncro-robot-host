@@ -367,16 +367,6 @@ def test_reschedule_task_rejects_unparseable_natural_language_deadline(tmp_path)
     assert outcome.error_code == "invalid_slots"
 
 
-# =============================================================================
-# Idempotent mutations and committed-mutation reporting
-#
-# Invariant: one logical mutation -> at most one committed side effect, even if
-# LLM / policy / TTS / trace-save fail afterwards or the same utterance is
-# replayed. Uses only existing tables (SPEC section 9): tasks.client_write_id for
-# dedup and an in-memory per-interaction sink for failure reporting.
-# =============================================================================
-
-
 def _state(key, *, user="u1", intent="add_task", slots=None, session="s1"):
     state = {
         "user_id": user,
@@ -399,9 +389,6 @@ def store(tmp_path):
 def _task_count(store):
     with store.database.connection() as conn:
         return conn.execute("SELECT COUNT(*) FROM tasks").fetchone()[0]
-
-
-# --- same-attempt replay ----------------------------------------------------
 
 
 def test_replayed_add_task_does_not_create_a_second_task(store):
@@ -450,8 +437,10 @@ def test_replayed_snooze_still_cannot_mutate_twice(store):
     executor = make_executor(store)
     slots = {"reference_trace_id": trace_id, "snooze_minutes": 10}
 
-    first = executor.execute(_state("k1", intent="snooze_reminder", slots=slots))
-    second = executor.execute(_state("k1", intent="snooze_reminder", slots=slots))
+    first = executor.execute(
+        _state("k1", intent="snooze_reminder", slots=slots))
+    second = executor.execute(
+        _state("k1", intent="snooze_reminder", slots=slots))
 
     assert first.succeeded
     assert not second.succeeded  # no second mutation
@@ -472,9 +461,6 @@ def test_save_task_client_write_id_is_idempotent(store):
     assert _task_count(store) == 1
 
 
-# --- identity ----------------------------------------------------------------
-
-
 def test_interaction_key_is_stable_and_utterance_specific():
     base = dict(session_id="s1", user_id="u1", started_monotonic=0.0,
                 wake_word_detected_at=1000)
@@ -492,9 +478,6 @@ def test_interaction_key_is_stable_and_utterance_specific():
 def test_interaction_key_is_none_without_wake_word_timestamp():
     s = SessionContext(session_id="s1", user_id="u1", started_monotonic=0.0)
     assert s.interaction_key is None
-
-
-# --- committed mutation followed by a downstream failure ----------------------
 
 
 def _pending_trace():
@@ -646,11 +629,13 @@ def test_respoken_request_after_failure_is_a_new_utterance(store):
     executor = make_executor(store)
 
     with pytest.raises(InteractionError) as first:
-        _run(_failing_runner(store, executor, "llm"), _session(wake_word_detected_at=1000))
+        _run(_failing_runner(store, executor, "llm"),
+             _session(wake_word_detected_at=1000))
     assert "You do not need to repeat it" in first.value.committed_message
 
     with pytest.raises(InteractionError):
-        _run(_failing_runner(store, executor, "llm"), _session(wake_word_detected_at=9000))
+        _run(_failing_runner(store, executor, "llm"),
+             _session(wake_word_detected_at=9000))
 
     assert _task_count(store) == 2
 
@@ -675,7 +660,8 @@ def test_failed_mutation_is_not_reported_as_committed(store):
             self._node = make_executor_node(executor)
 
         def invoke(self, state):
-            self._node({**state, "intent": "add_task", "slots": {"title": "  "}})
+            self._node({**state, "intent": "add_task",
+                       "slots": {"title": "  "}})
             raise LLMAdapterError("llm timeout")
 
     with pytest.raises(InteractionError) as info:

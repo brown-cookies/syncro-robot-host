@@ -256,7 +256,9 @@ def test_graph_routes_executable_intent_through_executor_before_llm(tmp_path):
     assert recorder.calls
     assert result["execution_outcome"]["succeeded"] is True
     retrieved_context = llm.observed.split("Retrieved context:", 1)[1]
-    assert '"tasks": []' in retrieved_context
+    # Node 3 is prompted with the context re-read AFTER the mutation, so the
+    # task the executor just created is visible (previously: '"tasks": []').
+    assert "write report" in retrieved_context
     with store.database.connection() as conn:
         row = conn.execute(
             "SELECT title FROM tasks WHERE user_id = ?", ("u-exec",)

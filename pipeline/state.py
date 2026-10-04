@@ -59,6 +59,13 @@ class DialogueState(TypedDict, total=False):
     # Transient graph state only; never a decision_trace field.
     interaction_key: str
 
+    # Context re-read AFTER a succeeded mutation, for Node 3 only. ``context``,
+    # ``retrieved_context_ids`` and ``deadline_proximity`` stay as they were when
+    # the decision was made, so policy and the decision trace still describe the
+    # inputs the decision was actually based on. Absent when no mutation
+    # succeeded or the refresh failed.
+    post_execution_context: dict[str, Any]
+
     # Runner-owned sink the executor node reports succeeded mutations into, so a
     # failure in a later stage cannot hide a committed change from the runner.
     outcome_sink: CommittedOutcomeSink
