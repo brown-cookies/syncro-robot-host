@@ -23,14 +23,22 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["poethepoet>=0.48.0", "pytest>=9.1.1", "ruff>=0.16.10"]
+dev = [
+    "poethepoet>=0.48.0",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.16.10",
+]
 
 [tool.uv]
 package = false
 
+# Poe tasks
+
 [tool.poe.tasks]
-# Whole suite and groups
-test-all = "python -m pytest -q"
+
+# Whole suite and test layers
+test = "python -m pytest -q tests"
 test-unit = "python -m pytest -q tests/unit"
 test-integration = "python -m pytest -q tests/integration"
 
@@ -42,17 +50,28 @@ test-composition = "python -m pytest -q tests/unit/composition"
 test-config = "python -m pytest -q tests/unit/config"
 test-pipeline = "python -m pytest -q tests/unit/pipeline"
 test-storage = "python -m pytest -q tests/unit/storage"
-test-ml-affect = "python -m pytest -q tests/unit/ml_affect"
+test-ml = "python -m pytest -q tests/unit/ml_affect"
 test-scripts = "python -m pytest -q tests/unit/scripts"
+
+# Coverage
+test-coverage = "python -m pytest -q tests --cov --cov-report=term-missing --cov-report=html"
+test-coverage-unit = "python -m pytest -q tests/unit --cov --cov-report=term-missing"
+test-coverage-integration = "python -m pytest -q tests/integration --cov --cov-report=term-missing"
 
 # Operational
 serve = "python -m uvicorn api.app:app --host 0.0.0.0 --port 8765"
 
-# Linting Formatting
+# Linting / formatting
 lint = "ruff check ."
 lint-fix = "ruff check . --fix"
 format = "ruff format ."
 format-check = "ruff format --check ."
+
+# General validation
+[tool.poe.tasks.check]
+sequence = ["lint", "format-check"]
+
+# Ruff
 
 [tool.ruff]
 line-length = 100
@@ -65,5 +84,21 @@ ignore = ["UP007", "UP031", "UP046"]
 "tests/**" = ["E402"]
 "scripts/test_f6_baseline.py" = ["E402"]
 
-[tool.poe.tasks.check]
-sequence = ["lint", "format-check"]
+# Coverage
+
+[tool.coverage.run]
+branch = true
+source = [
+    "api",
+    "adapters",
+    "audio",
+    "config",
+    "composition",
+    "ml_affect",
+    "pipeline",
+    "storage",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
