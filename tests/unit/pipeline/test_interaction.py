@@ -285,7 +285,6 @@ def test_trace_latency_is_finalized_from_tts_timing_before_persist():
 
 def test_ensure_user_is_called_before_saving_the_trace():
     call_order: list[str] = []
-    store = FakeStore(call_order=call_order)
 
     class OrderedFakeStore(FakeStore):
         def ensure_user(self, user_id):

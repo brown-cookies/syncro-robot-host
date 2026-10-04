@@ -25,8 +25,7 @@ def wav_bytes() -> bytes:
 
 def install_fake_piper(monkeypatch, *, load_error=None, synth_error=None):
     """Perform the install fake piper operation required by the project."""
-    data = wav_bytes()
-
+    
     class FakeVoice:
         @classmethod
         def load(cls, path):

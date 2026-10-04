@@ -9,6 +9,7 @@ from collections import Counter
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from .label_mapping import (
     ALLOWED_LEVELS,
@@ -16,6 +17,9 @@ from .label_mapping import (
     TESS_LABEL_MAP,
     map_label,
 )
+
+if TYPE_CHECKING:
+    import numpy as np
 
 MANIFEST_COLUMNS = (
     "audio_path",
