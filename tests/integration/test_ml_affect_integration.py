@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from uuid import uuid4
+
 import numpy as np
 import pytest
 
@@ -75,6 +77,7 @@ def test_classifier_detector_reaches_pending_trace(monkeypatch, tmp_path):
     user_id = "wp104-integration-user"
     result = graph.invoke(
         {
+            "trace_id": str(uuid4()),
             "session_id": "wp104-integration-session",
             "user_id": user_id,
             "audio": np.zeros(1600, dtype=np.float32),

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from uuid import uuid4
+
 import numpy as np
 import pytest
 
@@ -56,6 +58,7 @@ def test_dialogue_graph_runs_full_processing_path_and_assembles_trace(tmp_path):
         default_lead_time=15,
     )
     result = graph.invoke({
+        "trace_id": str(uuid4()),
         "session_id": "s1",
         "user_id": "u1",
         "audio": np.zeros(160, dtype=np.float32),

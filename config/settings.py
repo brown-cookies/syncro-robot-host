@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from typing import Literal
 from functools import lru_cache
 
 from dotenv import load_dotenv
@@ -40,6 +41,17 @@ def _bool_env(name: str, default: bool) -> bool:
     if normalized in {"0", "false", "no", "off"}:
         return False
     raise ValueError(f"{name} must be boolean, got {raw!r}")
+
+
+def _log_output_env(name: str, default: str) -> str:
+    """Read LOG_OUTPUT; only console|file are supported sinks (OBS-LOG Section 8)."""
+    raw = os.getenv(name)
+    if raw is None or raw.strip() == "":
+        return default
+    normalized = raw.strip().lower()
+    if normalized not in {"console", "file"}:
+        raise ValueError(f"{name} must be 'console' or 'file', got {raw!r}")
+    return normalized
 
 
 @dataclass(frozen=True, slots=True)
@@ -126,6 +138,9 @@ class Settings:
 
     # Logging
     log_level: str = "INFO"
+    log_output: Literal["console", "file"] = "console"
+    log_file_path: str = "./logs/syncro-events.jsonl"
+    log_include_text: bool = False
 
     def __post_init__(self) -> None:
         """Enforce the D5 sum-based timeout invariant this dataclass can't express per-field."""
@@ -270,6 +285,9 @@ class Settings:
 
             # Logging
             log_level=os.getenv("LOG_LEVEL", defaults.log_level),
+            log_output=_log_output_env("LOG_OUTPUT", defaults.log_output),
+            log_file_path=os.getenv("LOG_FILE_PATH", defaults.log_file_path),
+            log_include_text=_bool_env("LOG_INCLUDE_TEXT", defaults.log_include_text),
         )
 
 
@@ -277,4 +295,3 @@ class Settings:
 def get_settings() -> Settings:
     """Return the immutable settings snapshot used by the running process."""
     return Settings.from_env()
-

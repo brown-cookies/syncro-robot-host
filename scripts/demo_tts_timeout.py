@@ -40,7 +40,7 @@ class CannedGraph:
 
     def invoke(self, state):
         from datetime import datetime, timezone
-        from uuid import uuid4
+        from uuid import UUID
 
         return {
             "response_payload": {
@@ -49,7 +49,7 @@ class CannedGraph:
                 "state_tag": "speaking", "policy_rule": "R5", "lead_time_min": 15.0,
             },
             "pending_trace": {
-                "trace_id": uuid4(), "session_id": state["session_id"],
+                "trace_id": UUID(state["trace_id"]), "session_id": state["session_id"],
                 "user_id": state["user_id"], "timestamp": datetime.now(timezone.utc),
                 "intent": "snooze_reminder", "intent_confidence": 0.9,
                 "retrieved_context_ids": [], "affect_level": "High",

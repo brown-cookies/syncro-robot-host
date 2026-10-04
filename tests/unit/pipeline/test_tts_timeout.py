@@ -3,20 +3,23 @@
 A forced timeout (a stub TTS that blocks until released) makes the behavior
 deterministic without a slow real engine: the runner must finish the
 interaction, persist a full trace with degradation_reason="tts_timeout",
-return empty audio plus the text, and print the fallback line to the console.
+return empty audio plus the text, and emit a WARNING ``degradation_applied``
+event with ``reason_code=tts_timeout`` (OBS-LOG FR-O11; this replaced the old
+warnings print).
 """
 
 from __future__ import annotations
 
 import threading
 from datetime import datetime, timezone
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import numpy as np
 import pytest
 
 from adapters.tts.piper_adapter import TTSAdapterError
 from audio.resample import to_pcm16_16k
+from observability import Emitter, Severity
 from pipeline.interaction import InteractionError, InteractionRunner, SessionContext
 
 
@@ -40,7 +43,7 @@ class _Graph:
                 "tts_text": "Let's focus on the most important item first.",
                 "state_tag": "speaking", "policy_rule": "R5", "lead_time_min": 15.0,
             },
-            "pending_trace": _pending_trace(),
+            "pending_trace": {**_pending_trace(), "trace_id": UUID(state["trace_id"])},
             "stage_timings_s": {"stt": 0.01},
         }
 
@@ -84,10 +87,24 @@ def _session():
     return SessionContext(session_id="s1", user_id="u1", started_monotonic=0.0)
 
 
-def _runner(tts, store, console, timeout=0.05):
+class _ListSink:
+    def __init__(self, records):
+        self.records = records
+
+    def write(self, record):
+        self.records.append(record)
+
+    def close(self):
+        return None
+
+
+def _runner(tts, store, warnings, timeout=0.05):
+    """``warnings`` collects WARNING-and-above events, so it stays empty unless
+    the interaction degraded."""
     return InteractionRunner(
         graph=_Graph(), store=store, tts=tts, resampler=to_pcm16_16k,
-        tts_timeout_s=timeout, console=console.append,
+        tts_timeout_s=timeout,
+        emitter=Emitter([_ListSink(warnings)], level=Severity.WARNING),
     )
 
 
@@ -97,10 +114,10 @@ def _run(runner):
     )
 
 
-def test_forced_tts_timeout_degrades_traces_and_prints_fallback_line():
-    tts, store, console = _BlockingTTS(), _Store(), []
+def test_forced_tts_timeout_degrades_traces_and_emits_degradation_event():
+    tts, store, warnings = _BlockingTTS(), _Store(), []
     try:
-        result = _run(_runner(tts, store, console))
+        result = _run(_runner(tts, store, warnings))
     finally:
         tts.release.set()
 
@@ -112,8 +129,13 @@ def test_forced_tts_timeout_degrades_traces_and_prints_fallback_line():
     assert len(store.saved) == 1 and store.saved_degraded == []
     assert store.saved[0]["degradation_reason"] == "tts_timeout"
     assert store.saved[0]["policy_rule"] == "R5"
-    assert any("TTS timed out" in line and "fallback channel activated" in line
-               for line in console)
+    assert len(warnings) == 1
+    event = warnings[0]
+    assert event["event_type"] == "degradation_applied"
+    assert event["severity"] == "WARNING"
+    assert event["component"] == "runner"
+    assert event["metadata"]["reason_code"] == "tts_timeout"
+    assert event["trace_id"] == result.trace_id
 
 
 def test_timed_out_tts_never_runs_concurrently_with_next_interaction():
@@ -152,8 +174,8 @@ def test_timed_out_tts_never_runs_concurrently_with_next_interaction():
                 if call_number == 1:
                     finished.set()
 
-    tts, store, console = _TrackingTTS(), _Store(), []
-    runner = _runner(tts, store, console, timeout=0.05)
+    tts, store, warnings = _TrackingTTS(), _Store(), []
+    runner = _runner(tts, store, warnings, timeout=0.05)
     first_done = threading.Event()
     first_result = []
     first_error = []
@@ -197,24 +219,30 @@ def test_timed_out_tts_never_runs_concurrently_with_next_interaction():
     assert len(tts.calls) == 1
 
 
-def test_tts_within_timeout_is_not_degraded_and_console_is_silent():
-    store, console = _Store(), []
-    result = _run(_runner(_FastTTS(), store, console, timeout=2.0))
+def test_tts_within_timeout_is_not_degraded_and_warnings_are_silent():
+    store, warnings = _Store(), []
+    result = _run(_runner(_FastTTS(), store, warnings, timeout=2.0))
 
     assert result.degradation_reason is None
     assert result.tts_audio.size > 0
     assert store.saved[0]["degradation_reason"] is None
-    assert console == []
+    assert warnings == []
 
 
 def test_tts_adapter_error_still_maps_to_interaction_error():
-    store, console = _Store(), []
+    store, warnings = _Store(), []
     with pytest.raises(InteractionError) as exc_info:
-        _run(_runner(_FailingTTS(), store, console, timeout=2.0))
+        _run(_runner(_FailingTTS(), store, warnings, timeout=2.0))
 
     assert exc_info.value.stage == "tts"
     assert store.saved == []          # no normal trace for a failed interaction
-    assert console == []
+    # A TTS adapter error is a pipeline failure, not a TTS timeout: the runner
+    # emits pipeline_failure (WARNING) plus interaction_failed (ERROR), and no
+    # tts_timeout degradation.
+    degradations = [e for e in warnings if e["event_type"] == "degradation_applied"]
+    assert [e["metadata"]["reason_code"] for e in degradations] == ["pipeline_failure"]
+    assert [e["event_type"] for e in warnings
+            if e["severity"] == "ERROR"] == ["interaction_failed"]
 
 
 def test_tts_timeout_setting_defaults_to_two_seconds_and_reads_env(monkeypatch):

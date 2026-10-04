@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import cast
-from uuid import uuid4
+from uuid import UUID
 
 from pipeline.contracts import (
     ActionTaken,
@@ -21,6 +21,7 @@ def make_output_node():
     """Create the output graph node that assembles, but does not persist, the trace."""
     def output_node(state: DialogueState) -> DialogueState:
         """Prepare the response payload and pending trace from completed dialogue state."""
+        trace_id_raw = state.get("trace_id")
         session_id = state.get("session_id")
         user_id = state.get("user_id")
         final_response = state.get("final_response")
@@ -30,6 +31,7 @@ def make_output_node():
         missing = [
             name
             for name, value in (
+                ("trace_id", trace_id_raw),
                 ("session_id", session_id),
                 ("user_id", user_id),
                 ("final_response", final_response),
@@ -46,6 +48,8 @@ def make_output_node():
 
         # The checks above narrow these values for both runtime safety and
         # static type checkers such as Pylance.
+        if not isinstance(trace_id_raw, str):
+            raise TypeError("trace_id must be a string")
         if not isinstance(session_id, str):
             raise TypeError("session_id must be a string")
         if not isinstance(user_id, str):
@@ -57,7 +61,9 @@ def make_output_node():
         if not isinstance(intent_confidence, (int, float)):
             raise TypeError("intent_confidence must be numeric")
 
-        trace_id = uuid4()
+        # OBS-LOG FR-O1: the trace_id is minted once, by InteractionRunner.run,
+        # and arrives here through state. This node must never mint its own.
+        trace_id = UUID(trace_id_raw)
 
         policy_rule_raw = state.get("policy_rule", "n/a")
         if policy_rule_raw not in {"R1", "R2", "R3", "R4", "R5", "n/a"}:

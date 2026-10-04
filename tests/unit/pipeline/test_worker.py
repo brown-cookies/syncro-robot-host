@@ -50,6 +50,7 @@ class FakeRunner:
 
     def __init__(self) -> None:
         self.calls: list[SessionContext] = []
+        self.trace_ids: list[str | None] = []
         self.thread_idents: list[int] = []
         self.max_active = 0
         self._active = 0
@@ -65,7 +66,15 @@ class FakeRunner:
     def raise_on(self, session_id: str, exc: BaseException) -> None:
         self._raises[session_id] = exc
 
-    def run(self, *, session: SessionContext, audio: np.ndarray, sample_rate: int) -> InteractionResult:
+    def run(
+        self,
+        *,
+        session: SessionContext,
+        audio: np.ndarray,
+        sample_rate: int,
+        trace_id: str | None = None,
+    ) -> InteractionResult:
+        self.trace_ids.append(trace_id)
         with self._lock:
             self._active += 1
             self.max_active = max(self.max_active, self._active)
@@ -90,6 +99,26 @@ def _wait_until(predicate, *, timeout: float = 2.0, interval: float = 0.01) -> b
             return True
         time.sleep(interval)
     return predicate()
+
+
+# --- trace_id hand-off (OBS-LOG FR-O1) --------------------------------
+
+
+def test_submit_passes_the_transport_trace_id_through_to_the_runner():
+    runner = FakeRunner()
+    worker = InteractionWorker(runner=runner, maxsize=4)
+    worker.start()
+    try:
+        worker.submit(
+            session=make_session(), audio=AUDIO, sample_rate=16_000, trace_id="abc"
+        ).result(timeout=2.0)
+        worker.submit(
+            session=make_session(), audio=AUDIO, sample_rate=16_000
+        ).result(timeout=2.0)
+    finally:
+        worker.stop(timeout=2.0)
+
+    assert runner.trace_ids == ["abc", None]
 
 
 # --- basic round trip -------------------------------------------------

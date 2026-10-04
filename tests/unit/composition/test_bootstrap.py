@@ -53,6 +53,27 @@ def _patch_graph_dependencies(monkeypatch, test_settings):
     return FakeStore
 
 
+def test_bootstrap_builds_one_emitter_and_shares_it_with_the_runner(monkeypatch, test_settings):
+    """OBS-LOG: the composition root owns the emitter; the runner uses that same one."""
+    from observability import Emitter, Severity
+    from observability.sinks import ConsoleSink
+
+    _patch_graph_dependencies(monkeypatch, test_settings)
+    import sys
+    import types
+    fake_graph_module = types.ModuleType("pipeline.graph")
+    setattr(fake_graph_module, "build_dialogue_graph", lambda **kwargs: object())
+    monkeypatch.setitem(sys.modules, "pipeline.graph", fake_graph_module)
+
+    result = bootstrap.build_host_components(test_settings)
+
+    assert isinstance(result.emitter, Emitter)
+    assert result.runner._emitter is result.emitter
+    # Settings default: console output at INFO (spec Section 8).
+    assert result.emitter.level is Severity.INFO
+    assert isinstance(result.emitter._sinks[0], ConsoleSink)
+
+
 def test_bootstrap_uses_development_affect_detector_by_default(monkeypatch, test_settings):
     """Verify that clean clones default to the deterministic affect fallback."""
     _patch_graph_dependencies(monkeypatch, test_settings)

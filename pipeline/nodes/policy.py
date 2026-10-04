@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from observability import NULL_EMITTER, Emitter, EventType
 from pipeline.state import DialogueState
 
 ALLOWED_AFFECT_LEVELS = frozenset({"Low", "Moderate", "High"})
@@ -53,6 +54,7 @@ def make_policy_node(
     store=None,
     lead_time_min: float = LEAD_TIME_MIN_MINUTES,
     lead_time_max: float = LEAD_TIME_MAX_MINUTES,
+    emitter: Emitter = NULL_EMITTER,
 ):
     """Create the policy graph node with its injected policy logic."""
     def policy_node(state: DialogueState) -> DialogueState:
@@ -70,6 +72,24 @@ def make_policy_node(
             raise RuntimeError("Node 4 requires the parallel affect result.")
 
         rule = apply_policy(affect, proximity) if governed else "n/a"
+        # OBS-LOG FR-O7: the rule evaluation and the inputs it saw. Emitted
+        # for every turn (rule "n/a" when the intent is outside the policy
+        # domain) so each trace shows the policy decision.
+        trace_id = state.get("trace_id") or ""
+        session_id = state.get("session_id")
+        emitter.event(
+            trace_id=trace_id,
+            component="policy",
+            event_type=EventType.DECISION_EVALUATED,
+            session_id=session_id,
+            metadata={
+                "intent": intent,
+                "governed": governed,
+                "affect_level": affect,
+                "deadline_proximity": proximity,
+                "policy_rule": rule,
+            },
+        )
         if not governed:
             proximity = "n/a"
 
@@ -108,6 +128,21 @@ def make_policy_node(
             else float(default_lead_time)
         )
         lead_time = clamp_lead_time(raw_lead_time, lead_time_min, lead_time_max)
+
+        # OBS-LOG FR-O8: the host selects an action; the only executor-like
+        # effect (R5 suppressing pending reminder traces) is above. The
+        # action_started/completed/failed events stay reserved.
+        emitter.event(
+            trace_id=trace_id,
+            component="policy",
+            event_type=EventType.ACTION_SELECTED,
+            session_id=session_id,
+            metadata={
+                "proposed_action": state.get("proposed_action"),
+                "action_taken": action,
+                "policy_rule": rule,
+            },
+        )
 
         return {
             "final_response": final,

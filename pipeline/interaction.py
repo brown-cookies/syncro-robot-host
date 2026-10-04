@@ -27,7 +27,7 @@ from datetime import datetime, timezone
 from threading import Lock
 from time import monotonic, time
 from typing import Any, Callable, cast
-from uuid import uuid4
+from uuid import UUID
 
 import numpy as np
 
@@ -35,6 +35,8 @@ from adapters.llm.intent_classifier import IntentClassifierError
 from adapters.llm.ollama_adapter import LLMAdapterError
 from adapters.stt.whisper_adapter import STTAdapterError
 from adapters.tts.piper_adapter import TTSAdapterError
+from observability import NULL_EMITTER, Emitter, EventType, Severity, new_trace_id
+from observability.emitter import error_info
 from pipeline.contracts import DecisionTraceRecord
 
 from pipeline.graph import invoke_dialogue
@@ -105,10 +107,12 @@ class InteractionError(RuntimeError):
         wire_code: str,
         degradation_reason: str | None,
         trace_required: bool,
+        trace_id: str | None = None,
     ) -> None:
         super().__init__(f"interaction failed at stage {stage!r}: {cause}")
         self.stage = stage
         self.cause = cause
+        self.trace_id = trace_id
         self.wire_code = wire_code
         self.degradation_reason = degradation_reason
         self.trace_required = trace_required
@@ -125,6 +129,15 @@ _FAILURE_MAP: tuple[tuple[type[Exception], str, str, str | None, bool], ...] = (
     (ValueError, "pipeline", "pipeline_failure", "pipeline_failure", True),
     (RuntimeError, "pipeline", "pipeline_failure", "pipeline_failure", True),
 )
+
+
+def _resolve_trace_id(trace_id: str | None) -> str:
+    """Return the canonical trace_id string, minting one only if none is supplied.
+
+    Normalizing through ``UUID`` means a supplied id and the id the graph hands
+    back compare equal regardless of formatting (case, braces).
+    """
+    return str(UUID(trace_id)) if trace_id else new_trace_id()
 
 
 class InteractionRunner:
@@ -150,8 +163,9 @@ class InteractionRunner:
         clock: Callable[[], float] = monotonic,
         clock_ms: Callable[[], float] | None = None,
         tts_timeout_s: float | None = None,
-        console: Callable[[str], None] = print,
+        emitter: Emitter = NULL_EMITTER,
     ) -> None:
+        self._emitter = emitter
         self._graph = graph
         self._store = store
         self._tts = tts
@@ -159,7 +173,6 @@ class InteractionRunner:
         self._clock = clock
         self._clock_ms = clock_ms or (lambda: time() * 1000.0)
         self._tts_timeout_s = tts_timeout_s
-        self._console = console
         self._tts_executor: ThreadPoolExecutor | None = (
             ThreadPoolExecutor(max_workers=1, thread_name_prefix="tts")
             if tts_timeout_s is not None
@@ -206,17 +219,42 @@ class InteractionRunner:
         self._tts_executor.shutdown(wait=False, cancel_futures=True)
         self._tts_executor = None
 
-
-    def run(self, *, session: SessionContext, audio: np.ndarray, sample_rate: int) -> InteractionResult:
+    def run(
+        self,
+        *,
+        session: SessionContext,
+        audio: np.ndarray,
+        sample_rate: int,
+        trace_id: str | None = None,
+    ) -> InteractionResult:
         """Run one full interaction and return its result.
 
         All graph, adapter, and runner-stage failures are translated into
         ``InteractionError`` before crossing this boundary. Trace persistence
         still occurs only after TTS timing is known (F1).
+
+        OBS-LOG FR-O1: this is the one place a ``trace_id`` is minted. A caller
+        that accepted the interaction earlier (the transport) may supply the id
+        it already minted; otherwise one is minted here. The same value is
+        threaded through the graph state, stamped on every event, and persisted
+        as ``decision_trace.trace_id`` (or the degraded trace on failure).
         """
+        trace_id = _resolve_trace_id(trace_id)
+        self._emitter.event(
+            trace_id=trace_id,
+            component="runner",
+            event_type=EventType.INTERACTION_STARTED,
+            status="started",
+            session_id=session.session_id,
+            metadata={
+                "sample_rate": sample_rate,
+                "audio_samples": int(getattr(audio, "size", 0)),
+            },
+        )
         try:
             graph_result = invoke_dialogue(
                 self._graph,
+                trace_id=trace_id,
                 session_id=session.session_id,
                 user_id=session.user_id,
                 audio=audio,
@@ -226,7 +264,8 @@ class InteractionRunner:
 
             response_payload = state.get("response_payload")
             if response_payload is None:
-                raise KeyError("dialogue graph state is missing 'response_payload'")
+                raise KeyError(
+                    "dialogue graph state is missing 'response_payload'")
             pending_trace_raw = state.get("pending_trace")
             if pending_trace_raw is None:
                 raise KeyError(
@@ -246,9 +285,13 @@ class InteractionRunner:
                 # it degraded; the edge gets text and no audio.
                 degradation_reason = "tts_timeout"
                 tts_audio = np.zeros(0, dtype=np.int16)
-                self._console(
-                    "[interaction] TTS timed out - fallback channel activated "
-                    f"(session={session.session_id}, timeout={self._tts_timeout_s}s)"
+                # OBS-LOG FR-O11: replaces the former console print.
+                self._emitter.degradation(
+                    trace_id=trace_id,
+                    component="runner",
+                    session_id=session.session_id,
+                    reason_code=degradation_reason,
+                    metadata={"timeout_s": self._tts_timeout_s},
                 )
             else:
                 tts_audio_raw, tts_native_rate = synthesized
@@ -261,6 +304,12 @@ class InteractionRunner:
             )
 
             pending_trace = dict(pending_trace_raw)
+            if _resolve_trace_id(str(pending_trace.get("trace_id"))) != trace_id:
+                raise RuntimeError(
+                    f"dialogue graph produced trace_id {pending_trace.get('trace_id')!r} "
+                    f"but this interaction's trace_id is {trace_id!r}; OBS-LOG FR-O1 "
+                    "allows exactly one trace_id per interaction"
+                )
             pending_trace["latency_ms"] = latency_ms
             pending_trace["latency_basis"] = latency_basis
             if degradation_reason is not None:
@@ -274,6 +323,18 @@ class InteractionRunner:
                 **graph_result.stage_durations_s,
                 "tts": tts_completed - tts_started,
             }
+
+            self._emitter.event(
+                trace_id=trace_id,
+                component="runner",
+                event_type=EventType.INTERACTION_COMPLETED,
+                session_id=session.session_id,
+                metadata={
+                    "latency_ms": latency_ms,
+                    "latency_basis": latency_basis,
+                    "degradation_reason": trace.degradation_reason,
+                },
+            )
 
             return InteractionResult(
                 session_id=session.session_id,
@@ -290,18 +351,66 @@ class InteractionRunner:
             raise
         except Exception as exc:  # noqa: BLE001 - interaction boundary
             disposition = self._classify_failure(exc)
+            # OBS-LOG FR-O11: the degradation is decided here. It is emitted in
+            # addition to interaction_failed below, and before persistence so it
+            # is logged even if the degraded-trace write itself fails.
+            if disposition.degradation_reason is not None:
+                self._emitter.degradation(
+                    trace_id=trace_id,
+                    component="runner",
+                    session_id=session.session_id,
+                    reason_code=disposition.degradation_reason,
+                    metadata={
+                        "stage": disposition.stage,
+                        "wire_code": disposition.wire_code,
+                    },
+                )
+            # Emitted before persistence so the failure is logged even if the
+            # degraded-trace write itself fails.
+            self._emitter.event(
+                trace_id=trace_id,
+                component="runner",
+                event_type=EventType.INTERACTION_FAILED,
+                severity=Severity.ERROR,
+                status="failure",
+                session_id=session.session_id,
+                metadata={
+                    "stage": disposition.stage,
+                    "wire_code": disposition.wire_code,
+                    "degradation_reason": disposition.degradation_reason,
+                },
+                # FR-O9: error.component is where it failed (the disposition's
+                # stage), error_code is the stable wire code from _FAILURE_MAP.
+                # The interaction produced no response, so it is not
+                # recoverable; the traceback stays in this log record only.
+                error=error_info(
+                    exc,
+                    component=disposition.stage,
+                    operation="run",
+                    error_code=disposition.wire_code,
+                    recoverable=False,
+                ),
+            )
             if disposition.trace_required:
-                self._persist_degraded_trace(session=session, disposition=disposition)
+                self._persist_degraded_trace(
+                    session=session, disposition=disposition, trace_id=trace_id
+                )
             raise InteractionError(
                 disposition.stage,
                 exc,
                 wire_code=disposition.wire_code,
                 degradation_reason=disposition.degradation_reason,
                 trace_required=disposition.trace_required,
+                trace_id=trace_id,
             ) from exc
 
     def persist_transport_degraded_trace(
-        self, *, session: SessionContext, wire_code: str, degradation_reason: str
+        self,
+        *,
+        session: SessionContext,
+        wire_code: str,
+        degradation_reason: str,
+        trace_id: str | None = None,
     ) -> None:
         """Persist a degraded trace for a failure the transport layer
         decided on its own, before the interaction ever reached `run()`.
@@ -315,7 +424,23 @@ class InteractionRunner:
         `WorkerQueueFullError` handling
         (`degradation_reason="queue_overflow"`) both call this rather than
         each carrying its own near-duplicate wrapper.
+
+        OBS-LOG FR-O1: ``trace_id`` is the id the transport minted when it
+        accepted the interaction; it is reused here so the degraded trace and
+        any transport events correlate. One is minted only if none is supplied.
         """
+        trace_id = _resolve_trace_id(trace_id)
+        # OBS-LOG FR-O11: session_timeout / queue_overflow. This is the single
+        # point every transport degradation passes through with its reason, and
+        # it is emitted before persistence so it is logged even if the write
+        # fails. Both reasons come from DegradationReason.
+        self._emitter.degradation(
+            trace_id=trace_id,
+            component="transport",
+            session_id=session.session_id,
+            reason_code=degradation_reason,
+            metadata={"wire_code": wire_code},
+        )
         self._persist_degraded_trace(
             session=session,
             disposition=FailureDisposition(
@@ -324,10 +449,15 @@ class InteractionRunner:
                 degradation_reason=degradation_reason,
                 trace_required=True,
             ),
+            trace_id=trace_id,
         )
 
     def _persist_degraded_trace(
-        self, *, session: SessionContext, disposition: FailureDisposition
+        self,
+        *,
+        session: SessionContext,
+        disposition: FailureDisposition,
+        trace_id: str,
     ) -> None:
         """Persist the minimal trace for an interaction that never completed normally."""
         reason = disposition.degradation_reason
@@ -336,7 +466,7 @@ class InteractionRunner:
         self._store.ensure_user(session.user_id)
         self._store.save_degraded_trace(
             {
-                "trace_id": uuid4(),
+                "trace_id": UUID(trace_id),
                 "session_id": session.session_id,
                 "user_id": session.user_id,
                 "timestamp": datetime.now(timezone.utc),

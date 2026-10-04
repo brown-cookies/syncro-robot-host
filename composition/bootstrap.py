@@ -21,6 +21,7 @@ from audio.capture import MicrophoneAudioInput
 from audio.playback import SpeakerAudioOutput
 from audio.resample import to_pcm16_16k
 from config.settings import Settings, get_settings
+from observability import Emitter, build_emitter
 from pipeline.host_pipeline import HostPipeline
 from storage.sqlite_store import SQLiteStore
 
@@ -52,6 +53,9 @@ class HostComponents:
     affect_detector: ClassifierAffectDetector | DevelopmentAffectDetector
     runner: InteractionRunner
     worker: InteractionWorker
+    # OBS-LOG: the single shared emitter, built once here from Settings. The
+    # process owner (api/app.py's lifespan) closes it on shutdown.
+    emitter: Emitter
 
 
 def build_host_pipeline(settings: Settings | None = None) -> HostPipeline:
@@ -141,6 +145,9 @@ def build_host_components(
 ) -> HostComponents:
     """Assemble the host components and graph dependencies used by the runtime."""
     settings = settings or get_settings()
+    # Built first so everything assembled below can share it. Never fails
+    # startup: a bad LOG_FILE_PATH falls back to console (OBS-LOG Section 8/9).
+    emitter = build_emitter(settings)
     _warm_up_llm(settings)
     store = SQLiteStore(settings.db_path)
     stt = WhisperSTTAdapter(settings)
@@ -185,6 +192,7 @@ def build_host_components(
         default_lead_time=settings.lead_time_default,
         lead_time_min=settings.lead_time_min,
         lead_time_max=settings.lead_time_max,
+        emitter=emitter,
     )
 
     # F3: the runner is part of the composition root so every caller
@@ -201,6 +209,7 @@ def build_host_components(
         tts=tts,
         resampler=to_pcm16_16k,
         tts_timeout_s=settings.tts_timeout_s,
+        emitter=emitter,
     )
 
     # S1: the worker is constructed here so it shares the composition root's
@@ -225,4 +234,5 @@ def build_host_components(
         affect_detector=affect_detector,
         runner=runner,
         worker=worker,
+        emitter=emitter,
     )
