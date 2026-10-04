@@ -219,7 +219,6 @@ class InteractionRunner:
         self._tts_executor.shutdown(wait=False, cancel_futures=True)
         self._tts_executor = None
 
-
     def run(
         self,
         *,
@@ -265,7 +264,8 @@ class InteractionRunner:
 
             response_payload = state.get("response_payload")
             if response_payload is None:
-                raise KeyError("dialogue graph state is missing 'response_payload'")
+                raise KeyError(
+                    "dialogue graph state is missing 'response_payload'")
             pending_trace_raw = state.get("pending_trace")
             if pending_trace_raw is None:
                 raise KeyError(
@@ -332,7 +332,7 @@ class InteractionRunner:
                 metadata={
                     "latency_ms": latency_ms,
                     "latency_basis": latency_basis,
-                    "degradation_reason": degradation_reason,
+                    "degradation_reason": trace.degradation_reason,
                 },
             )
 

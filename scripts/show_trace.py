@@ -38,18 +38,26 @@ def list_traces(path: Path) -> list[dict]:
         t = traces.setdefault(
             r["trace_id"],
             {"trace_id": r["trace_id"], "started": r["timestamp"], "session_id": r.get("session_id"),
-             "events": 0, "failed": False, "completed": False},
+             "events": 0, "failed": False, "completed": False, "degraded": False},
         )
         t["events"] += 1
         t["started"] = min(t["started"], r["timestamp"])
         t["session_id"] = t["session_id"] or r.get("session_id")
-        if r["event_type"] == "interaction_failed" or r["severity"] in ("ERROR", "CRITICAL"):
+        if r["event_type"] == "interaction_failed":
             t["failed"] = True
         if r["event_type"] == "interaction_completed":
             t["completed"] = True
+        # A degradation or a recovered ERROR (e.g. the affect fallback) on an
+        # interaction that still completed is "degraded", not "FAILED".
+        if r["event_type"] == "degradation_applied" or r["severity"] in ("ERROR", "CRITICAL"):
+            t["degraded"] = True
     for t in traces.values():
-        t["outcome"] = "FAILED" if t["failed"] else (
-            "ok" if t["completed"] else "incomplete")
+        if t["failed"]:
+            t["outcome"] = "FAILED"
+        elif not t["completed"]:
+            t["outcome"] = "incomplete"
+        else:
+            t["outcome"] = "degraded" if t["degraded"] else "ok"
     return sorted(traces.values(), key=lambda t: t["started"], reverse=True)
 
 
