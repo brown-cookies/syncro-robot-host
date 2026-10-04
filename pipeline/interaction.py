@@ -363,7 +363,17 @@ class InteractionRunner:
                     "wire_code": disposition.wire_code,
                     "degradation_reason": disposition.degradation_reason,
                 },
-                error=error_info(exc, component="runner", operation="run"),
+                # FR-O9: error.component is where it failed (the disposition's
+                # stage), error_code is the stable wire code from _FAILURE_MAP.
+                # The interaction produced no response, so it is not
+                # recoverable; the traceback stays in this log record only.
+                error=error_info(
+                    exc,
+                    component=disposition.stage,
+                    operation="run",
+                    error_code=disposition.wire_code,
+                    recoverable=False,
+                ),
             )
             if disposition.trace_required:
                 self._persist_degraded_trace(

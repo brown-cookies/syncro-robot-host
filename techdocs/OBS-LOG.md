@@ -116,17 +116,17 @@ error
 
 ### FR-O4 — Stage Lifecycle
 
-Every instrumented pipeline stage must emit:
+Every instrumented pipeline stage emits `stage_started`, followed by exactly one terminal event:
 
 ```text
-stage_started
-stage_completed
-stage_failed
+stage_completed   the stage ran its normal work
+stage_skipped     the stage's normal work was intentionally bypassed
+stage_failed      the stage raised
 ```
 
-`stage_skipped` may be used when a stage is intentionally bypassed.
+`stage_skipped` is a terminal event. It replaces `stage_completed` and is never emitted in addition to it, so a stage that was skipped has no completion. It carries a `reason` in its metadata. The stage still runs its wrapper, still writes state and still has a `stage_timings_s` entry.
 
-Completed and failed stage events must include `duration_ms`.
+Every terminal event (completed, skipped, failed) must include `duration_ms` and `parent_event_id` (the `stage_started` event).
 
 `stage_failed` is emitted when a stage raises. The instrumentation records the failure and re-raises the original exception unchanged. It must not swallow, wrap, or alter stage exceptions.
 
@@ -236,6 +236,8 @@ action execution (reserved, see FR-O8)
 ```
 
 Elapsed durations must use a monotonic clock.
+
+Stage timing has one implementation: the stage wrapper times each stage through the stage-lifecycle API, and a stage's `stage_timings_s` value is that same reading. There is no separate timing path for interactions without observability or without a `trace_id`; a dialogue graph invoked without a `trace_id` is an invalid invocation (FR-O1) and fails at its first stage.
 
 Instrumentation wraps existing timing; it does not replace it. `stage_timings_s`, `stage_durations_s`, and `decision_trace.latency_ms` remain as they are and continue to feed latency measurement. Each duration is read from the clock once, and that same value is used for both the existing timing field and the event's `duration_ms`, so the two cannot disagree.
 
@@ -442,7 +444,7 @@ A missing telemetry event must never create a second application failure.
 The implementation is verified by confirming that:
 
 1. One interaction produces a consistent `trace_id`.
-2. Instrumented stages emit start and completion/failure events.
+2. Instrumented stages emit a start event and exactly one terminal event (completed, skipped or failed); a skipped stage has no completion event.
 3. Stage and model durations are recorded.
 4. Model results and decision branches are observable.
 5. Selected actions are distinguishable from executed actions.
@@ -458,7 +460,8 @@ The implementation is verified by confirming that:
 15. The affect fallback emits a WARNING `degradation_applied` event with `reason_code=affect_detector_failure`.
 16. Transcript and response text are absent from events by default, and present only with `LOG_LEVEL=DEBUG` and `LOG_INCLUDE_TEXT=true` together.
 17. `action_started`, `action_completed`, and `action_failed` are never emitted while no executor exists.
-18. For each stage, the event `duration_ms` equals the matching `stage_timings_s` value.
+18. For each stage, the terminal event's `duration_ms` (completed or skipped) equals the matching `stage_timings_s` value.
+20. A dialogue graph invoked without a `trace_id` fails at its first stage, before any adapter or model runs.
 19. `state_snapshot` events appear only at `LOG_LEVEL=DEBUG`, record only the named variables, and contain no raw string values unless marked `plain` or full text is enabled.
 
 ---
@@ -516,3 +519,9 @@ without relying on unrelated `print()` statements or a centralized observability
 7. `LOG_FILE_PATH` defaults to `./logs/syncro-events.jsonl` (git-ignored); console remains the default output.
 
 **Rev 3 (2026-10-05)** adds debugger-style variable tracing: new `state_snapshot` event and an FR-O5 amendment (explicit `snapshot` / `diff`, DEBUG only, strings hash-only by type, credentials never hashed, no automatic tracing).
+
+**Rev 4 (2026-10-05)** tightens stage semantics after implementation review:
+
+1. FR-O4: a stage ends in exactly one terminal event. `stage_skipped` replaces `stage_completed` rather than following it, carries `reason`, and (like every terminal event) carries `duration_ms` and `parent_event_id`.
+2. FR-O10: stage timing has a single implementation. A missing `trace_id` is an invalid invocation, not a legacy timing mode (new verification item 20).
+

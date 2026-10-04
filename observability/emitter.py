@@ -27,12 +27,18 @@ class StageTimer:
     ``elapsed_s`` is set once, from one monotonic reading, when the block
     exits. Use it for ``stage_timings_s`` so the existing timing field and the
     event's ``duration_ms`` can never disagree (FR-O10).
-    ``output`` is attached to the ``stage_completed`` event (FR-O5).
+    ``output`` is attached to the terminal event (FR-O5).
+    ``skip(reason)`` ends the stage as ``stage_skipped`` instead of
+    ``stage_completed``: the stage's normal work was bypassed (FR-O4).
     """
 
     elapsed_s: float = 0.0
     started_event_id: str = ""
     output: dict[str, Any] = field(default_factory=dict)
+    skip_reason: str | None = None
+
+    def skip(self, reason: str) -> None:
+        self.skip_reason = reason
 
 
 _MISSING = object()
@@ -47,16 +53,30 @@ def _callsite(depth: int) -> str:
         return ""
 
 
-def error_info(exc: BaseException, *, component: str, operation: str) -> dict[str, Any]:
-    """FR-O9 error shape. The traceback stays in the diagnostic log only."""
+def error_info(
+    exc: BaseException,
+    *,
+    component: str,
+    operation: str,
+    error_code: str | None = None,
+    recoverable: bool | None = None,
+    retry_count: int | None = None,
+) -> dict[str, Any]:
+    """FR-O9 error shape. The traceback stays in the diagnostic log only.
+
+    ``error_code`` defaults to the exception's own ``wire_code`` when it has
+    one; callers that have classified the failure (the runner's _FAILURE_MAP
+    disposition) pass the stable code explicitly. ``recoverable`` and
+    ``retry_count`` stay None ("unknown") unless the caller actually knows.
+    """
     return {
         "error_type": type(exc).__name__,
-        "error_code": getattr(exc, "wire_code", None),
+        "error_code": error_code if error_code is not None else getattr(exc, "wire_code", None),
         "component": component,
         "operation": operation,
         "message": str(exc)[:500],
-        "recoverable": None,
-        "retry_count": None,
+        "recoverable": recoverable,
+        "retry_count": retry_count,
         "traceback": "".join(
             traceback.format_exception(type(exc), exc, exc.__traceback__)
         )[-4000:],
@@ -140,7 +160,9 @@ class Emitter:
         session_id: str | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> Iterator[StageTimer]:
-        """FR-O4 lifecycle: stage_started, then stage_completed or stage_failed.
+        """FR-O4 lifecycle: stage_started, then exactly one terminal event:
+        stage_completed, stage_skipped (the body called ``timer.skip``) or
+        stage_failed. Every terminal event carries ``duration_ms``.
 
         The original exception is re-raised untouched.
         """
@@ -173,14 +195,22 @@ class Emitter:
             raise
         else:
             timer.elapsed_s = time.monotonic() - start
+            skipped = timer.skip_reason is not None
             self.event(
                 trace_id=trace_id,
                 component=component,
-                event_type=EventType.STAGE_COMPLETED,
+                event_type=(
+                    EventType.STAGE_SKIPPED if skipped else EventType.STAGE_COMPLETED
+                ),
+                status="skipped" if skipped else "success",
                 session_id=session_id,
                 duration_ms=timer.elapsed_s * 1000.0,
                 parent_event_id=timer.started_event_id or None,
-                metadata=timer.output,
+                metadata=(
+                    {"reason": timer.skip_reason, **timer.output}
+                    if skipped
+                    else timer.output
+                ),
             )
 
     def bind(self, *, trace_id: str, component: str, session_id: str | None = None) -> "Scope":

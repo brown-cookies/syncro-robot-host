@@ -139,3 +139,31 @@ def test_file_sink_is_safe_under_concurrent_writers(tmp_path) -> None:
     lines = path.read_text(encoding="utf-8").splitlines()
     assert len(lines) == 200
     assert all(json.loads(line)["trace_id"] == "t1" for line in lines)
+
+def test_stage_skip_replaces_completed_and_keeps_duration_and_parent() -> None:
+    sink = ListSink()
+    emitter = Emitter([sink], level=Severity.DEBUG)
+    with emitter.stage(trace_id="t1", component="llm") as timer:
+        timer.output["marker"] = 1
+        timer.skip("clarification_only")
+    types = [r["event_type"] for r in sink.records]
+    assert types == ["stage_started", "stage_skipped"]
+    started, skipped = sink.records
+    assert skipped["status"] == "skipped"
+    assert skipped["parent_event_id"] == started["event_id"]
+    assert skipped["duration_ms"] == timer.elapsed_s * 1000.0
+    assert skipped["metadata"] == {"reason": "clarification_only", "marker": 1}
+
+
+def test_stage_without_skip_still_completes_and_failure_wins_over_skip() -> None:
+    sink = ListSink()
+    emitter = Emitter([sink], level=Severity.DEBUG)
+    with emitter.stage(trace_id="t1", component="a"):
+        pass
+    with pytest.raises(ValueError):
+        with emitter.stage(trace_id="t2", component="b") as timer:
+            timer.skip("will be overridden by the raise")
+            raise ValueError("boom")
+    assert [r["event_type"] for r in sink.records] == [
+        "stage_started", "stage_completed", "stage_started", "stage_failed",
+    ]
