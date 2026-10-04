@@ -24,6 +24,11 @@ class OllamaLLMAdapter:
         self._timeout_s = settings.reasoning_timeout_s
         self._keep_alive = settings.ollama_keep_alive
 
+    @property
+    def model_name(self) -> str:
+        """Configured Ollama model, reported in OBS-LOG model events."""
+        return self._model
+
     def generate(self, prompt: str) -> str:
         """Generate an LLM response from the supplied conversation state and context."""
         payload = {

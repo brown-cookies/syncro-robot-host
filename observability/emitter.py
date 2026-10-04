@@ -41,6 +41,21 @@ class StageTimer:
         self.skip_reason = reason
 
 
+@dataclass(slots=True)
+class ModelCall:
+    """Handed to the body of ``Emitter.model_inference`` (FR-O6).
+
+    ``result`` is attached to ``model_inference_completed``: put the prediction
+    and confidence there (text fields use their redacted names, e.g.
+    ``transcript``). ``elapsed_s`` is set once, from one monotonic reading,
+    when the block exits.
+    """
+
+    elapsed_s: float = 0.0
+    started_event_id: str = ""
+    result: dict[str, Any] = field(default_factory=dict)
+
+
 _MISSING = object()
 
 
@@ -212,6 +227,96 @@ class Emitter:
                     else timer.output
                 ),
             )
+
+    @contextmanager
+    def model_inference(
+        self,
+        *,
+        trace_id: str,
+        component: str,
+        session_id: str | None = None,
+        model_name: str | None = None,
+        model_version: str | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> Iterator[ModelCall]:
+        """FR-O6: ``model_inference_started``, then exactly one of
+        ``model_inference_completed`` or ``model_inference_failed``.
+
+        ``duration_ms`` is the inference only (a subset of the stage's time).
+        Raw model inputs are never passed here; callers put only the
+        prediction/confidence in ``call.result``. The original exception is
+        re-raised untouched.
+        """
+        call = ModelCall()
+        base: dict[str, Any] = {"model_name": model_name}
+        if model_version is not None:
+            base["model_version"] = model_version
+        base.update(metadata or {})
+        call.started_event_id = self.event(
+            trace_id=trace_id,
+            component=component,
+            event_type=EventType.MODEL_INFERENCE_STARTED,
+            status="started",
+            metadata=base,
+            session_id=session_id,
+        )
+        start = time.monotonic()
+        try:
+            yield call
+        except BaseException as exc:
+            call.elapsed_s = time.monotonic() - start
+            self.event(
+                trace_id=trace_id,
+                component=component,
+                event_type=EventType.MODEL_INFERENCE_FAILED,
+                severity=Severity.ERROR,
+                status="failure",
+                session_id=session_id,
+                duration_ms=call.elapsed_s * 1000.0,
+                parent_event_id=call.started_event_id or None,
+                metadata={**base, "outcome": "failure"},
+                error=error_info(exc, component=component, operation="inference"),
+            )
+            raise
+        else:
+            call.elapsed_s = time.monotonic() - start
+            self.event(
+                trace_id=trace_id,
+                component=component,
+                event_type=EventType.MODEL_INFERENCE_COMPLETED,
+                status="success",
+                session_id=session_id,
+                duration_ms=call.elapsed_s * 1000.0,
+                parent_event_id=call.started_event_id or None,
+                metadata={**base, **call.result, "outcome": "success"},
+            )
+
+    def degradation(
+        self,
+        *,
+        trace_id: str,
+        component: str,
+        reason_code: str,
+        session_id: str | None = None,
+        metadata: dict[str, Any] | None = None,
+        error: dict[str, Any] | None = None,
+    ) -> str:
+        """FR-O11: one ``degradation_applied`` event at WARNING.
+
+        ``reason_code`` must be a ``DegradationReason`` value from
+        ``pipeline/contracts.py``; observability introduces no reason strings
+        (it cannot import the contract, so the tests enforce membership).
+        """
+        return self.event(
+            trace_id=trace_id,
+            component=component,
+            event_type=EventType.DEGRADATION_APPLIED,
+            severity=Severity.WARNING,
+            status="degraded",
+            session_id=session_id,
+            metadata={"reason_code": reason_code, **(metadata or {})},
+            error=error,
+        )
 
     def bind(self, *, trace_id: str, component: str, session_id: str | None = None) -> "Scope":
         """Fix trace/component once so call sites stay one-liners."""

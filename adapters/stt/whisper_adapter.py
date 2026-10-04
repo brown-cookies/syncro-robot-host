@@ -16,6 +16,7 @@ class WhisperSTTAdapter:
         """Initialize the WhisperSTTAdapter and establish its runtime state."""
         settings = settings or get_settings()
         self._sample_rate = settings.audio_sample_rate_hz
+        self._model_name = settings.stt_model_size
         try:
             from faster_whisper import WhisperModel
         except ImportError as exc:  # pragma: no cover - dependency boundary
@@ -34,6 +35,11 @@ class WhisperSTTAdapter:
                 f"faster-whisper failed to initialize (model={settings.stt_model_size!r}, "
                 f"device={settings.stt_device!r}, compute_type={settings.stt_compute_type!r}): {exc}"
             ) from exc
+
+    @property
+    def model_name(self) -> str:
+        """Configured model size, reported in OBS-LOG model events."""
+        return self._model_name
 
     def transcribe(self, audio: np.ndarray, sample_rate: int) -> str:
         """Transcribe the supplied audio using the configured speech-to-text backend."""

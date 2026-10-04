@@ -24,6 +24,11 @@ class ClassifierAffectDetector:
         self.model_path = Path(model_path)
         self.model = load_model_artifact(self.model_path)
 
+    @property
+    def model_name(self) -> str:
+        """Artifact name, reported in OBS-LOG model events."""
+        return self.model_path.stem
+
     def detect(self, audio: Any, sample_rate: int) -> str:
         """Detect the current affect level from the supplied audio."""
         if audio is None:

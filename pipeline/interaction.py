@@ -163,7 +163,6 @@ class InteractionRunner:
         clock: Callable[[], float] = monotonic,
         clock_ms: Callable[[], float] | None = None,
         tts_timeout_s: float | None = None,
-        console: Callable[[str], None] = print,
         emitter: Emitter = NULL_EMITTER,
     ) -> None:
         self._emitter = emitter
@@ -174,7 +173,6 @@ class InteractionRunner:
         self._clock = clock
         self._clock_ms = clock_ms or (lambda: time() * 1000.0)
         self._tts_timeout_s = tts_timeout_s
-        self._console = console
         self._tts_executor: ThreadPoolExecutor | None = (
             ThreadPoolExecutor(max_workers=1, thread_name_prefix="tts")
             if tts_timeout_s is not None
@@ -287,9 +285,13 @@ class InteractionRunner:
                 # it degraded; the edge gets text and no audio.
                 degradation_reason = "tts_timeout"
                 tts_audio = np.zeros(0, dtype=np.int16)
-                self._console(
-                    "[interaction] TTS timed out - fallback channel activated "
-                    f"(session={session.session_id}, timeout={self._tts_timeout_s}s)"
+                # OBS-LOG FR-O11: replaces the former console print.
+                self._emitter.degradation(
+                    trace_id=trace_id,
+                    component="runner",
+                    session_id=session.session_id,
+                    reason_code=degradation_reason,
+                    metadata={"timeout_s": self._tts_timeout_s},
                 )
             else:
                 tts_audio_raw, tts_native_rate = synthesized
@@ -349,6 +351,20 @@ class InteractionRunner:
             raise
         except Exception as exc:  # noqa: BLE001 - interaction boundary
             disposition = self._classify_failure(exc)
+            # OBS-LOG FR-O11: the degradation is decided here. It is emitted in
+            # addition to interaction_failed below, and before persistence so it
+            # is logged even if the degraded-trace write itself fails.
+            if disposition.degradation_reason is not None:
+                self._emitter.degradation(
+                    trace_id=trace_id,
+                    component="runner",
+                    session_id=session.session_id,
+                    reason_code=disposition.degradation_reason,
+                    metadata={
+                        "stage": disposition.stage,
+                        "wire_code": disposition.wire_code,
+                    },
+                )
             # Emitted before persistence so the failure is logged even if the
             # degraded-trace write itself fails.
             self._emitter.event(
@@ -413,6 +429,18 @@ class InteractionRunner:
         accepted the interaction; it is reused here so the degraded trace and
         any transport events correlate. One is minted only if none is supplied.
         """
+        trace_id = _resolve_trace_id(trace_id)
+        # OBS-LOG FR-O11: session_timeout / queue_overflow. This is the single
+        # point every transport degradation passes through with its reason, and
+        # it is emitted before persistence so it is logged even if the write
+        # fails. Both reasons come from DegradationReason.
+        self._emitter.degradation(
+            trace_id=trace_id,
+            component="transport",
+            session_id=session.session_id,
+            reason_code=degradation_reason,
+            metadata={"wire_code": wire_code},
+        )
         self._persist_degraded_trace(
             session=session,
             disposition=FailureDisposition(
@@ -421,7 +449,7 @@ class InteractionRunner:
                 degradation_reason=degradation_reason,
                 trace_required=True,
             ),
-            trace_id=_resolve_trace_id(trace_id),
+            trace_id=trace_id,
         )
 
     def _persist_degraded_trace(

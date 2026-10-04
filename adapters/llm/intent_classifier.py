@@ -31,6 +31,11 @@ class OllamaIntentClassifier:
         self._num_predict = settings.intent_num_predict
         self._threshold = settings.intent_confidence_threshold
 
+    @property
+    def model_name(self) -> str:
+        """Configured Ollama model, reported in OBS-LOG model events."""
+        return self._model
+
     def classify(self, transcript: str) -> tuple[str, float, dict[str, object]]:
         """Classify the supplied input using the configured classifier."""
         prompt = f"""You are a strict SYNCRO intent classifier.

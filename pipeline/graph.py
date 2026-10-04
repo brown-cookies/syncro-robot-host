@@ -130,7 +130,7 @@ def build_dialogue_graph(
     # node1_stt and affect are the two branches LangGraph runs in the same
     # superstep off START; both are wrapped with timed() so their durations land
     # in the reducer-backed stage_timings_s key rather than a plain key (F5).
-    builder.add_node("node1_stt", timed("stt", make_stt_node(stt), emitter))
+    builder.add_node("node1_stt", timed("stt", make_stt_node(stt, emitter), emitter))
     # Step 4 (latency): every remaining stage is wrapped with timed() so the
     # measurement table can split the total into wake->intent, intent->policy
     # and policy->TTS. Measurement only; no behavior change.
@@ -138,7 +138,7 @@ def build_dialogue_graph(
         "node1_intent",
         timed(
             "intent",
-            make_intent_node(intent_classifier, confidence_threshold),
+            make_intent_node(intent_classifier, confidence_threshold, emitter),
             emitter,
         ),
     )
@@ -153,10 +153,13 @@ def build_dialogue_graph(
         ),
     )
     builder.add_node(
-        "node3_llm", timed("llm", make_llm_node(llm), emitter)
+        "node3_llm", timed("llm", make_llm_node(llm, emitter), emitter)
     )
     builder.add_node("affect", timed(
-        "affect", make_affect_node(affect_detector), emitter))
+        "affect",
+        make_affect_node(affect_detector, emitter=emitter),
+        emitter,
+    ))
     builder.add_node(
         "node4_policy",
         timed("policy", make_policy_node(
@@ -165,6 +168,7 @@ def build_dialogue_graph(
             store=store,
             lead_time_min=lead_time_min,
             lead_time_max=lead_time_max,
+            emitter=emitter,
         ), emitter),
     )
     builder.add_node("output", timed("output", make_output_node(), emitter))

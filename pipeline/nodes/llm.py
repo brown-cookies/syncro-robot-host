@@ -5,10 +5,11 @@ from __future__ import annotations
 import json
 import re
 
+from observability import NULL_EMITTER, Emitter, EventType, Severity
 from pipeline.state import DialogueState
 
 
-def make_llm_node(llm):
+def make_llm_node(llm, emitter: Emitter = NULL_EMITTER):
     """Create the LLM graph node with its injected generation dependency."""
     def llm_node(state: DialogueState) -> DialogueState:
         """Generate a draft response and store it in dialogue state."""
@@ -54,19 +55,30 @@ Execution boundary:
 Write a useful natural-language response based on the intent, utterance, and context.
 Never output motor commands or low-level hardware instructions.
 """
-        raw = llm.generate(prompt)
-        parsed = _parse_json(raw)
-        response_text = parsed.get("response_text")
-        proposed_action = parsed.get("proposed_action", "respond")
-        if not isinstance(response_text, str) or not response_text.strip():
-            raise ValueError("Node 3 returned an empty response_text.")
-        if not isinstance(proposed_action, str) or not proposed_action.strip():
-            proposed_action = "respond"
+        # OBS-LOG FR-O6: generation, parsing and payload validation are one
+        # inference boundary, so a malformed model payload is recorded as a
+        # failed inference. The prompt is never logged (spec Section 7).
+        with emitter.model_inference(
+            trace_id=state.get("trace_id") or "",
+            component="llm",
+            session_id=state.get("session_id"),
+            model_name=getattr(llm, "model_name", None),
+            metadata={"intent": intent},
+        ) as call:
+            raw = llm.generate(prompt)
+            parsed = _parse_json(raw)
+            response_text = parsed.get("response_text")
+            proposed_action = parsed.get("proposed_action", "respond")
+            if not isinstance(response_text, str) or not response_text.strip():
+                raise ValueError("Node 3 returned an empty response_text.")
+            if not isinstance(proposed_action, str) or not proposed_action.strip():
+                proposed_action = "respond"
+            call.result["proposed_action"] = proposed_action.strip()
 
-        response_text = _reject_unexecuted_mutation_claim(
-            intent, response_text.strip()
-        )
-        return {"draft_response": response_text, "proposed_action": proposed_action.strip()}
+        draft = response_text.strip()
+        final = _reject_unexecuted_mutation_claim(intent, draft)
+        _emit_guard_decision(emitter, state, intent, draft, final)
+        return {"draft_response": final, "proposed_action": proposed_action.strip()}
     return llm_node
 
 
@@ -427,6 +439,41 @@ def _leaves_claim_standing(prefix: str) -> bool:
     window = " ".join(scope)
     return not (_NEGATION.search(window) or _PROSPECTIVE.search(window))
 # AI-BLOCK-END
+
+
+def _emit_guard_decision(
+    emitter: Emitter,
+    state: DialogueState,
+    intent: str,
+    draft: str,
+    final: str,
+) -> None:
+    """OBS-LOG FR-O7: record the mutation-claim guard's branch.
+
+    Emitted only for the mutation intents the guard actually evaluates; for
+    every other intent the guard is not applicable and no branch exists. A
+    rewrite is WARNING. ``draft_response`` / ``final_response`` are redacted
+    keys: events carry length + hash unless LOG_LEVEL=DEBUG and
+    LOG_INCLUDE_TEXT=true, and a WARNING event never carries full text, so a
+    rewrite is diagnosable from ``reason_code`` plus the hashes alone.
+    """
+    if intent not in _MUTATION_RULES:
+        return
+    rewritten = final != draft
+    emitter.event(
+        trace_id=state.get("trace_id") or "",
+        component="llm",
+        event_type=EventType.BRANCH_SELECTED,
+        severity=Severity.WARNING if rewritten else Severity.INFO,
+        session_id=state.get("session_id"),
+        metadata={
+            "rule": "mutation_claim_guard",
+            "reason_code": "claim_rewritten" if rewritten else "passed_through",
+            "intent": intent,
+            "draft_response": draft,
+            "final_response": final,
+        },
+    )
 
 
 def _parse_json(raw: str) -> dict[str, object]:
