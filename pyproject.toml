@@ -83,6 +83,7 @@ sequence = [
 
 [tool.ruff]
 line-length = 100
+exclude = ["techdocs/**"]
 
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F", "I", "UP"]
