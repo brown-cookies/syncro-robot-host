@@ -43,8 +43,12 @@ def verify_manifest_pair(
 def main() -> int:
     """Run the command-line verification for the canonical RAVDESS and TESS manifests."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--ravdess-manifest", type=Path, default=Path("datasets/affect/manifests/ravdess.csv"))
-    parser.add_argument("--tess-manifest", type=Path, default=Path("datasets/affect/manifests/tess.csv"))
+    parser.add_argument(
+        "--ravdess-manifest", type=Path, default=Path("datasets/affect/manifests/ravdess.csv")
+    )
+    parser.add_argument(
+        "--tess-manifest", type=Path, default=Path("datasets/affect/manifests/tess.csv")
+    )
     parser.add_argument("--ravdess-root", type=Path, default=None)
     parser.add_argument("--tess-root", type=Path, default=None)
     args = parser.parse_args()

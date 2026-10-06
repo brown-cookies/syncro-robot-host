@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import cast
 from uuid import uuid4
 
@@ -19,6 +19,7 @@ from pipeline.state import DialogueState
 
 def make_output_node():
     """Create the output graph node that assembles, but does not persist, the trace."""
+
     def output_node(state: DialogueState) -> DialogueState:
         """Prepare the response payload and pending trace from completed dialogue state."""
         session_id = state.get("session_id")
@@ -40,8 +41,7 @@ def make_output_node():
         ]
         if missing:
             raise RuntimeError(
-                "Node output assembly missing required DialogueState keys: "
-                + ", ".join(missing)
+                "Node output assembly missing required DialogueState keys: " + ", ".join(missing)
             )
 
         # The checks above narrow these values for both runtime safety and
@@ -66,18 +66,14 @@ def make_output_node():
 
         deadline_proximity_raw = state.get("deadline_proximity", "n/a")
         if deadline_proximity_raw not in {"imminent", "not_imminent", "n/a"}:
-            raise ValueError(
-                f"Invalid deadline_proximity: {deadline_proximity_raw!r}"
-            )
+            raise ValueError(f"Invalid deadline_proximity: {deadline_proximity_raw!r}")
         deadline_proximity = cast(DeadlineProximity, deadline_proximity_raw)
 
         if policy_rule == "n/a":
             deadline_proximity = "n/a"
 
         action_taken_raw = state.get("action_taken", "deliver")
-        if action_taken_raw not in {
-            "deliver", "defer", "soften", "break_prompt", "suppress"
-        }:
+        if action_taken_raw not in {"deliver", "defer", "soften", "break_prompt", "suppress"}:
             raise ValueError(f"Invalid action_taken: {action_taken_raw!r}")
         action_taken = cast(ActionTaken, action_taken_raw)
 
@@ -89,18 +85,15 @@ def make_output_node():
         affect_level = cast(AffectLevel, affect_level_raw)
 
         degradation_reason_raw = state.get("degradation_reason")
-        if degradation_reason_raw is not None and degradation_reason_raw != "affect_detector_failure":
-            raise ValueError(
-                f"Invalid affect degradation reason: {degradation_reason_raw!r}"
-            )
+        if (
+            degradation_reason_raw is not None
+            and degradation_reason_raw != "affect_detector_failure"
+        ):
+            raise ValueError(f"Invalid affect degradation reason: {degradation_reason_raw!r}")
 
         reminder_outcome_raw = state.get("reminder_outcome", "n/a")
-        if reminder_outcome_raw not in {
-            "accepted", "snoozed", "delivery_miss", "pending", "n/a"
-        }:
-            raise ValueError(
-                f"Invalid reminder_outcome: {reminder_outcome_raw!r}"
-            )
+        if reminder_outcome_raw not in {"accepted", "snoozed", "delivery_miss", "pending", "n/a"}:
+            raise ValueError(f"Invalid reminder_outcome: {reminder_outcome_raw!r}")
         reminder_outcome = cast(ReminderOutcome, reminder_outcome_raw)
 
         lead_time_raw = state.get("lead_time_min", 15.0)
@@ -126,7 +119,7 @@ def make_output_node():
             "trace_id": trace_id,
             "session_id": session_id,
             "user_id": user_id,
-            "timestamp": datetime.now(timezone.utc),
+            "timestamp": datetime.now(UTC),
             "intent": intent,
             "intent_confidence": float(intent_confidence),
             "retrieved_context_ids": list(state.get("retrieved_context_ids", [])),
@@ -139,7 +132,6 @@ def make_output_node():
             "degradation_reason": degradation_reason_raw,
             "network_event": None,
         }
-
 
         return {
             "trace_id": str(trace_id),

@@ -43,9 +43,7 @@ def test_default_timeout_budget_satisfies_d5_invariant() -> None:
     calls under the session timeout, not just each call individually."""
     settings = Settings()
     budget = (
-        settings.intent_timeout_s
-        + settings.reasoning_timeout_s
-        + settings.non_llm_timeout_margin_s
+        settings.intent_timeout_s + settings.reasoning_timeout_s + settings.non_llm_timeout_margin_s
     )
     assert budget < settings.session_timeout_seconds
 

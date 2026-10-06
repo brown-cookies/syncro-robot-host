@@ -63,7 +63,7 @@ class _WorkItem:
     session: SessionContext
     audio: np.ndarray
     sample_rate: int
-    future: "Future[InteractionResult]"
+    future: Future[InteractionResult]
 
 
 class InteractionWorker:
@@ -82,10 +82,8 @@ class InteractionWorker:
         if maxsize < 1:
             raise ValueError(f"maxsize must be >= 1, got {maxsize}")
         self._runner = runner
-        self._queue: "queue.Queue[_WorkItem | object]" = queue.Queue(maxsize=maxsize)
-        self._thread = threading.Thread(
-            target=self._run, name="interaction-worker", daemon=True
-        )
+        self._queue: queue.Queue[_WorkItem | object] = queue.Queue(maxsize=maxsize)
+        self._thread = threading.Thread(target=self._run, name="interaction-worker", daemon=True)
         self._started = False
         self._accepting = True
 
@@ -128,7 +126,7 @@ class InteractionWorker:
 
     def submit(
         self, *, session: SessionContext, audio: np.ndarray, sample_rate: int
-    ) -> "Future[InteractionResult]":
+    ) -> Future[InteractionResult]:
         """Enqueue one interaction and return immediately.
 
         Never blocks: if the queue is already full this raises
@@ -138,7 +136,7 @@ class InteractionWorker:
         """
         if not self._accepting:
             raise WorkerStoppedError("InteractionWorker.submit() called after stop()")
-        future: "Future[InteractionResult]" = Future()
+        future: Future[InteractionResult] = Future()
         item = _WorkItem(session=session, audio=audio, sample_rate=sample_rate, future=future)
         try:
             self._queue.put_nowait(item)

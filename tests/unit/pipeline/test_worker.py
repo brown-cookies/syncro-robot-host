@@ -65,7 +65,9 @@ class FakeRunner:
     def raise_on(self, session_id: str, exc: BaseException) -> None:
         self._raises[session_id] = exc
 
-    def run(self, *, session: SessionContext, audio: np.ndarray, sample_rate: int) -> InteractionResult:
+    def run(
+        self, *, session: SessionContext, audio: np.ndarray, sample_rate: int
+    ) -> InteractionResult:
         with self._lock:
             self._active += 1
             self.max_active = max(self.max_active, self._active)
@@ -167,12 +169,16 @@ def test_submit_raises_without_blocking_when_queue_is_full():
         worker.submit(session=make_session(session_id="blocker"), audio=AUDIO, sample_rate=16_000)
         assert _wait_until(lambda: len(runner.calls) == 1)
 
-        worker.submit(session=make_session(session_id="fills-queue"), audio=AUDIO, sample_rate=16_000)
+        worker.submit(
+            session=make_session(session_id="fills-queue"), audio=AUDIO, sample_rate=16_000
+        )
         assert _wait_until(lambda: worker.queue_depth == 1)
 
         started = time.monotonic()
         with pytest.raises(WorkerQueueFullError):
-            worker.submit(session=make_session(session_id="overflow"), audio=AUDIO, sample_rate=16_000)
+            worker.submit(
+                session=make_session(session_id="overflow"), audio=AUDIO, sample_rate=16_000
+            )
         elapsed = time.monotonic() - started
         assert elapsed < 0.5, "submit() must reject immediately, not wait for room"
 
@@ -190,7 +196,9 @@ def test_worker_propagates_runner_exceptions_via_the_future():
     worker = InteractionWorker(runner=runner, maxsize=4)
     worker.start()
     try:
-        future = worker.submit(session=make_session(session_id="boom"), audio=AUDIO, sample_rate=16_000)
+        future = worker.submit(
+            session=make_session(session_id="boom"), audio=AUDIO, sample_rate=16_000
+        )
         with pytest.raises(ValueError, match="kaboom"):
             future.result(timeout=2.0)
     finally:

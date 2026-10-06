@@ -7,43 +7,77 @@ For requirements and architecture contracts, use `techdocs/SPEC.md` and `techdoc
 
 ## 1. Prerequisites
 
-- Python 3.11 or newer
+- [uv](https://docs.astral.sh/uv/) (installed in section 2; it also manages the Python version)
+- Python 3.14 or newer (uv downloads a matching interpreter automatically if you do not have one)
 - Git
 - Ollama installed and running locally
 - A microphone and speaker/audio output for live host runs
 - Network access for the first `faster-whisper` model download
 
-The exact Python package versions are pinned in `requirements.txt`.
+Dependencies are declared in `pyproject.toml`, and the exact versions are locked in `uv.lock`.
 
 ## 2. Create the Python environment
 
-From the repository root.
+This project uses [uv](https://docs.astral.sh/uv/) for dependency management. Dependencies are declared in `pyproject.toml` and locked in `uv.lock`, so every checkout installs identical versions.
 
-### Git Bash / Linux / macOS
+### Install uv
+
+#### Git Bash / Linux / macOS
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-pip install -r requirements.txt
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-### Windows PowerShell
+#### Windows PowerShell
 
 ```powershell
-py -3 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-pip install -r requirements.txt
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+Open a new terminal and confirm:
+
+```bash
+uv --version
+```
+
+### Install the dependencies
+
+From the repository root:
+
+```bash
+uv sync
+```
+
+This creates `.venv` with the Python version in `.python-version` (downloading it if needed) and installs exactly what `uv.lock` specifies, including the `dev` group (pytest). Do not run `pip install` into this environment: `uv sync` removes any package that is not declared in `pyproject.toml`.
+
+You do not need to activate the environment. Prefix commands with `uv run`, as the rest of this document does. If you prefer to activate it anyway:
+
+```bash
+source .venv/Scripts/activate      # Git Bash on Windows
+source .venv/bin/activate          # Linux / macOS
+```
+
+```powershell
+.\.venv\Scripts\Activate.ps1       # Windows PowerShell
 ```
 
 Verify the environment:
 
 ```bash
-python --version
-python -m pip check
-python -m pytest -q
+uv run python --version
+uv pip check
+uv run python -m pytest -q
 ```
+
+### Changing dependencies
+
+```bash
+uv add <package>            # runtime dependency
+uv add --dev <package>      # development-only dependency
+uv remove <package>
+```
+
+Commit `pyproject.toml` and `uv.lock` together whenever they change. After pulling changes that touch them, run `uv sync` again.
 
 ## 3. Create local configuration
 
@@ -170,7 +204,7 @@ Use the matching Piper voice release for both files.
 Verify the configured files:
 
 ```bash
-python -c "from config.settings import get_settings; from pathlib import Path; p=Path(get_settings().piper_model_path); print('onnx:',p,'exists=',p.is_file()); q=p.with_suffix(p.suffix+'.json'); print('json:',q,'exists=',q.is_file())"
+uv run python -c "from config.settings import get_settings; from pathlib import Path; p=Path(get_settings().piper_model_path); print('onnx:',p,'exists=',p.is_file()); q=p.with_suffix(p.suffix+'.json'); print('json:',q,'exists=',q.is_file())"
 ```
 
 A missing model or companion configuration causes Piper initialization to fail.
@@ -207,13 +241,13 @@ The WP-103 live runner creates `wp103-demo-user` itself and supports a fresh dat
 For deterministic policy/context testing, seed the development dataset:
 
 ```bash
-python -m scripts.seed_wp103
+uv run python -m scripts.seed_wp103
 ```
 
 Preserve existing demo rows:
 
 ```bash
-python -m scripts.seed_wp103 --no-reset
+uv run python -m scripts.seed_wp103 --no-reset
 ```
 
 The seeder is a development/testing tool; it is not required before every live run.
@@ -223,7 +257,7 @@ The seeder is a development/testing tool; it is not required before every live r
 The FastAPI application is exposed by `api.app:app`.
 
 ```bash
-python -m uvicorn api.app:app --host 0.0.0.0 --port 8765
+uv run python -m uvicorn api.app:app --host 0.0.0.0 --port 8765
 ```
 
 The WebSocket endpoint is:
@@ -235,7 +269,7 @@ ws://127.0.0.1:8765/v1/stream
 ## 10. Run WP-102
 
 ```bash
-python -m scripts.run_wp102
+uv run python -m scripts.run_wp102
 ```
 
 This exercises microphone capture → STT → Ollama → Piper → host playback.
@@ -243,7 +277,7 @@ This exercises microphone capture → STT → Ollama → Piper → host playback
 ## 11. Run WP-103
 
 ```bash
-python -m scripts.run_wp103
+uv run python -m scripts.run_wp103
 ```
 
 The runner builds the host components, ensures `wp103-demo-user`, simulates the edge-owned wake word, captures audio, runs the graph, synthesizes the response, persists the decision trace, and writes evidence.
@@ -251,7 +285,7 @@ The runner builds the host components, ensures `wp103-demo-user`, simulates the 
 To reproduce the evidence for an existing trace without running the pipeline again:
 
 ```bash
-python -m scripts.run_wp103 --dump-trace TRACE_ID
+uv run python -m scripts.run_wp103 --dump-trace TRACE_ID
 ```
 
 ## 12. Run the WebSocket smoke test
@@ -259,7 +293,7 @@ python -m scripts.run_wp103 --dump-trace TRACE_ID
 With the FastAPI server running in another terminal:
 
 ```bash
-python -m scripts.run_manual_stream --silence --no-play
+uv run python -m scripts.run_manual_stream --silence --no-play
 ```
 
 This uses silence rather than a physical microphone and is intended for a transport/error-path check.
@@ -267,7 +301,7 @@ This uses silence rather than a physical microphone and is intended for a transp
 For a real microphone interaction:
 
 ```bash
-python -m scripts.run_manual_stream --seconds 3
+uv run python -m scripts.run_manual_stream --seconds 3
 ```
 
 ## 13. WP-104 dataset and ML reproduction

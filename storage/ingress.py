@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-import sqlite3
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
@@ -38,7 +37,7 @@ class IngressRepository:
         concurrent identical calls cannot both insert. Every call, new or
         duplicate, writes one ``ingress_event_log`` row in the same transaction.
         """
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         with self._database.connection() as conn:
             conn.execute(
                 "INSERT INTO users(user_id, created_at) VALUES (?, ?) "
@@ -54,8 +53,16 @@ class IngressRepository:
                 ) VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?)
                 ON CONFLICT DO NOTHING
                 """,
-                (task_id, INGRESS_USER_ID, title, due_at, priority,
-                 created_at, source, external_id),
+                (
+                    task_id,
+                    INGRESS_USER_ID,
+                    title,
+                    due_at,
+                    priority,
+                    created_at,
+                    source,
+                    external_id,
+                ),
             )
             created = cursor.rowcount == 1
             row = conn.execute(
@@ -66,8 +73,14 @@ class IngressRepository:
                 "INSERT INTO ingress_event_log("
                 "event_id, source, external_id, outcome, task_id, logged_at"
                 ") VALUES (?, ?, ?, ?, ?, ?)",
-                (str(uuid4()), source, external_id,
-                 "created" if created else "duplicate", row["task_id"], now),
+                (
+                    str(uuid4()),
+                    source,
+                    external_id,
+                    "created" if created else "duplicate",
+                    row["task_id"],
+                    now,
+                ),
             )
             return dict(row), created
 

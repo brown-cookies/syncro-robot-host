@@ -83,12 +83,14 @@ SYNCRO outside the LLM itself.**
 ```python
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
-from sklearn.svm import SVC                    # or sklearn.neural_network.MLPClassifier
+from sklearn.svm import SVC  # or sklearn.neural_network.MLPClassifier
 
-clf = Pipeline([
-    ("scale", StandardScaler()),               # eGeMAPS dims differ by orders of magnitude
-    ("svm",   SVC(kernel="rbf", class_weight="balanced")),
-])
+clf = Pipeline(
+    [
+        ("scale", StandardScaler()),  # eGeMAPS dims differ by orders of magnitude
+        ("svm", SVC(kernel="rbf", class_weight="balanced")),
+    ]
+)
 ```
 
 `StandardScaler` is not optional. eGeMAPS mixes Hz, dB, dimensionless ratios and percentages; an RBF

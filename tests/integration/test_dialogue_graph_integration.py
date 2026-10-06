@@ -55,12 +55,14 @@ def test_dialogue_graph_runs_full_processing_path_and_assembles_trace(tmp_path):
         grace_window_minutes=15,
         default_lead_time=15,
     )
-    result = graph.invoke({
-        "session_id": "s1",
-        "user_id": "u1",
-        "audio": np.zeros(160, dtype=np.float32),
-        "sample_rate": 16000,
-    })
+    result = graph.invoke(
+        {
+            "session_id": "s1",
+            "user_id": "u1",
+            "audio": np.zeros(160, dtype=np.float32),
+            "sample_rate": 16000,
+        }
+    )
     assert result["transcript"]
     assert result["intent"] == "dismiss_reminder"
     assert result["policy_rule"] in {"R4", "R5"}

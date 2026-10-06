@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import sqlite3
 
-
 # Keep all CREATE TABLE / CREATE INDEX statements in this module so the
 # database schema has one explicit source of truth. Repository modules must
 # contain queries and persistence operations, not DDL.
@@ -15,10 +14,22 @@ import sqlite3
 # the table under the current, nullable-friendly definition. Keeping one
 # copy avoids the two ever drifting apart.
 DECISION_TRACE_COLUMNS = (
-    "trace_id", "session_id", "user_id", "timestamp", "intent",
-    "intent_confidence", "retrieved_context_ids", "affect_level",
-    "deadline_proximity", "policy_rule", "action_taken", "lead_time_min",
-    "reminder_outcome", "degradation_reason", "network_event", "latency_ms",
+    "trace_id",
+    "session_id",
+    "user_id",
+    "timestamp",
+    "intent",
+    "intent_confidence",
+    "retrieved_context_ids",
+    "affect_level",
+    "deadline_proximity",
+    "policy_rule",
+    "action_taken",
+    "lead_time_min",
+    "reminder_outcome",
+    "degradation_reason",
+    "network_event",
+    "latency_ms",
     "latency_basis",
 )
 
@@ -45,10 +56,9 @@ _DECISION_TRACE_COLUMNS_SQL = """    trace_id TEXT PRIMARY KEY,
 # are the ones _decision_trace_needs_migration() checks. A database created
 # before degraded-trace support still has all of these as NOT NULL, which
 # rejects the NULLs a degraded trace (F4) must be able to write.
-_FORMERLY_NOT_NULL_COLUMNS = frozenset(
-    {"intent", "intent_confidence", "affect_level"})
+_FORMERLY_NOT_NULL_COLUMNS = frozenset({"intent", "intent_confidence", "affect_level"})
 
-SCHEMA_SQL = """
+SCHEMA_SQL = f"""
 CREATE TABLE IF NOT EXISTS users (
     user_id TEXT PRIMARY KEY,
     created_at TEXT NOT NULL,
@@ -91,7 +101,7 @@ CREATE INDEX IF NOT EXISTS ix_routine_log_user_logged_at
     ON routine_log(user_id, logged_at DESC);
 
 CREATE TABLE IF NOT EXISTS decision_trace (
-{decision_trace_columns}
+{_DECISION_TRACE_COLUMNS_SQL}
 );
 CREATE INDEX IF NOT EXISTS ix_decision_trace_user_timestamp
     ON decision_trace(user_id, timestamp);
@@ -168,7 +178,7 @@ CREATE TABLE IF NOT EXISTS ingress_event_log (
     task_id TEXT,
     logged_at TEXT NOT NULL
 );
-""".format(decision_trace_columns=_DECISION_TRACE_COLUMNS_SQL)
+"""
 
 
 def _decision_trace_needs_migration(conn: sqlite3.Connection) -> bool:
@@ -211,14 +221,11 @@ def _migrate_decision_trace(conn: sqlite3.Connection) -> None:
     """
     conn.execute("BEGIN")
     try:
-        conn.execute(
-            "ALTER TABLE decision_trace RENAME TO decision_trace__pre_migration")
-        conn.execute(
-            f"CREATE TABLE decision_trace (\n{_DECISION_TRACE_COLUMNS_SQL}\n)")
+        conn.execute("ALTER TABLE decision_trace RENAME TO decision_trace__pre_migration")
+        conn.execute(f"CREATE TABLE decision_trace (\n{_DECISION_TRACE_COLUMNS_SQL}\n)")
 
         old_columns = {
-            row[1]
-            for row in conn.execute("PRAGMA table_info(decision_trace__pre_migration)")
+            row[1] for row in conn.execute("PRAGMA table_info(decision_trace__pre_migration)")
         }
         # Copy only columns the old table actually has; a database from any
         # earlier point in the schema's history is still handled rather than

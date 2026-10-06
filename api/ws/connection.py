@@ -18,8 +18,8 @@ connection) is Phase 14's "session registry stub" -- out of scope here.
 
 from __future__ import annotations
 
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from typing import Callable, Mapping
 
 
 class AuthenticationError(RuntimeError):
@@ -97,9 +97,7 @@ class Connection:
     token validation later doesn't require changing this class.
     """
 
-    def __init__(
-        self, *, authenticate: Callable[[Mapping[str, str]], DeviceIdentity]
-    ) -> None:
+    def __init__(self, *, authenticate: Callable[[Mapping[str, str]], DeviceIdentity]) -> None:
         self._authenticate = authenticate
         self._identity: DeviceIdentity | None = None
         self.clock_offset_ms: float | None = None
@@ -173,9 +171,7 @@ class Connection:
                 f"(clock_offset_ms={self.clock_offset_ms}); "
                 "record_clock_sync() cannot be called a second time"
             )
-        offset = (
-            (host_recv_ms - edge_send_ms) + (host_send_ms - edge_send_ms)
-        ) / 2
+        offset = ((host_recv_ms - edge_send_ms) + (host_send_ms - edge_send_ms)) / 2
         self.clock_offset_ms = float(offset)
         return self.clock_offset_ms
 

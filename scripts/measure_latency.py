@@ -48,7 +48,7 @@ import argparse
 import statistics
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from time import monotonic
 
@@ -102,7 +102,10 @@ def build_row(
     (pipeline/nodes/llm.py) skipped the LLM call this run - explaining a 0 ms
     LLM stage instead of leaving it looking like missing data.
     """
-    def stage(name): return float(stage_timings_s.get(name, 0.0)) * 1000.0  # noqa: E731
+
+    def stage(name):
+        return float(stage_timings_s.get(name, 0.0)) * 1000.0  # noqa: E731
+
     capture_ms = capture_s * 1000.0
     llm_ms = stage("llm")
 
@@ -143,8 +146,7 @@ def _graph_and_after_ms(stage_timings_s: dict[str, float]) -> float:
     total minus this.
     """
     return (
-        float(stage_timings_s.get("dialogue_graph", 0.0))
-        + float(stage_timings_s.get("tts", 0.0))
+        float(stage_timings_s.get("dialogue_graph", 0.0)) + float(stage_timings_s.get("tts", 0.0))
     ) * 1000.0
 
 
@@ -170,8 +172,12 @@ def render_table(
     if not rows:
         raise ValueError("no warm runs to report")
 
-    def fmt(v): return f"{v:,.0f}"  # noqa: E731
-    def fmt_conf(v): return "-" if v is None else f"{v:.2f}"  # noqa: E731
+    def fmt(v):
+        return f"{v:,.0f}"  # noqa: E731
+
+    def fmt_conf(v):
+        return "-" if v is None else f"{v:.2f}"  # noqa: E731
+
     lines = [
         "| run | wake->intent | intent->policy | policy->TTS | total | LLM | capture | intent | confidence | clarified | basis |",
         "|----:|-------------:|---------------:|------------:|------:|----:|--------:|--------|-----------:|:---------:|-------|",
@@ -255,7 +261,7 @@ def _lookup_trace_classification(
 
 def _write_evidence(text: str) -> Path:
     EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     path = EVIDENCE_DIR / f"latency_table_{stamp}.md"
     path.write_text(text + "\n", encoding="utf-8")
     return path
@@ -263,11 +269,17 @@ def _write_evidence(text: str) -> Path:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--runs", type=int, default=5,
-                        help="warm runs to report (default 5; one extra warm-up run is always discarded)")
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument(
-        "--audio-file", help="WAV to use instead of the microphone (repeatable input)")
+        "--runs",
+        type=int,
+        default=5,
+        help="warm runs to report (default 5; one extra warm-up run is always discarded)",
+    )
+    parser.add_argument(
+        "--audio-file", help="WAV to use instead of the microphone (repeatable input)"
+    )
     args = parser.parse_args()
 
     # Heavy imports stay here so the pure table logic is importable in tests.
@@ -276,8 +288,7 @@ def main() -> int:
     from pipeline.interaction import SessionContext
 
     settings = get_settings()
-    print(
-        f"[startup] warming {settings.llm_model!r} (composition root warms the LLM)...")
+    print(f"[startup] warming {settings.llm_model!r} (composition root warms the LLM)...")
     components = build_host_components(settings)
     components.store.ensure_user(
         BENCH_USER_ID,
@@ -297,8 +308,7 @@ def main() -> int:
         session_id = str(uuid.uuid4())
         started = monotonic()  # "wake": same instant run_wp103.py uses
         if file_audio is None:
-            print(
-                f"[run {run}] recording {settings.audio_capture_seconds:.0f}s -- speak now...")
+            print(f"[run {run}] recording {settings.audio_capture_seconds:.0f}s -- speak now...")
             audio, rate = components.audio_input.capture()
         else:
             audio, rate = file_audio
@@ -341,13 +351,16 @@ def main() -> int:
 
     header = [
         "# SYNCRO host latency (Step 4)",
-        f"Generated: {datetime.now(timezone.utc).isoformat()}",
+        f"Generated: {datetime.now(UTC).isoformat()}",
         f"LLM: {settings.llm_model} | STT: {settings.stt_model_size}/{settings.stt_compute_type}",
         f"Input: {'file ' + args.audio_file if args.audio_file else 'microphone'}",
         "",
     ]
     if args.audio_file:
-        header += ["Note: file input, so the capture column is ~0 and not comparable to a live mic run.", ""]
+        header += [
+            "Note: file input, so the capture column is ~0 and not comparable to a live mic run.",
+            "",
+        ]
     text = "\n".join(header) + render_table(
         rows, confidence_threshold=settings.intent_confidence_threshold
     )

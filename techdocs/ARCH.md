@@ -126,11 +126,14 @@ parameter names, order, defaults and return types unchanged.
 class STT(Protocol):
     def transcribe(self, audio: np.ndarray, sample_rate: int) -> str: ...
 
+
 class LLM(Protocol):
     def generate(self, prompt: str) -> str: ...
 
+
 class TTS(Protocol):
     def synthesize(self, text: str) -> tuple[np.ndarray, int]: ...
+
 
 class IntentClassifier(Protocol):
     def classify(self, transcript: str) -> tuple[str, float, dict[str, object]]: ...
@@ -145,6 +148,7 @@ that imports a concrete adapter class.
 
 ```python
 class STTAdapterError(RuntimeError): ...
+
 
 class WhisperSTTAdapter:
     def __init__(self, settings: Settings | None = None) -> None: ...
@@ -165,6 +169,7 @@ made, not a silent resample or truncation.
 ```python
 class LLMAdapterError(RuntimeError): ...
 
+
 class OllamaLLMAdapter:
     def __init__(self, settings: Settings | None = None) -> None: ...
     def generate(self, prompt: str) -> str: ...
@@ -184,6 +189,7 @@ reply.
 ```python
 class TTSAdapterError(RuntimeError): ...
 
+
 class PiperTTSAdapter:
     def __init__(self, settings: Settings | None = None) -> None: ...
     def synthesize(self, text: str) -> tuple[np.ndarray, int]: ...
@@ -202,6 +208,7 @@ different rate is required (section 4.11).
 ```python
 class DevelopmentAffectDetector:
     def detect(self, audio: Any, sample_rate: int) -> str: ...  # always "Low"
+
 
 class ClassifierAffectDetector:
     def __init__(self, model_path: str | Path) -> None: ...
@@ -225,19 +232,27 @@ detector when construction fails (section 6).
 ```python
 def build_dialogue_graph(
     *,
-    stt, intent_classifier, llm, store, affect_detector,
+    stt,
+    intent_classifier,
+    llm,
+    store,
+    affect_detector,
     confidence_threshold: float,
     context_top_k: int,
     deadline_proximity_hours: int,
     grace_window_minutes: int,
     default_lead_time: float,
-):
-    ...  # -> compiled LangGraph graph
+): ...  # -> compiled LangGraph graph
+
 
 def invoke_dialogue(
-    graph, *, session_id: str, user_id: str, audio: Any, sample_rate: int,
-) -> DialogueGraphResult:
-    ...
+    graph,
+    *,
+    session_id: str,
+    user_id: str,
+    audio: Any,
+    sample_rate: int,
+) -> DialogueGraphResult: ...
 ```
 
 `build_dialogue_graph` wires seven nodes (`node1_stt`, `node1_intent`,
@@ -262,16 +277,18 @@ class SessionContext:
     wake_word_detected_at: int | None = None  # edge-clock epoch ms, SPEC 7.3
     clock_offset_ms: float | None = None
 
+
 @dataclass(frozen=True, slots=True)
 class InteractionResult:
     session_id: str
     trace_id: str
     response_payload: dict[str, Any]
-    tts_audio: np.ndarray          # 16 kHz int16 mono, after resampling (S5)
+    tts_audio: np.ndarray  # 16 kHz int16 mono, after resampling (S5)
     tts_sample_rate: int
     stage_timings_s: dict[str, float]
     latency_ms: float
     latency_basis: str
+
 
 @dataclass(frozen=True, slots=True)
 class FailureDisposition:
@@ -280,20 +297,33 @@ class FailureDisposition:
     degradation_reason: str | None
     trace_required: bool
 
+
 class InteractionError(RuntimeError):
     def __init__(
-        self, stage: str, cause: BaseException, *,
-        wire_code: str, degradation_reason: str | None, trace_required: bool,
+        self,
+        stage: str,
+        cause: BaseException,
+        *,
+        wire_code: str,
+        degradation_reason: str | None,
+        trace_required: bool,
     ) -> None: ...
+
 
 class InteractionRunner:
     def __init__(
-        self, *, graph: Any, store: Any, tts: Any,
+        self,
+        *,
+        graph: Any,
+        store: Any,
+        tts: Any,
         resampler: Callable[[np.ndarray, int], np.ndarray],
         clock: Callable[[], float] = monotonic,
         clock_ms: Callable[[], float] | None = None,
     ) -> None: ...
-    def run(self, *, session: SessionContext, audio: np.ndarray, sample_rate: int) -> InteractionResult: ...
+    def run(
+        self, *, session: SessionContext, audio: np.ndarray, sample_rate: int
+    ) -> InteractionResult: ...
     def persist_session_timeout_trace(self, *, session: SessionContext) -> None: ...
 ```
 
@@ -333,12 +363,17 @@ directly (section 8 restates this as an invariant).
 
 ```python
 class WorkerQueueFullError(RuntimeError): ...
+
+
 class WorkerStoppedError(RuntimeError): ...
+
 
 class InteractionWorker:
     def __init__(self, *, runner: InteractionRunner, maxsize: int) -> None: ...
     def start(self) -> None: ...
-    def submit(self, *, session: SessionContext, audio: np.ndarray, sample_rate: int) -> "Future[InteractionResult]": ...
+    def submit(
+        self, *, session: SessionContext, audio: np.ndarray, sample_rate: int
+    ) -> "Future[InteractionResult]": ...
     def stop(self, *, timeout: float | None = None) -> None: ...
 ```
 
@@ -367,8 +402,11 @@ class HostComponents:
     runner: InteractionRunner
     worker: InteractionWorker
 
+
 def build_host_components(
-    settings: Settings | None = None, *, affect_detector=None,
+    settings: Settings | None = None,
+    *,
+    affect_detector=None,
 ) -> HostComponents: ...
 ```
 

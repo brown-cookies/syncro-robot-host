@@ -10,9 +10,9 @@ import sys
 
 from adapters.stt import STTAdapterError
 from adapters.tts import TTSAdapterError
+from composition.bootstrap import build_host_pipeline
 from config.settings import get_settings
 from pipeline.host_pipeline import PipelineStageError
-from composition.bootstrap import build_host_pipeline
 
 
 def main() -> int:
@@ -30,12 +30,10 @@ def main() -> int:
     try:
         pipeline = build_host_pipeline(settings)
     except STTAdapterError as exc:
-        print(
-            f"[ERR-2] STT adapter failed to initialize: {exc}", file=sys.stderr)
+        print(f"[ERR-2] STT adapter failed to initialize: {exc}", file=sys.stderr)
         return 1
     except TTSAdapterError as exc:
-        print(
-            f"[ERR-4] TTS adapter failed to initialize: {exc}", file=sys.stderr)
+        print(f"[ERR-4] TTS adapter failed to initialize: {exc}", file=sys.stderr)
         return 1
 
     print(
@@ -44,8 +42,7 @@ def main() -> int:
     try:
         result, _audio, _sample_rate = pipeline.run_once()
     except PipelineStageError as exc:
-        print(f"\n[{exc.stage}] WP-102 run FAILED: {exc.cause}",
-              file=sys.stderr)
+        print(f"\n[{exc.stage}] WP-102 run FAILED: {exc.cause}", file=sys.stderr)
         return 1
     print("\n--- WP-102 run complete ---")
     print(f"Transcript: {result.transcript!r}")

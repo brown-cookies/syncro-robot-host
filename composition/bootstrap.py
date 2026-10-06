@@ -158,8 +158,7 @@ def build_host_components(
             affect_detector = DevelopmentAffectDetector()
         elif backend == "classifier":
             try:
-                affect_detector = ClassifierAffectDetector(
-                    settings.affect_classifier_path)
+                affect_detector = ClassifierAffectDetector(settings.affect_classifier_path)
             except (FileNotFoundError, RuntimeError) as exc:
                 logger.warning(
                     "WP-104 classifier unavailable at %s; using development affect detector: %s",
@@ -168,9 +167,7 @@ def build_host_components(
                 )
                 affect_detector = DevelopmentAffectDetector()
         else:
-            raise ValueError(
-                "AFFECT_DETECTOR_BACKEND must be 'development' or 'classifier'"
-            )
+            raise ValueError("AFFECT_DETECTOR_BACKEND must be 'development' or 'classifier'")
 
     graph = build_dialogue_graph(
         stt=stt,
@@ -212,9 +209,7 @@ def build_host_components(
     # lifetime (WP-105's FastAPI `lifespan`, Phase 14), not with assembly.
     from pipeline.worker import InteractionWorker
 
-    worker = InteractionWorker(
-        runner=runner, maxsize=settings.interaction_queue_maxsize
-    )
+    worker = InteractionWorker(runner=runner, maxsize=settings.interaction_queue_maxsize)
 
     return HostComponents(
         graph=graph,

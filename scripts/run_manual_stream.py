@@ -21,10 +21,9 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
-import sys
 import time
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import websockets
@@ -43,7 +42,7 @@ def _write_evidence(lines: list[str], stem: str) -> Path:
     """Write a full run transcript to evidences/, same convention as
     `scripts/run_wp103.py`'s `_write_evidence`."""
     EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     path = EVIDENCE_DIR / f"{stem}_{stamp}.txt"
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return path
@@ -120,10 +119,10 @@ def _load_wav_as_pcm16_16k(path: str) -> bytes:
 def _record_from_mic(seconds: float, emit) -> bytes:
     import sounddevice as sd
 
-    emit(
-        f"[audio_capture] Recording {seconds:.1f}s from the default microphone -- speak now...")
-    recording = sd.rec(int(seconds * SAMPLE_RATE_HZ),
-                       samplerate=SAMPLE_RATE_HZ, channels=1, dtype="int16")
+    emit(f"[audio_capture] Recording {seconds:.1f}s from the default microphone -- speak now...")
+    recording = sd.rec(
+        int(seconds * SAMPLE_RATE_HZ), samplerate=SAMPLE_RATE_HZ, channels=1, dtype="int16"
+    )
     sd.wait()
     emit("[audio_capture] OK")
     return recording.reshape(-1).tobytes()
@@ -140,13 +139,16 @@ def _play_pcm16_16k(audio_bytes: bytes, emit) -> None:
     emit("[audio_output] OK")
 
 
-async def run_interaction(*, uri: str, audio_bytes: bytes, user_id: str, emit) -> tuple[str, str | None, bytes]:
+async def run_interaction(
+    *, uri: str, audio_bytes: bytes, user_id: str, emit
+) -> tuple[str, str | None, bytes]:
     """Drive one full interaction over `/v1/stream`.
 
     Returns (session_id, error_code_or_None, received_tts_audio_bytes).
     """
-    frames = [audio_bytes[i: i + BYTES_PER_FRAME]
-              for i in range(0, len(audio_bytes), BYTES_PER_FRAME)]
+    frames = [
+        audio_bytes[i : i + BYTES_PER_FRAME] for i in range(0, len(audio_bytes), BYTES_PER_FRAME)
+    ]
     session_id = str(uuid.uuid4())
 
     async with websockets.connect(uri) as ws:
@@ -158,13 +160,18 @@ async def run_interaction(*, uri: str, audio_bytes: bytes, user_id: str, emit) -
 
         wake_word_detected_at = int(time.time() * 1000)
         emit(
-            f"[start_audio] session_id={session_id} user_id={user_id} wake_word_detected_at={wake_word_detected_at}")
-        await ws.send(json.dumps({
-            "type": "start_audio",
-            "session_id": session_id,
-            "user_id": user_id,
-            "wake_word_detected_at": wake_word_detected_at,
-        }))
+            f"[start_audio] session_id={session_id} user_id={user_id} wake_word_detected_at={wake_word_detected_at}"
+        )
+        await ws.send(
+            json.dumps(
+                {
+                    "type": "start_audio",
+                    "session_id": session_id,
+                    "user_id": user_id,
+                    "wake_word_detected_at": wake_word_detected_at,
+                }
+            )
+        )
         ready = json.loads(await ws.recv())
         emit(f"[start_audio] {ready}")
         if ready.get("type") != "ready":
@@ -179,7 +186,9 @@ async def run_interaction(*, uri: str, audio_bytes: bytes, user_id: str, emit) -
             await ws.send(frame)
 
         interaction_started = time.monotonic()
-        await ws.send(json.dumps({"type": "end_audio", "session_id": session_id, "frame_count": len(frames)}))
+        await ws.send(
+            json.dumps({"type": "end_audio", "session_id": session_id, "frame_count": len(frames)})
+        )
 
         first = json.loads(await ws.recv())
         round_trip_s = time.monotonic() - interaction_started
@@ -201,8 +210,7 @@ async def run_interaction(*, uri: str, audio_bytes: bytes, user_id: str, emit) -
                 tts_audio.extend(message)
                 chunk_count += 1
                 continue
-            emit(
-                f"[downlink_audio] received {chunk_count} chunk(s), {len(tts_audio)} bytes")
+            emit(f"[downlink_audio] received {chunk_count} chunk(s), {len(tts_audio)} bytes")
             emit(f"[tts_audio_end] {message}")
             break
 
@@ -211,23 +219,29 @@ async def run_interaction(*, uri: str, audio_bytes: bytes, user_id: str, emit) -
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("wav_path", nargs="?",
-                        help="16 kHz mono PCM16 WAV file to send")
-    parser.add_argument("--seconds", type=float, default=3.0,
-                        help="seconds to record from the mic (default 3)")
-    parser.add_argument("--silence", action="store_true",
-                        help="send silence -- transport-only check")
-    parser.add_argument("--uri", default="ws://127.0.0.1:8765/v1/stream",
-                        help="the /v1/stream URI to connect to")
-    parser.add_argument("--user-id", default=DEMO_USER_ID,
-                        help=f"user_id to run as (default: {DEMO_USER_ID})")
-    parser.add_argument("--no-play", action="store_true",
-                        help="don't play the returned TTS audio through speakers")
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument("wav_path", nargs="?", help="16 kHz mono PCM16 WAV file to send")
     parser.add_argument(
-        "--no-trace-lookup", action="store_true",
+        "--seconds", type=float, default=3.0, help="seconds to record from the mic (default 3)"
+    )
+    parser.add_argument(
+        "--silence", action="store_true", help="send silence -- transport-only check"
+    )
+    parser.add_argument(
+        "--uri", default="ws://127.0.0.1:8765/v1/stream", help="the /v1/stream URI to connect to"
+    )
+    parser.add_argument(
+        "--user-id", default=DEMO_USER_ID, help=f"user_id to run as (default: {DEMO_USER_ID})"
+    )
+    parser.add_argument(
+        "--no-play", action="store_true", help="don't play the returned TTS audio through speakers"
+    )
+    parser.add_argument(
+        "--no-trace-lookup",
+        action="store_true",
         help="skip reading the decision_trace row back out of the server's SQLite db "
-             "(only works when this script and the server share a filesystem)",
+        "(only works when this script and the server share a filesystem)",
     )
     args = parser.parse_args()
 
@@ -239,7 +253,9 @@ def main() -> int:
 
     if args.silence:
         audio_bytes = b"\x00\x00" * SAMPLE_RATE_HZ  # 1 second
-        emit("[audio_source] silence (1.0s) -- real STT will correctly reject this as an empty transcript")
+        emit(
+            "[audio_source] silence (1.0s) -- real STT will correctly reject this as an empty transcript"
+        )
     elif args.wav_path:
         audio_bytes = _load_wav_as_pcm16_16k(args.wav_path)
         emit(f"[audio_source] wav file: {args.wav_path}")
@@ -251,8 +267,7 @@ def main() -> int:
 
     try:
         session_id, error_code, tts_audio = asyncio.run(
-            run_interaction(uri=args.uri, audio_bytes=audio_bytes,
-                            user_id=args.user_id, emit=emit)
+            run_interaction(uri=args.uri, audio_bytes=audio_bytes, user_id=args.user_id, emit=emit)
         )
     except (ConnectionRefusedError, OSError) as exc:
         emit(f"[connect] FAILED: could not reach {args.uri}: {exc}")
@@ -280,8 +295,7 @@ def main() -> int:
             from storage.sqlite_store import SQLiteStore
 
             store = SQLiteStore(settings.db_path)
-            trace_record = _fetch_decision_trace_by_session(
-                store, args.user_id, session_id)
+            trace_record = _fetch_decision_trace_by_session(store, args.user_id, session_id)
         except Exception as exc:  # noqa: BLE001 - reporting a lookup failure is the point here
             emit(f"[trace] could not read {settings.db_path!r}: {exc}")
             trace_record = "lookup_failed"

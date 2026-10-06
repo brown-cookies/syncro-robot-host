@@ -42,9 +42,7 @@ class WhisperSTTAdapter:
                 f"Expected float32 PCM, got {audio.dtype}. Convert before calling transcribe()."
             )
         if sample_rate != self._sample_rate:
-            raise STTAdapterError(
-                f"Expected {self._sample_rate} Hz audio, got {sample_rate} Hz."
-            )
+            raise STTAdapterError(f"Expected {self._sample_rate} Hz audio, got {sample_rate} Hz.")
         try:
             segments, _info = self._model.transcribe(audio, language="en")
             text = " ".join(seg.text.strip() for seg in segments).strip()

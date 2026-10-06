@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 import re
+from pathlib import Path
 
 from ml.affect.dataset import AffectRecord, write_manifest
 from ml.affect.label_mapping import map_label
@@ -41,22 +41,18 @@ def build_ravdess_records(root: str | Path) -> list[AffectRecord]:
             continue
         speaker_id = actor_dir.name.removeprefix("Actor_")
         if actor_dir.name not in RAVDESS_SPEAKERS:
-            raise ValueError(
-                f"Unexpected RAVDESS speaker directory: {actor_dir.name}")
+            raise ValueError(f"Unexpected RAVDESS speaker directory: {actor_dir.name}")
         for audio_path in sorted(actor_dir.glob("*.wav")):
             match = RAVDESS_FILENAME.match(audio_path.name)
             if match is None:
-                raise ValueError(
-                    f"Unrecognised RAVDESS filename: {audio_path}")
+                raise ValueError(f"Unrecognised RAVDESS filename: {audio_path}")
             if match.group("actor") != speaker_id:
                 raise ValueError(
-                    "RAVDESS speaker mismatch between directory and filename: "
-                    f"{audio_path}"
+                    f"RAVDESS speaker mismatch between directory and filename: {audio_path}"
                 )
             source_label = RAVDESS_EMOTIONS.get(match.group("emotion"))
             if source_label is None:
-                raise ValueError(
-                    f"Unsupported RAVDESS emotion code: {audio_path.name}")
+                raise ValueError(f"Unsupported RAVDESS emotion code: {audio_path.name}")
             records.append(
                 AffectRecord(
                     audio_path=Path(audio_path.relative_to(base).as_posix()),
@@ -77,8 +73,7 @@ def build_tess_records(root: str | Path) -> list[AffectRecord]:
         match = TESS_FILENAME.match(audio_path.name)
         if match is None:
             raise ValueError(f"Unrecognised TESS filename: {audio_path}")
-        source_label = " ".join(match.group(
-            "emotion").replace("_", " ").split()).lower()
+        source_label = " ".join(match.group("emotion").replace("_", " ").split()).lower()
         if source_label == "ps":
             source_label = "pleasant surprise"
         records.append(
@@ -98,8 +93,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--ravdess-root", type=Path, required=True)
     parser.add_argument("--tess-root", type=Path, required=True)
-    parser.add_argument("--output-dir", type=Path,
-                        default=Path("datasets/affect/manifests"))
+    parser.add_argument("--output-dir", type=Path, default=Path("datasets/affect/manifests"))
     args = parser.parse_args()
 
     ravdess = build_ravdess_records(args.ravdess_root)

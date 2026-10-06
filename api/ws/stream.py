@@ -33,9 +33,9 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from time import monotonic, time
-from typing import Callable, Mapping
 
 import numpy as np
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
@@ -112,10 +112,8 @@ class StreamDeps:
     worker: InteractionWorker
     session_registry: SessionRegistry
     audio_sample_rate_hz: int
-    authenticate: Callable[[Mapping[str, str]],
-                           DeviceIdentity] = default_dev_authenticate
-    downlink_pacer: DownlinkPacer = field(
-        default_factory=ImmediateDownlinkPacer)
+    authenticate: Callable[[Mapping[str, str]], DeviceIdentity] = default_dev_authenticate
+    downlink_pacer: DownlinkPacer = field(default_factory=ImmediateDownlinkPacer)
     session_timeout_seconds: float = 30.0
 
 
@@ -181,7 +179,9 @@ class _StreamSession:
     async def _send_error(
         self, *, session_id: str, error_code: WsErrorCode, detail: str | None = None
     ) -> None:
-        await self._send_json(ErrorMessage(session_id=session_id, error_code=error_code, message=detail))
+        await self._send_json(
+            ErrorMessage(session_id=session_id, error_code=error_code, message=detail)
+        )
 
     def _release_session(self) -> None:
         """End the in-flight session in both the registry and this
@@ -256,8 +256,7 @@ class _StreamSession:
         target timeout tolerates a coarser poll granularity than this
         while still detecting a test-shortened timeout quickly.
         """
-        poll_interval_s = max(
-            0.01, min(5.0, self._deps.session_timeout_seconds / 5))
+        poll_interval_s = max(0.01, min(5.0, self._deps.session_timeout_seconds / 5))
         try:
             while True:
                 await asyncio.sleep(poll_interval_s)
@@ -269,17 +268,14 @@ class _StreamSession:
                     # monitoring for whatever remains of this connection's
                     # lifetime, or surface as an unexpected exception from
                     # `await reaper_task` in stream_endpoint's cleanup.
-                    logger.exception(
-                        "session-timeout reaper iteration failed; continuing to poll"
-                    )
+                    logger.exception("session-timeout reaper iteration failed; continuing to poll")
         except asyncio.CancelledError:
             pass  # normal shutdown path -- stream_endpoint cancels this on disconnect
 
     async def handle_binary(self, data: bytes) -> None:
         """`audio_frame` (SPEC 8.2): raw uplink PCM, no envelope."""
         if self._in_flight is None:
-            logger.warning(
-                "dropping audio_frame received outside an active session")
+            logger.warning("dropping audio_frame received outside an active session")
             return
         if len(data) % 2 != 0:
             await self._send_error(
@@ -318,8 +314,7 @@ class _StreamSession:
 
     async def _handle_start_audio(self, message: StartAudioMessage) -> None:
         try:
-            self._deps.session_registry.start(
-                message.session_id, self._connection)
+            self._deps.session_registry.start(message.session_id, self._connection)
         except GlobalSessionCollisionError:
             await self._send_error(session_id=message.session_id, error_code="session_collision")
             return
@@ -431,8 +426,7 @@ class _StreamSession:
             result = await asyncio.wrap_future(future)
         except InteractionError as exc:
             await self._send_error(
-                session_id=session.session_id, error_code=exc.wire_code, detail=str(
-                    exc)
+                session_id=session.session_id, error_code=exc.wire_code, detail=str(exc)
             )
             self._release_session()
             return
@@ -443,15 +437,16 @@ class _StreamSession:
         chunks = chunk_100ms(result.tts_audio)
         await self._deps.downlink_pacer.send(chunks, self._ws.send_bytes)
         await self._send_json(
-            TtsAudioEndMessage(session_id=session.session_id,
-                               frame_count=len(chunks))
+            TtsAudioEndMessage(session_id=session.session_id, frame_count=len(chunks))
         )
 
         self._release_session()
 
 
 @router.websocket(endpoints.WS_STREAM)
-async def stream_endpoint(websocket: WebSocket, deps: StreamDeps = Depends(get_stream_deps)) -> None:
+async def stream_endpoint(
+    websocket: WebSocket, deps: StreamDeps = Depends(get_stream_deps)
+) -> None:
     """`/v1/stream` (SPEC 7.1-7.4): one persistent connection per edge unit.
 
     See this module's docstring for exactly what is and is not implemented
@@ -466,8 +461,7 @@ async def stream_endpoint(websocket: WebSocket, deps: StreamDeps = Depends(get_s
         await websocket.close(code=4401, reason="authentication failed")
         return
 
-    session = _StreamSession(
-        websocket=websocket, connection=connection, deps=deps)
+    session = _StreamSession(websocket=websocket, connection=connection, deps=deps)
     reaper_task = asyncio.create_task(session.run_reaper())
     try:
         while True:
@@ -489,5 +483,4 @@ async def stream_endpoint(websocket: WebSocket, deps: StreamDeps = Depends(get_s
         await session.handle_disconnect()
 
 
-__all__ = ["router", "StreamDeps",
-           "get_stream_deps", "default_dev_authenticate"]
+__all__ = ["router", "StreamDeps", "get_stream_deps", "default_dev_authenticate"]

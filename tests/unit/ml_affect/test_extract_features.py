@@ -11,7 +11,9 @@ from ml.affect.extract_features import (
 from ml.affect.features import FeatureExtractionResult
 
 
-def test_manifest_extraction_preserves_record_order_and_reports_progress(tmp_path, capsys, monkeypatch):
+def test_manifest_extraction_preserves_record_order_and_reports_progress(
+    tmp_path, capsys, monkeypatch
+):
     """Verify batch extraction preserves manifest order and reports progress."""
     manifest = tmp_path / "manifest.csv"
     manifest.write_text(
@@ -38,7 +40,8 @@ def test_manifest_extraction_preserves_record_order_and_reports_progress(tmp_pat
         )
 
     matrix = extract_manifest_features(
-        manifest, tmp_path, extractor=fake_extractor, progress_every=1)
+        manifest, tmp_path, extractor=fake_extractor, progress_every=1
+    )
 
     assert matrix.shape == (2, 88)
     assert np.all(matrix[0] == 1.0)

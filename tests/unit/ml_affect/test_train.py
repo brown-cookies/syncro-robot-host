@@ -1,5 +1,3 @@
-from pathlib import Path
-
 """Tests for the WP-104 training orchestration."""
 
 import csv
@@ -7,10 +5,10 @@ import json
 
 import numpy as np
 
+from ml.affect.artifacts import load_model_artifact
 from ml.affect.dataset import write_feature_alignment_sidecar
 from ml.affect.evaluate import evaluate_held_out
 from ml.affect.train import train_from_features
-from ml.affect.artifacts import load_model_artifact
 
 
 def _write_dataset(tmp_path, name, speakers):
@@ -77,8 +75,8 @@ def test_held_out_evaluation_uses_frozen_model(tmp_path):
 
 def test_method_note_is_self_contained(tmp_path):
     """Verify generated method notes do not depend on an external template."""
-    from ml.affect.train import _method_note
     from ml.affect.evaluate import EvaluationResult
+    from ml.affect.train import _method_note
 
     result = EvaluationResult(
         macro_f1=0.632258,
@@ -128,8 +126,8 @@ def test_method_note_is_self_contained(tmp_path):
 
 def test_method_note_reports_measured_mlp_comparison_when_available(tmp_path):
     """The MLP comparison status must come from real evidence, never a hardcoded literal."""
-    from ml.affect.train import _method_note
     from ml.affect.evaluate import EvaluationResult
+    from ml.affect.train import _method_note
 
     result = EvaluationResult(
         macro_f1=0.632258,
@@ -180,8 +178,8 @@ def test_method_note_reports_measured_mlp_comparison_when_available(tmp_path):
 
 def test_method_note_fails_loudly_on_a_malformed_comparison_file(tmp_path):
     """A corrupt comparison file must raise, not silently report a false 'not run' status."""
-    from ml.affect.train import _method_note
     from ml.affect.evaluate import EvaluationResult
+    from ml.affect.train import _method_note
 
     result = EvaluationResult(
         macro_f1=0.632258,

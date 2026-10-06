@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from pipeline import HostPipeline
 from composition import bootstrap
 from composition.bootstrap import HostComponents
+from pipeline import HostPipeline
 from pipeline.interaction import InteractionRunner
 from pipeline.worker import InteractionWorker
 
@@ -58,6 +58,7 @@ def test_bootstrap_uses_development_affect_detector_by_default(monkeypatch, test
     _patch_graph_dependencies(monkeypatch, test_settings)
     import sys
     import types
+
     fake_graph_module = types.ModuleType("pipeline.graph")
     setattr(fake_graph_module, "build_dialogue_graph", lambda **kwargs: kwargs["affect_detector"])
     monkeypatch.setitem(sys.modules, "pipeline.graph", fake_graph_module)
@@ -75,6 +76,7 @@ def test_bootstrap_returns_host_components_not_a_positional_tuple(monkeypatch, t
     _patch_graph_dependencies(monkeypatch, test_settings)
     import sys
     import types
+
     fake_graph_module = types.ModuleType("pipeline.graph")
     setattr(fake_graph_module, "build_dialogue_graph", lambda **kwargs: kwargs["affect_detector"])
     monkeypatch.setitem(sys.modules, "pipeline.graph", fake_graph_module)
@@ -102,6 +104,7 @@ def test_bootstrap_builds_worker_around_the_shared_runner_but_does_not_start_it(
     _patch_graph_dependencies(monkeypatch, test_settings)
     import sys
     import types
+
     fake_graph_module = types.ModuleType("pipeline.graph")
     setattr(fake_graph_module, "build_dialogue_graph", lambda **kwargs: kwargs["affect_detector"])
     monkeypatch.setitem(sys.modules, "pipeline.graph", fake_graph_module)
@@ -121,6 +124,7 @@ def test_bootstrap_calls_warm_up_before_building_components(monkeypatch, test_se
     _patch_graph_dependencies(monkeypatch, test_settings)
     import sys
     import types
+
     fake_graph_module = types.ModuleType("pipeline.graph")
     setattr(fake_graph_module, "build_dialogue_graph", lambda **kwargs: kwargs["affect_detector"])
     monkeypatch.setitem(sys.modules, "pipeline.graph", fake_graph_module)
@@ -179,6 +183,7 @@ def test_bootstrap_classifier_failure_falls_back_to_development(monkeypatch, tes
     _patch_graph_dependencies(monkeypatch, test_settings)
     import sys
     import types
+
     fake_graph_module = types.ModuleType("pipeline.graph")
     setattr(fake_graph_module, "build_dialogue_graph", lambda **kwargs: kwargs["affect_detector"])
     monkeypatch.setitem(sys.modules, "pipeline.graph", fake_graph_module)

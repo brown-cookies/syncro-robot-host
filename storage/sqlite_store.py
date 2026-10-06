@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import UTC
 from typing import Any
 
 from storage.context import ContextRepository, ContextResult
@@ -38,7 +39,7 @@ class SQLiteStore:
         """Create the requested user record when it does not already exist."""
         if not user_id:
             raise ValueError("user_id is required")
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         with self.database.connection() as conn:
             conn.execute(
@@ -50,13 +51,15 @@ class SQLiteStore:
                 """,
                 (
                     user_id,
-                    datetime.now(timezone.utc).isoformat(),
+                    datetime.now(UTC).isoformat(),
                     declared_working_window_start,
                     declared_working_window_end,
                 ),
             )
 
-    def retrieve_context(self, user_id: str, top_k: int, deadline_proximity_hours: int) -> ContextResult:
+    def retrieve_context(
+        self, user_id: str, top_k: int, deadline_proximity_hours: int
+    ) -> ContextResult:
         """Retrieve bounded context data for the requested user."""
         return self.context.retrieve(user_id, top_k, deadline_proximity_hours)
 

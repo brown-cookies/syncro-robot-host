@@ -23,7 +23,8 @@ mistaken for a decision already made.
 
 from __future__ import annotations
 
-from typing import Awaitable, Callable, Protocol, Sequence
+from collections.abc import Awaitable, Callable, Sequence
+from typing import Protocol
 
 from audio.resample import FRAME_DURATION_S
 

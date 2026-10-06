@@ -15,8 +15,8 @@ from adapters.contracts import LLM, STT, TTS
 from adapters.llm import LLMAdapterError
 from adapters.stt import STTAdapterError
 from adapters.tts import TTSAdapterError
-from audio.contracts import AudioInput, AudioOutput
 from audio.capture import AudioCaptureError
+from audio.contracts import AudioInput, AudioOutput
 from audio.playback import AudioPlaybackError
 
 
@@ -79,8 +79,9 @@ class HostPipeline:
             durations,
         )
         if not transcript.strip():
-            self._raise_stage("stt", STTAdapterError(
-                "Transcript was empty; nothing to send to the LLM."))
+            self._raise_stage(
+                "stt", STTAdapterError("Transcript was empty; nothing to send to the LLM.")
+            )
 
         response_text = self._run_stage(
             "llm",
@@ -89,8 +90,7 @@ class HostPipeline:
             durations,
         )
         if not response_text.strip():
-            self._raise_stage("llm", LLMAdapterError(
-                "LLM returned an empty response."))
+            self._raise_stage("llm", LLMAdapterError("LLM returned an empty response."))
 
         synthesized_audio, tts_rate = self._run_stage(
             "tts",
@@ -101,8 +101,7 @@ class HostPipeline:
 
         self._run_stage(
             "audio_output",
-            lambda: self._audio_output.play(
-                synthesized_audio, sample_rate=tts_rate),
+            lambda: self._audio_output.play(synthesized_audio, sample_rate=tts_rate),
             AudioPlaybackError,
             durations,
         )
@@ -120,7 +119,9 @@ class HostPipeline:
         raise PipelineStageError(stage, cause) from cause
 
     @staticmethod
-    def _run_stage(stage: str, operation, expected_error: type[Exception], durations: dict[str, float]):
+    def _run_stage(
+        stage: str, operation, expected_error: type[Exception], durations: dict[str, float]
+    ):
         """Execute one named pipeline stage with its required error handling."""
         start = time.monotonic()
         try:

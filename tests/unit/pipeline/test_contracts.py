@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
 
-from pipeline.contracts import DegradedTraceRecord, DecisionTraceRecord, ResponsePayload
+from pipeline.contracts import DecisionTraceRecord, DegradedTraceRecord, ResponsePayload
 
 
 def base_trace(**overrides):
@@ -14,7 +14,7 @@ def base_trace(**overrides):
         "trace_id": uuid4(),
         "session_id": "session-1",
         "user_id": "user-1",
-        "timestamp": datetime.now(timezone.utc),
+        "timestamp": datetime.now(UTC),
         "intent": "ask_status",
         "intent_confidence": 0.91,
         "retrieved_context_ids": ["task-1", "routine-1"],
@@ -43,7 +43,12 @@ def test_response_payload_matches_section_8_1_shape():
         lead_time_min=15,
     ).model_dump(mode="json")
     assert set(payload) == {
-        "type", "session_id", "tts_text", "state_tag", "policy_rule", "lead_time_min"
+        "type",
+        "session_id",
+        "tts_text",
+        "state_tag",
+        "policy_rule",
+        "lead_time_min",
     }
     assert payload["type"] == "response"
 
@@ -52,11 +57,23 @@ def test_decision_trace_matches_section_8_3_shape():
     """Verify that decision trace matches section 8 3 shape."""
     trace = DecisionTraceRecord(**base_trace()).model_dump(mode="json")
     assert set(trace) == {
-        "trace_id", "session_id", "user_id", "timestamp", "intent",
-        "intent_confidence", "retrieved_context_ids", "affect_level",
-        "deadline_proximity", "policy_rule", "action_taken", "lead_time_min",
-        "reminder_outcome", "degradation_reason", "network_event",
-        "latency_ms", "latency_basis",
+        "trace_id",
+        "session_id",
+        "user_id",
+        "timestamp",
+        "intent",
+        "intent_confidence",
+        "retrieved_context_ids",
+        "affect_level",
+        "deadline_proximity",
+        "policy_rule",
+        "action_taken",
+        "lead_time_min",
+        "reminder_outcome",
+        "degradation_reason",
+        "network_event",
+        "latency_ms",
+        "latency_basis",
     }
 
 
@@ -98,7 +115,7 @@ def test_degraded_trace_allows_missing_normal_interaction_fields():
         trace_id=uuid4(),
         session_id="session-1",
         user_id="user-1",
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
         degradation_reason="pipeline_failure",
     )
     dumped = record.model_dump(mode="json")
@@ -117,7 +134,7 @@ def test_no_interaction_degradation_rejects_non_null_intent():
             trace_id=uuid4(),
             session_id="session-1",
             user_id="user-1",
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             intent="ask_status",
             degradation_reason="pipeline_failure",
         )
@@ -128,7 +145,7 @@ def test_degraded_trace_allows_standalone_event_without_session_id():
         trace_id=uuid4(),
         session_id=None,
         user_id="user-1",
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
         degradation_reason="queue_overflow",
     )
     assert record.session_id is None

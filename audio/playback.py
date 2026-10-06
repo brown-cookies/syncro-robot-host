@@ -35,4 +35,3 @@ class SpeakerAudioOutput:
             raise AudioPlaybackError(
                 f"Host audio playback failed (device={device!r}, sample_rate={sample_rate}): {exc}"
             ) from exc
-

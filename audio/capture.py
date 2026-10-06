@@ -52,4 +52,3 @@ class MicrophoneAudioInput:
                 "Captured audio is all silence -- check the USB microphone is connected and selected."
             )
         return audio, sample_rate
-

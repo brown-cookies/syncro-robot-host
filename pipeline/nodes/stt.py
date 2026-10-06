@@ -7,6 +7,7 @@ from pipeline.state import DialogueState
 
 def make_stt_node(stt):
     """Create the speech-to-text graph node with its injected adapter."""
+
     def stt_node(state: DialogueState) -> DialogueState:
         """Transcribe request audio and place the result into dialogue state."""
         audio = state.get("audio")
@@ -17,4 +18,5 @@ def make_stt_node(stt):
         if not transcript.strip():
             raise ValueError("Node 1 STT returned an empty transcript.")
         return {"transcript": transcript.strip()}
+
     return stt_node

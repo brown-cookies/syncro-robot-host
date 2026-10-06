@@ -11,6 +11,7 @@ from adapters.stt.whisper_adapter import STTAdapterError, WhisperSTTAdapter
 
 def install_fake_whisper(monkeypatch, *, segments=None, init_error=None, transcribe_error=None):
     """Perform the install fake whisper operation required by the project."""
+
     class FakeWhisperModel:
         def __init__(self, model_size, device, compute_type):
             """Initialize the FakeWhisperModel and establish its runtime state."""
@@ -25,7 +26,9 @@ def install_fake_whisper(monkeypatch, *, segments=None, init_error=None, transcr
                 raise transcribe_error
             return segments or [], object()
 
-    monkeypatch.setitem(sys.modules, "faster_whisper", types.SimpleNamespace(WhisperModel=FakeWhisperModel))
+    monkeypatch.setitem(
+        sys.modules, "faster_whisper", types.SimpleNamespace(WhisperModel=FakeWhisperModel)
+    )
     return FakeWhisperModel
 
 
@@ -39,8 +42,13 @@ def test_stt_initialization_uses_settings(monkeypatch, test_settings):
 
 def test_stt_joins_segments(monkeypatch, test_settings, sample_audio):
     """Verify that stt joins segments."""
-    install_fake_whisper(monkeypatch, segments=[types.SimpleNamespace(text=" Hello "), types.SimpleNamespace(text=" world ")])
-    assert WhisperSTTAdapter(settings=test_settings).transcribe(sample_audio, 16_000) == "Hello world"
+    install_fake_whisper(
+        monkeypatch,
+        segments=[types.SimpleNamespace(text=" Hello "), types.SimpleNamespace(text=" world ")],
+    )
+    assert (
+        WhisperSTTAdapter(settings=test_settings).transcribe(sample_audio, 16_000) == "Hello world"
+    )
 
 
 def test_stt_rejects_wrong_dtype(monkeypatch, test_settings):

@@ -74,7 +74,7 @@ class DegradedTraceRecord(_Contract):
     latency_basis: LatencyBasis = "host_observed_only"
 
     @model_validator(mode="after")
-    def validate_degraded_fields(self) -> "DegradedTraceRecord":
+    def validate_degraded_fields(self) -> DegradedTraceRecord:
         """Enforce the Phase 8 degraded-record contract."""
         no_interaction_reasons = {
             "session_timeout",
@@ -82,9 +82,7 @@ class DegradedTraceRecord(_Contract):
             "pipeline_failure",
         }
         if self.degradation_reason in no_interaction_reasons and self.intent is not None:
-            raise ValueError(
-                "degraded traces with no-interaction reasons cannot carry an intent"
-            )
+            raise ValueError("degraded traces with no-interaction reasons cannot carry an intent")
         if self.degradation_reason in no_interaction_reasons:
             if self.policy_rule != "n/a" or self.deadline_proximity != "n/a":
                 raise ValueError("degraded traces cannot carry a policy-domain result")
@@ -113,26 +111,24 @@ class DecisionTraceRecord(_Contract):
     latency_basis: LatencyBasis
 
     @model_validator(mode="after")
-    def validate_policy_domain(self) -> "DecisionTraceRecord":
+    def validate_policy_domain(self) -> DecisionTraceRecord:
         """Validate that a policy trace uses only the allowed policy-domain values."""
         if self.policy_rule == "n/a":
             if self.deadline_proximity != "n/a":
-                raise ValueError(
-                    "deadline_proximity must be n/a when policy_rule is n/a"
-                )
+                raise ValueError("deadline_proximity must be n/a when policy_rule is n/a")
         elif self.deadline_proximity == "n/a":
-            raise ValueError(
-                "deadline_proximity cannot be n/a when policy_rule is R1-R5"
-            )
+            raise ValueError("deadline_proximity cannot be n/a when policy_rule is R1-R5")
         return self
 
 
-ALLOWED_INTENTS = frozenset({
-    "add_task",
-    "reschedule_task",
-    "request_summary",
-    "request_break",
-    "dismiss_reminder",
-    "snooze_reminder",
-    "ask_status",
-})
+ALLOWED_INTENTS = frozenset(
+    {
+        "add_task",
+        "reschedule_task",
+        "request_summary",
+        "request_break",
+        "dismiss_reminder",
+        "snooze_reminder",
+        "ask_status",
+    }
+)

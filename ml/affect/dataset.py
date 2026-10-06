@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from collections import Counter
-from dataclasses import dataclass
 import csv
 import hashlib
 import json
+from collections import Counter
+from collections.abc import Iterable, Sequence
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Sequence
+from typing import TYPE_CHECKING
 
 from .label_mapping import (
     ALLOWED_LEVELS,
@@ -16,6 +17,9 @@ from .label_mapping import (
     TESS_LABEL_MAP,
     map_label,
 )
+
+if TYPE_CHECKING:
+    import numpy as np
 
 MANIFEST_COLUMNS = (
     "audio_path",
@@ -29,9 +33,7 @@ EXPECTED_COUNTS = {
     "tess": {"records": 2800, "speakers": 2, "source_labels": 7},
 }
 EXPECTED_FEATURE_COUNT = 88
-EXPECTED_FEATURE_COLUMNS = tuple(
-    f"feature_{index:02d}" for index in range(EXPECTED_FEATURE_COUNT)
-)
+EXPECTED_FEATURE_COLUMNS = tuple(f"feature_{index:02d}" for index in range(EXPECTED_FEATURE_COUNT))
 
 EXPECTED_SOURCE_LABELS = {
     "ravdess": frozenset(RAVDESS_LABEL_MAP),
@@ -92,8 +94,7 @@ def verify_manifest(
     """Verify that a corpus manifest satisfies the fixed WP-104 dataset contract."""
     corpus = expected_corpus.strip().lower()
     if corpus not in EXPECTED_COUNTS:
-        raise ValueError(
-            f"Unsupported corpus for verification: {expected_corpus!r}")
+        raise ValueError(f"Unsupported corpus for verification: {expected_corpus!r}")
 
     records = load_manifest(path)
     expected = EXPECTED_COUNTS[corpus]
@@ -128,19 +129,18 @@ def verify_manifest(
         )
 
     if len(source_labels) != expected["source_labels"]:
-        raise AssertionError(
-            "Source-label count does not match the fixed contract")
+        raise AssertionError("Source-label count does not match the fixed contract")
 
     paths = [record.audio_path.as_posix() for record in records]
     duplicates = _duplicates(paths)
     if duplicates:
         raise ValueError(
-            f"{corpus.upper()} manifest contains duplicate audio paths: {duplicates[:5]}")
+            f"{corpus.upper()} manifest contains duplicate audio paths: {duplicates[:5]}"
+        )
 
     if require_audio_files:
         if audio_root is None:
-            raise ValueError(
-                "audio_root is required when require_audio_files=True")
+            raise ValueError("audio_root is required when require_audio_files=True")
         _verify_audio_files(records, Path(audio_root))
 
     target_counts = Counter(record.target_label for record in records)
@@ -154,8 +154,7 @@ def verify_manifest(
         record_count=len(records),
         speaker_count=len(speakers),
         source_label_count=len(source_labels),
-        target_label_counts={label: target_counts.get(
-            label, 0) for label in ALLOWED_LEVELS},
+        target_label_counts={label: target_counts.get(label, 0) for label in ALLOWED_LEVELS},
     )
 
 
@@ -195,13 +194,11 @@ def _validate_manifest_row(row: dict[str, str], row_number: int, path: Path) -> 
     """Validate required values and fixed label mappings for one manifest row."""
     for column in MANIFEST_COLUMNS:
         if not row.get(column, "").strip():
-            raise ValueError(
-                f"Manifest row {row_number} has an empty {column!r}: {path}")
+            raise ValueError(f"Manifest row {row_number} has an empty {column!r}: {path}")
 
     corpus = row["corpus"].strip().lower()
     if corpus not in EXPECTED_COUNTS:
-        raise ValueError(
-            f"Unsupported corpus {row['corpus']!r} at row {row_number}")
+        raise ValueError(f"Unsupported corpus {row['corpus']!r} at row {row_number}")
 
     source_label = _normalise_source_label(row["source_label"])
     expected = map_label(corpus, source_label)
@@ -211,16 +208,13 @@ def _validate_manifest_row(row: dict[str, str], row_number: int, path: Path) -> 
         )
 
     if "\\" in row["audio_path"]:
-        raise ValueError(
-            f"Manifest audio_path must use POSIX separators at row {row_number}")
+        raise ValueError(f"Manifest audio_path must use POSIX separators at row {row_number}")
 
     if Path(row["audio_path"]).is_absolute():
-        raise ValueError(
-            f"Manifest audio_path must be relative at row {row_number}")
+        raise ValueError(f"Manifest audio_path must be relative at row {row_number}")
 
     if Path(row["audio_path"]).suffix.lower() != ".wav":
-        raise ValueError(
-            f"Manifest audio_path must reference a WAV file at row {row_number}")
+        raise ValueError(f"Manifest audio_path must reference a WAV file at row {row_number}")
 
 
 def _normalise_source_label(source_label: str) -> str:
@@ -241,8 +235,11 @@ def _duplicates(values: Iterable[str]) -> list[str]:
 
 def _verify_audio_files(records: Iterable[AffectRecord], audio_root: Path) -> None:
     """Confirm that every manifest path resolves to a local WAV file when requested."""
-    missing = [str(audio_root / record.audio_path)
-               for record in records if not (audio_root / record.audio_path).is_file()]
+    missing = [
+        str(audio_root / record.audio_path)
+        for record in records
+        if not (audio_root / record.audio_path).is_file()
+    ]
     if missing:
         raise FileNotFoundError(
             f"Manifest references {len(missing)} missing audio files; first examples: {missing[:5]}"
@@ -253,13 +250,15 @@ def manifest_fingerprint(records: Iterable[AffectRecord]) -> str:
     """Hash ordered manifest identity fields used to align features with labels."""
     digest = hashlib.sha256()
     for record in records:
-        line = "\x1f".join((
-            record.audio_path.as_posix(),
-            record.corpus,
-            record.speaker_id,
-            record.source_label,
-            record.target_label,
-        ))
+        line = "\x1f".join(
+            (
+                record.audio_path.as_posix(),
+                record.corpus,
+                record.speaker_id,
+                record.source_label,
+                record.target_label,
+            )
+        )
         digest.update(line.encode("utf-8"))
         digest.update(b"\n")
     return digest.hexdigest()
@@ -288,7 +287,7 @@ def write_feature_alignment_sidecar(
 def validate_feature_table(
     feature_csv: str | Path,
     manifest_csv: str | Path,
-) -> "np.ndarray":
+) -> np.ndarray:
     """Load a feature CSV and verify schema, values, row count, and manifest alignment."""
     import numpy as np
 
@@ -308,13 +307,9 @@ def validate_feature_table(
     if matrix.size == 0:
         matrix = np.empty((0, EXPECTED_FEATURE_COUNT), dtype=np.float64)
     if matrix.ndim != 2 or matrix.shape[1] != EXPECTED_FEATURE_COUNT:
-        raise ValueError(
-            f"Feature table must have exactly {EXPECTED_FEATURE_COUNT} columns"
-        )
+        raise ValueError(f"Feature table must have exactly {EXPECTED_FEATURE_COUNT} columns")
     if matrix.shape[0] != len(records):
-        raise ValueError(
-            f"Feature rows ({matrix.shape[0]}) != manifest rows ({len(records)})"
-        )
+        raise ValueError(f"Feature rows ({matrix.shape[0]}) != manifest rows ({len(records)})")
     if not np.isfinite(matrix).all():
         raise ValueError(f"Feature table contains non-finite values: {feature_path}")
 
@@ -332,11 +327,7 @@ def validate_feature_table(
             "manifest fingerprint differs from extraction sidecar"
         )
     if metadata.get("record_count") != len(records):
-        raise ValueError(
-            f"Feature alignment record count mismatch for {feature_path}"
-        )
+        raise ValueError(f"Feature alignment record count mismatch for {feature_path}")
     if metadata.get("feature_columns") != list(EXPECTED_FEATURE_COLUMNS):
-        raise ValueError(
-            f"Feature alignment schema mismatch for {feature_path}"
-        )
+        raise ValueError(f"Feature alignment schema mismatch for {feature_path}")
     return matrix

@@ -28,7 +28,7 @@ from __future__ import annotations
 
 import argparse
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from time import monotonic, time
 
@@ -59,7 +59,7 @@ def _render_trace_lines(trace_record: dict) -> list[str]:
 def _write_evidence(lines: list[str], stem: str) -> Path:
     """Write a full evidence transcript to evidences/ and return its path."""
     EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     evidence_path = EVIDENCE_DIR / f"{stem}_{stamp}.txt"
     evidence_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return evidence_path
@@ -82,12 +82,10 @@ def dump_trace(trace_id: str, user_id: str = DEMO_USER_ID, settings: Settings | 
         print(line)
         log.append(line)
 
-    emit(
-        f"--- DEL-03 decision trace dump (db={settings.db_path}, user_id={user_id!r}) ---")
+    emit(f"--- DEL-03 decision trace dump (db={settings.db_path}, user_id={user_id!r}) ---")
     trace_record = _fetch_decision_trace(store, user_id, trace_id)
     if trace_record is None:
-        emit(
-            f"[trace] FAILED: no stored decision_trace row found for trace_id={trace_id}")
+        emit(f"[trace] FAILED: no stored decision_trace row found for trace_id={trace_id}")
         return 1
 
     for line in _render_trace_lines(trace_record):
@@ -147,6 +145,7 @@ def main() -> int:
     # Self-document the config that actually governs this run, so evidence
     # doesn't need an out-of-band note about which backend/model was live.
     import os
+
     classifier_path_exists = os.path.exists(settings.affect_classifier_path)
     emit(
         f"[config] affect_detector_backend={settings.affect_detector_backend!r} "
@@ -158,7 +157,9 @@ def main() -> int:
         f"stt_model_size={settings.stt_model_size!r} compute_type={settings.stt_compute_type!r}"
     )
     emit(f"[config] db_path={settings.db_path!r} user_id={user_id!r}")
-    emit("[wake_word] Host wake-word model is edge-owned per SPEC; this runner simulates the received event.")
+    emit(
+        "[wake_word] Host wake-word model is edge-owned per SPEC; this runner simulates the received event."
+    )
     emit(
         f"[audio_capture] Recording {settings.audio_capture_seconds:.0f}s "
         "from the USB microphone -- speak now..."
@@ -166,7 +167,8 @@ def main() -> int:
 
     emit("[wake_word] Simulating edge-confirmed wake word 'syncro' for local development")
     emit(
-        f"[start_audio] session_id={session_id} user_id={user_id} wake_word_detected_at={wake_word_detected_at}")
+        f"[start_audio] session_id={session_id} user_id={user_id} wake_word_detected_at={wake_word_detected_at}"
+    )
     capture_started = monotonic()
     try:
         captured, sample_rate = components.audio_input.capture()
@@ -174,8 +176,7 @@ def main() -> int:
         emit(f"[audio_capture] FAILED: {exc}")
         _write_evidence(log, stem="live_run_wp103_FAILED")
         return 1
-    emit(
-        f"[audio_capture] OK ({monotonic() - capture_started:.3f}s, sample_rate={sample_rate})")
+    emit(f"[audio_capture] OK ({monotonic() - capture_started:.3f}s, sample_rate={sample_rate})")
 
     session = SessionContext(
         session_id=session_id,
@@ -187,11 +188,14 @@ def main() -> int:
     emit("[interaction] Running InteractionRunner (graph -> TTS -> resample -> trace)...")
     try:
         result = components.runner.run(
-            session=session, audio=captured, sample_rate=sample_rate,
+            session=session,
+            audio=captured,
+            sample_rate=sample_rate,
         )
     except InteractionError as exc:
         emit(
-            f"[interaction] FAILED at stage={exc.stage!r} wire_code={exc.wire_code!r}: {exc.cause}")
+            f"[interaction] FAILED at stage={exc.stage!r} wire_code={exc.wire_code!r}: {exc.cause}"
+        )
         _write_evidence(log, stem="live_run_wp103_FAILED")
         return 1
 
@@ -200,14 +204,14 @@ def main() -> int:
     emit(f"[interaction] state_tag: {result.response_payload.get('state_tag')}")
     emit(f"[interaction] trace_id: {result.trace_id}")
     emit(f"[interaction] stage timings (s): {result.stage_timings_s}")
-    emit(
-        f"[interaction] latency_ms={result.latency_ms:.1f} basis={result.latency_basis!r}")
+    emit(f"[interaction] latency_ms={result.latency_ms:.1f} basis={result.latency_basis!r}")
 
     emit("[audio_output] Playing synthesized audio on host speakers...")
     output_started = monotonic()
     try:
         components.audio_output.play(
-            result.tts_audio, sample_rate=result.tts_sample_rate,
+            result.tts_audio,
+            sample_rate=result.tts_sample_rate,
         )
         emit(f"[audio_output] OK ({monotonic() - output_started:.3f}s)")
     except Exception as exc:
@@ -226,8 +230,7 @@ def main() -> int:
     emit("--- DEL-03 decision trace (live interaction) ---")
     trace_record = _fetch_decision_trace(components.store, user_id, result.trace_id)
     if trace_record is None:
-        emit(
-            f"[trace] FAILED: no stored decision_trace row found for trace_id={result.trace_id}")
+        emit(f"[trace] FAILED: no stored decision_trace row found for trace_id={result.trace_id}")
         _write_evidence(log, stem="live_run_wp103_FAILED")
         return 1
 
@@ -235,8 +238,7 @@ def main() -> int:
         emit(line)
 
     evidence_path = _write_evidence(log, stem="live_run_wp103")
-    emit(
-        f"\n[evidence] full run transcript + DEL-03 trace written to {evidence_path}")
+    emit(f"\n[evidence] full run transcript + DEL-03 trace written to {evidence_path}")
 
     return 0
 

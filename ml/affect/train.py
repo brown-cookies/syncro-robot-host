@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 from pathlib import Path
 from typing import Any
 
@@ -13,7 +12,15 @@ import sklearn
 
 from .artifacts import ARTIFACT_VERSION, save_model_artifact
 from .dataset import load_manifest, validate_feature_table
-from .evaluate import ALLOWED_LEVELS, DEFAULT_N_SPLITS, DEPLOYMENT_THRESHOLD, EvaluationResult, evaluate_held_out, evaluate_ravdess, format_metrics
+from .evaluate import (
+    ALLOWED_LEVELS,
+    DEFAULT_N_SPLITS,
+    DEPLOYMENT_THRESHOLD,
+    EvaluationResult,
+    evaluate_held_out,
+    evaluate_ravdess,
+    format_metrics,
+)
 from .model import RANDOM_STATE, build_svc_pipeline
 
 
@@ -66,7 +73,9 @@ def write_evidence(
     target.mkdir(parents=True, exist_ok=True)
     labels = list(ALLOWED_LEVELS)
     (target / "ravdess_confusion_matrix.csv").write_text(
-        "actual/predicted," + ",".join(labels) + "\n"
+        "actual/predicted,"
+        + ",".join(labels)
+        + "\n"
         + "\n".join(
             f"{label}," + ",".join(str(int(value)) for value in ravdess.confusion_matrix[index])
             for index, label in enumerate(labels)
@@ -75,7 +84,9 @@ def write_evidence(
         encoding="utf-8",
     )
     (target / "tess_confusion_matrix.csv").write_text(
-        "actual/predicted," + ",".join(labels) + "\n"
+        "actual/predicted,"
+        + ",".join(labels)
+        + "\n"
         + "\n".join(
             f"{label}," + ",".join(str(int(value)) for value in tess.confusion_matrix[index])
             for index, label in enumerate(labels)

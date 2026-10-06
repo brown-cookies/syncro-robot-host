@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from time import monotonic
-from typing import Any, Callable
+from typing import Any
 
 from langgraph.graph import END, START, StateGraph
 
@@ -81,17 +82,19 @@ def build_dialogue_graph(
         timed("context", make_context_node(store, context_top_k, deadline_proximity_hours)),
     )
     builder.add_node("node3_llm", timed("llm", make_llm_node(llm)))
-    builder.add_node("affect", timed(
-        "affect", make_affect_node(affect_detector)))
+    builder.add_node("affect", timed("affect", make_affect_node(affect_detector)))
     builder.add_node(
         "node4_policy",
-        timed("policy", make_policy_node(
-            grace_window_minutes=grace_window_minutes,
-            default_lead_time=default_lead_time,
-            store=store,
-            lead_time_min=lead_time_min,
-            lead_time_max=lead_time_max,
-        )),
+        timed(
+            "policy",
+            make_policy_node(
+                grace_window_minutes=grace_window_minutes,
+                default_lead_time=default_lead_time,
+                store=store,
+                lead_time_min=lead_time_min,
+                lead_time_max=lead_time_max,
+            ),
+        ),
     )
     builder.add_node("output", timed("output", make_output_node()))
 

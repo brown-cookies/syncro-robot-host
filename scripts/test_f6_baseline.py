@@ -19,15 +19,15 @@ the observable latency proxy; the limitation is recorded in the evidence.
 from __future__ import annotations
 
 import argparse
-import os
 import subprocess
 import sys
 import time
 import uuid
-from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
+from collections.abc import Callable
+from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
@@ -94,7 +94,7 @@ def _git_revision() -> str | None:
             text=True,
             stderr=subprocess.DEVNULL,
         ).strip()
-    except (OSError, subprocess.CalledProcessError):
+    except OSError, subprocess.CalledProcessError:
         return None
 
 
@@ -134,7 +134,14 @@ def _install_policy_probe(probe: StageProbe) -> Callable[[], None]:
 
 def _summary(values: list[float]) -> dict[str, float | None]:
     if not values:
-        return {"count": 0, "mean_s": None, "median_s": None, "p95_s": None, "min_s": None, "max_s": None}
+        return {
+            "count": 0,
+            "mean_s": None,
+            "median_s": None,
+            "p95_s": None,
+            "min_s": None,
+            "max_s": None,
+        }
     ordered = sorted(values)
     n = len(ordered)
     mean = sum(ordered) / n
@@ -173,7 +180,9 @@ def main() -> int:
     store = components.store
     runner = components.runner
     if runner is None:
-        raise RuntimeError("HostComponents.runner is not populated; Phase 5 runner wiring is missing.")
+        raise RuntimeError(
+            "HostComponents.runner is not populated; Phase 5 runner wiring is missing."
+        )
 
     store.ensure_user(
         args.user_id,
@@ -190,7 +199,7 @@ def main() -> int:
         "policy": StageProbe("policy"),
     }
 
-    restorers = [
+    _restorers = [
         _install_ollama_probe(probes),
         _install_method_probe(store, "retrieve_context", probes["context"]),
         _install_method_probe(components.tts, "synthesize", probes["tts"]),
@@ -201,7 +210,9 @@ def main() -> int:
 
     print("\nF6 baseline benchmark")
     print(f"[config] model={settings.llm_model!r}")
-    print(f"[config] intent_timeout_s={settings.intent_timeout_s} reasoning_timeout_s={settings.reasoning_timeout_s} non_llm_timeout_margin_s={settings.non_llm_timeout_margin_s}")
+    print(
+        f"[config] intent_timeout_s={settings.intent_timeout_s} reasoning_timeout_s={settings.reasoning_timeout_s} non_llm_timeout_margin_s={settings.non_llm_timeout_margin_s}"
+    )
     print(f"[config] session_timeout_seconds={settings.session_timeout_seconds}")
     print(f"[config] stt_device={settings.stt_device!r}")
     print(f"[config] stt_model_size={settings.stt_model_size!r}")
@@ -212,7 +223,11 @@ def main() -> int:
     records: list[RunRecord] = []
 
     for warmup in [True] * args.warmups + [False] * args.runs:
-        run_index = sum(1 for record in records if not record.warmup) + 1 if not warmup else sum(1 for record in records if record.warmup) + 1
+        run_index = (
+            sum(1 for record in records if not record.warmup) + 1
+            if not warmup
+            else sum(1 for record in records if record.warmup) + 1
+        )
         for probe in probes.values():
             probe.reset()
 
@@ -278,20 +293,22 @@ def main() -> int:
         )
     }
 
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
     txt_path = EVIDENCE_DIR / f"f6_baseline_{timestamp}.txt"
 
     lines: list[str] = []
     lines.append("SYNCRO Host — F6 Baseline Measurement")
     lines.append("=" * 60)
-    lines.append(f"Generated (UTC): {datetime.now(timezone.utc).isoformat()}")
+    lines.append(f"Generated (UTC): {datetime.now(UTC).isoformat()}")
     lines.append(f"Git revision: {_git_revision() or 'unknown'}")
     lines.append("")
     lines.append("PURPOSE")
     lines.append("-------")
     lines.append("Measure the current unmodified two-LLM WP-103 path before any F6 optimization.")
-    lines.append("No num_predict, keep_alive, model split, timeout change, or STT-device change is applied.")
+    lines.append(
+        "No num_predict, keep_alive, model split, timeout change, or STT-device change is applied."
+    )
     lines.append("")
     lines.append("CURRENT CONFIGURATION")
     lines.append("---------------------")
@@ -338,9 +355,20 @@ def main() -> int:
     lines.append("PER-RUN RESULTS")
     lines.append("===============")
     headers = [
-        "run", "kind", "stt_s", "intent_s", "context_s", "reasoning_s",
-        "policy_s", "affect_s", "tts_s", "graph_s", "llm_total_s",
-        "interaction_to_tts_completion_s", "total_observed_s", "trace_id"
+        "run",
+        "kind",
+        "stt_s",
+        "intent_s",
+        "context_s",
+        "reasoning_s",
+        "policy_s",
+        "affect_s",
+        "tts_s",
+        "graph_s",
+        "llm_total_s",
+        "interaction_to_tts_completion_s",
+        "total_observed_s",
+        "trace_id",
     ]
     lines.append(" | ".join(headers))
     lines.append("-" * 60)
@@ -348,10 +376,17 @@ def main() -> int:
         values = [
             str(record.run_index),
             "warmup" if record.warmup else "measured",
-            f"{record.stt_s:.6f}", f"{record.intent_s:.6f}", f"{record.context_s:.6f}",
-            f"{record.reasoning_s:.6f}", f"{record.policy_s:.6f}", f"{record.affect_s:.6f}",
-            f"{record.tts_s:.6f}", f"{record.graph_s:.6f}", f"{record.llm_total_s:.6f}",
-            f"{record.interaction_to_tts_completion_s:.6f}", f"{record.total_observed_s:.6f}",
+            f"{record.stt_s:.6f}",
+            f"{record.intent_s:.6f}",
+            f"{record.context_s:.6f}",
+            f"{record.reasoning_s:.6f}",
+            f"{record.policy_s:.6f}",
+            f"{record.affect_s:.6f}",
+            f"{record.tts_s:.6f}",
+            f"{record.graph_s:.6f}",
+            f"{record.llm_total_s:.6f}",
+            f"{record.interaction_to_tts_completion_s:.6f}",
+            f"{record.total_observed_s:.6f}",
             record.trace_id,
         ]
         lines.append(" | ".join(values))
@@ -362,8 +397,12 @@ def main() -> int:
     lines.append("")
     lines.append("BASELINE USE")
     lines.append("=============")
-    lines.append("Use this TXT evidence as the before-measurement baseline for Phase 9 F6 decisions.")
-    lines.append("Do not treat it as optimized performance evidence; no F6 optimization is applied here.")
+    lines.append(
+        "Use this TXT evidence as the before-measurement baseline for Phase 9 F6 decisions."
+    )
+    lines.append(
+        "Do not treat it as optimized performance evidence; no F6 optimization is applied here."
+    )
 
     txt_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
@@ -371,7 +410,6 @@ def main() -> int:
     print(f"[evidence] TXT:  {txt_path}")
     print("[evidence] Use these files as the before-measurement baseline for Phase 9 decisions.")
     return 0
-
 
 
 if __name__ == "__main__":

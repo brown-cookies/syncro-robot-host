@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import sqlite3
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from config.settings import get_settings
 from storage.sqlite_store import SQLiteStore
@@ -13,7 +13,9 @@ from storage.sqlite_store import SQLiteStore
 USER_ID = "wp103-demo-user"
 
 
-def _task(task_id: str, title: str, deadline: datetime | None, priority: str, now: datetime) -> tuple:
+def _task(
+    task_id: str, title: str, deadline: datetime | None, priority: str, now: datetime
+) -> tuple:
     """Execute the seeded task operation used by the development script."""
     return (
         task_id,
@@ -37,7 +39,7 @@ def seed(db_path: str, reset: bool = True) -> None:
     conn = sqlite3.connect(db_path)
     try:
         conn.execute("PRAGMA foreign_keys = ON")
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if reset:
             conn.execute("DELETE FROM decision_trace WHERE user_id = ?", (USER_ID,))
             conn.execute("DELETE FROM routine_log WHERE user_id = ?", (USER_ID,))
@@ -52,11 +54,37 @@ def seed(db_path: str, reset: bool = True) -> None:
         )
 
         tasks = [
-            _task("wp103-task-overdue", "Submit thesis outline", now - timedelta(hours=2), "high", now),
-            _task("wp103-task-imminent-high", "Prepare presentation slides", now + timedelta(minutes=45), "high", now),
-            _task("wp103-task-imminent-normal", "Review methodology notes", now + timedelta(minutes=90), "normal", now),
-            _task("wp103-task-far-high", "Organize reference papers", now + timedelta(hours=5), "high", now),
-            _task("wp103-task-far-normal", "Read related literature", now + timedelta(hours=8), "normal", now),
+            _task(
+                "wp103-task-overdue", "Submit thesis outline", now - timedelta(hours=2), "high", now
+            ),
+            _task(
+                "wp103-task-imminent-high",
+                "Prepare presentation slides",
+                now + timedelta(minutes=45),
+                "high",
+                now,
+            ),
+            _task(
+                "wp103-task-imminent-normal",
+                "Review methodology notes",
+                now + timedelta(minutes=90),
+                "normal",
+                now,
+            ),
+            _task(
+                "wp103-task-far-high",
+                "Organize reference papers",
+                now + timedelta(hours=5),
+                "high",
+                now,
+            ),
+            _task(
+                "wp103-task-far-normal",
+                "Read related literature",
+                now + timedelta(hours=8),
+                "normal",
+                now,
+            ),
             _task("wp103-task-no-deadline", "Clean project repository", None, "low", now),
         ]
         conn.executemany(
@@ -101,7 +129,9 @@ def main() -> int:
 
     print(f"WP-103 SQLite seed ready: {db_path}")
     print(f"Demo user: {USER_ID}")
-    print("Seeded tasks relative to the current UTC time: overdue, 45m/high, 90m/normal, 5h/high, 8h/normal, no-deadline/low")
+    print(
+        "Seeded tasks relative to the current UTC time: overdue, 45m/high, 90m/normal, 5h/high, 8h/normal, no-deadline/low"
+    )
     print("Seeded routine log: routine + break")
     print("Seeded lead_time_state: L=15.0 minutes")
     return 0

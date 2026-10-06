@@ -39,6 +39,7 @@ def test_invalid_audio_is_rejected_before_extraction():
 
 def test_wrong_feature_count_is_named_error():
     """Verify that wrong feature count is named error."""
+
     class BadSmile(FakeSmile):
         def process_signal(self, audio, sample_rate):
             """Process the supplied signal through the test feature-extraction boundary."""

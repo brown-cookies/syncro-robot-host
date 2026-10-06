@@ -244,8 +244,7 @@ The runtime implementation must preserve the contract already used by WP-103:
 
 ```python
 class ClassifierAffectDetector:
-    def detect(self, audio: bytes, sample_rate: int) -> str:
-        ...
+    def detect(self, audio: bytes, sample_rate: int) -> str: ...
 ```
 
 The detector:

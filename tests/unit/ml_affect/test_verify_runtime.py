@@ -10,8 +10,8 @@ import numpy as np
 import sklearn
 
 from ml.affect.dataset import write_feature_alignment_sidecar
-from ml.affect.train import train_from_features, write_evidence
 from ml.affect.evaluate import evaluate_held_out
+from ml.affect.train import train_from_features, write_evidence
 from ml.affect.verify_runtime import verify_runtime, write_runtime_verification
 
 
@@ -49,7 +49,9 @@ def _write_dataset(tmp_path: Path, name: str, speakers: list[str]):
 
 def test_verify_runtime_reports_live_sklearn_version_and_accepted_metrics(tmp_path):
     """The producer must read real evidence, not hand-maintained values."""
-    ravdess_features, ravdess_manifest = _write_dataset(tmp_path, "ravdess", ["01", "02", "03", "04"])
+    ravdess_features, ravdess_manifest = _write_dataset(
+        tmp_path, "ravdess", ["01", "02", "03", "04"]
+    )
     tess_features, tess_manifest = _write_dataset(tmp_path, "tess", ["A", "B"])
     artifact = tmp_path / "affect_svc_v1.joblib"
 
@@ -90,7 +92,9 @@ def test_verify_runtime_reports_live_sklearn_version_and_accepted_metrics(tmp_pa
 
 def test_verify_runtime_rejects_a_bad_sample_prediction(tmp_path, monkeypatch):
     """An artifact that cannot produce a valid affect label must fail verification loudly."""
-    ravdess_features, ravdess_manifest = _write_dataset(tmp_path, "ravdess", ["01", "02", "03", "04"])
+    ravdess_features, ravdess_manifest = _write_dataset(
+        tmp_path, "ravdess", ["01", "02", "03", "04"]
+    )
     tess_features, tess_manifest = _write_dataset(tmp_path, "tess", ["A", "B"])
     artifact = tmp_path / "affect_svc_v1.joblib"
 
@@ -113,9 +117,7 @@ def test_verify_runtime_rejects_a_bad_sample_prediction(tmp_path, monkeypatch):
         def predict(self, _features):
             return ["NotALevel"]
 
-    monkeypatch.setattr(
-        verify_runtime_module, "load_model_artifact", lambda _path: _BadModel()
-    )
+    monkeypatch.setattr(verify_runtime_module, "load_model_artifact", lambda _path: _BadModel())
 
     try:
         verify_runtime(model_path=artifact, metrics_path=evidence_dir / "metrics.json")
@@ -127,7 +129,9 @@ def test_verify_runtime_rejects_a_bad_sample_prediction(tmp_path, monkeypatch):
 
 def test_verify_runtime_fails_loudly_on_malformed_metrics(tmp_path):
     """A metrics.json that doesn't match the expected schema must raise, not KeyError."""
-    ravdess_features, ravdess_manifest = _write_dataset(tmp_path, "ravdess", ["01", "02", "03", "04"])
+    ravdess_features, ravdess_manifest = _write_dataset(
+        tmp_path, "ravdess", ["01", "02", "03", "04"]
+    )
     artifact = tmp_path / "affect_svc_v1.joblib"
     train_from_features(ravdess_features, ravdess_manifest, artifact, n_splits=4)
 
@@ -144,7 +148,9 @@ def test_verify_runtime_fails_loudly_on_malformed_metrics(tmp_path):
 
 def test_verify_runtime_rejects_unpinned_sklearn(tmp_path, monkeypatch):
     """Acceptance verification must not produce evidence from the wrong sklearn version."""
-    ravdess_features, ravdess_manifest = _write_dataset(tmp_path, "ravdess", ["01", "02", "03", "04"])
+    ravdess_features, ravdess_manifest = _write_dataset(
+        tmp_path, "ravdess", ["01", "02", "03", "04"]
+    )
     tess_features, tess_manifest = _write_dataset(tmp_path, "tess", ["A", "B"])
     artifact = tmp_path / "affect_svc_v1.joblib"
     model, ravdess = train_from_features(ravdess_features, ravdess_manifest, artifact, n_splits=4)
@@ -154,6 +160,7 @@ def test_verify_runtime_rejects_unpinned_sklearn(tmp_path, monkeypatch):
     write_evidence(ravdess, tess, evidence_dir=evidence_dir, artifact_path=artifact, n_splits=4)
 
     import ml.affect.verify_runtime as verify_runtime_module
+
     monkeypatch.setattr(verify_runtime_module.sklearn, "__version__", "1.8.0")
     try:
         verify_runtime(model_path=artifact, metrics_path=evidence_dir / "metrics.json")

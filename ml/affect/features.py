@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import time
+from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
@@ -51,7 +51,9 @@ def _to_mono_float32(audio: np.ndarray) -> np.ndarray:
     return mono
 
 
-def resample_to_target(audio: np.ndarray, sample_rate: int, target_rate: int = TARGET_SAMPLE_RATE) -> np.ndarray:
+def resample_to_target(
+    audio: np.ndarray, sample_rate: int, target_rate: int = TARGET_SAMPLE_RATE
+) -> np.ndarray:
     """Resample mono PCM audio to the fixed feature-extraction sample rate."""
     if sample_rate <= 0:
         raise ValueError("sample_rate must be positive")

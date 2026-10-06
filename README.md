@@ -41,6 +41,8 @@ scripts/             Manual operational runners and dataset seeding
 techdocs/            Specs, architecture, roadmap, and work-package docs
 tests/               Unit, contract, architecture, and integration tests
 models/              Local model files; keep binary artifacts out of Git
+pyproject.toml       Project metadata and declared dependencies (uv)
+uv.lock              Locked dependency versions; commit with pyproject.toml
 ```
 
 See `techdocs/ARCH.md` for what each of these actually does and how they
@@ -50,15 +52,17 @@ depend on each other.
 
 Recommended environment for the current repository:
 
-- Python 3.11+
+- Python 3.14+ (managed automatically by uv)
+- [uv](https://docs.astral.sh/uv/) for installing dependencies and running commands
 - A working microphone and speaker/audio output for the live host run
 - Ollama running locally for the LLM stage
 - A Piper voice model installed locally
 - Internet access on the first faster-whisper model load so the
   selected Whisper model can be downloaded/cached
 
-The exact Python package versions are pinned in `requirements.txt`. Full
-setup steps are in `SETUP.md`.
+Dependencies are declared in `pyproject.toml` and locked in `uv.lock`.
+Install them with `uv sync`, and run commands with `uv run` (for example,
+`uv run python -m pytest -q`). Full setup steps are in `SETUP.md`.
 
 ## Evidence and operational artifacts
 

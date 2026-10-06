@@ -1,3 +1,3 @@
-from adapters.llm.ollama_adapter import OllamaLLMAdapter, LLMAdapterError
+from adapters.llm.ollama_adapter import LLMAdapterError, OllamaLLMAdapter
 
 __all__ = ["OllamaLLMAdapter", "LLMAdapterError"]

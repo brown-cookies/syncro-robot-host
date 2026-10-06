@@ -31,8 +31,10 @@ def format_events(events: list[dict]) -> str:
     """Render the ingest audit log."""
     lines = ["ingress_event_log:"]
     for e in events:
-        lines.append(f"  {e['logged_at']}  source={e['source']}  "
-                     f"external_id={e['external_id']}  outcome={e['outcome']}")
+        lines.append(
+            f"  {e['logged_at']}  source={e['source']}  "
+            f"external_id={e['external_id']}  outcome={e['outcome']}"
+        )
     if not events:
         lines.append("  (no ingest events)")
     return "\n".join(lines)
