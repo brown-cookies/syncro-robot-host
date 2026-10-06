@@ -8,7 +8,7 @@ For requirements and architecture contracts, use `techdocs/SPEC.md` and `techdoc
 ## 1. Prerequisites
 
 - [uv](https://docs.astral.sh/uv/) (installed in section 2; it also manages the Python version)
-- Python 3.11 or newer (uv downloads a matching interpreter automatically if you do not have one)
+- Python 3.14 or newer (uv downloads a matching interpreter automatically if you do not have one)
 - Git
 - Ollama installed and running locally
 - A microphone and speaker/audio output for live host runs

@@ -29,14 +29,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from composition.bootstrap import build_host_components
-from config.settings import Settings, get_settings
-from pipeline.interaction import SessionContext
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from composition.bootstrap import build_host_components
+from config.settings import Settings, get_settings
+from pipeline.interaction import SessionContext
 
 EVIDENCE_DIR = Path(__file__).resolve().parent.parent / "evidences"
 DEFAULT_USER_ID = "f6-baseline-user"

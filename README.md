@@ -52,7 +52,7 @@ depend on each other.
 
 Recommended environment for the current repository:
 
-- Python 3.11+ (managed automatically by uv)
+- Python 3.14+ (managed automatically by uv)
 - [uv](https://docs.astral.sh/uv/) for installing dependencies and running commands
 - A working microphone and speaker/audio output for the live host run
 - Ollama running locally for the LLM stage
